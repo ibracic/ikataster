@@ -4,6 +4,7 @@ import { cacheStore } from "../cache/instance";
 import { useEffect, useState } from "react";
 import { Accordion, Alert, Badge, Button, FileButton, Group, Loader, Modal, Paper, Progress, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
+import { currentPlatform, isStandalone } from "../pwa/platform";
 import { IconAlertTriangle, IconCloudOff, IconDatabaseExport, IconDownload, IconSettings, IconShieldCheck, IconTrash, IconUpload } from "@tabler/icons-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useI18n } from "../i18n";
@@ -35,6 +36,10 @@ const browserDownload = (bytes: Uint8Array, name: string) => {
 export function DataModal({ opened, onClose, download = browserDownload, onRestored = () => window.location.reload() }: Props) {
   const { t, lang } = useI18n();
   const mobile = useMediaQuery("(max-width: 640px)") ?? false;
+  const platform = currentPlatform();
+  const ios = platform === "ios-safari" || platform === "ios-other";
+  const standalone = isStandalone();
+  const [iosHelp, setIosHelp] = useState(false);
   const { store: cart, items } = useCart();
   const { store: results, records } = useResults();
   const folders = useLiveQuery(() => results.db.folders.count(), [results]) ?? 0;
@@ -121,14 +126,22 @@ export function DataModal({ opened, onClose, download = browserDownload, onResto
             <Group gap={4} wrap="nowrap" style={{ minWidth: 0 }}>
               {info?.persisted ? <IconShieldCheck size={16} color="var(--mantine-color-teal-6)" /> : <IconAlertTriangle size={16} color={info?.supported ? "var(--mantine-color-orange-6)" : "var(--mantine-color-gray-6)"} />}
               <Text size="xs" data-testid="persist-state" title={info?.supported && !info.persisted ? t("persistNoHint") : undefined}>
-                {info == null ? "…" : !info.supported ? t("persistUnsupported") : info.persisted ? t("persistYes") : t("persistNo")}
+                {ios && standalone ? t("persistHomeScreen") : info == null ? "…" : !info.supported ? t("persistUnsupported") : info.persisted ? t("persistYes") : t("persistNo")}
               </Text>
             </Group>
-            {info?.supported && !info.persisted && (
+            {ios && !standalone && (
+              <Button size="compact-xs" variant="subtle" onClick={() => setIosHelp((v) => !v)} data-testid="ios-home-btn">{t("persistIosBtn")}</Button>
+            )}
+            {!ios && info?.supported && !info.persisted && (
               <Button size="compact-xs" variant="subtle" loading={busy === "persist"}
                 onClick={async () => { setBusy("persist"); await ensurePersisted(undefined, undefined, true); setBusy(null); refresh(); }}>{t("persistAskShort")}</Button>
             )}
           </Group>
+          {ios && !standalone && iosHelp && (
+            <Alert color="blue" variant="light" p="xs" data-testid="ios-home-help">
+              <Text size="xs">{t(platform === "ios-other" ? "persistIosOther" : "persistIosSteps")}</Text>
+            </Alert>
+          )}
         </Stack>
 
         {section(<IconDatabaseExport size={18} />, t("backupTitle"), t("backupHelpShort"), (

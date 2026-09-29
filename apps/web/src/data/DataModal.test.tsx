@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MantineProvider } from "@mantine/core";
 import { I18nProvider } from "../i18n";
@@ -35,4 +36,18 @@ it("downloads a backup and restores it after confirmation", async () => {
 
   fireEvent.change(input, { target: { files: [new File(["hello"], "x.json")] } });
   expect(await screen.findByTestId("data-msg")).toHaveTextContent("ni varnostna kopija");
+});
+
+it("on iPhone Safari offers Add to Home Screen instead of the persist request", async () => {
+  const ua = vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1");
+  const tag = Date.now();
+  render(
+    <MantineProvider><I18nProvider><CartContext.Provider value={createCartStore(`ios-c-${tag}`)}><ResultsContext.Provider value={createResultsStore(`ios-r-${tag}`)}>
+      <DataModal opened onClose={() => {}} />
+    </ResultsContext.Provider></CartContext.Provider></I18nProvider></MantineProvider>,
+  );
+  expect(screen.queryByRole("button", { name: "Zaščiti podatke" })).toBeNull();
+  fireEvent.click(screen.getByTestId("ios-home-btn"));
+  expect(screen.getByTestId("ios-home-help")).toHaveTextContent("Dodaj na začetni zaslon");
+  ua.mockRestore();
 });
