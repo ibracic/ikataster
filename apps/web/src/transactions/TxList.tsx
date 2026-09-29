@@ -27,7 +27,8 @@ function Row({ i, land }: { i: TxItem; land?: boolean }) {
   const type = i.type != null ? (land ? LAND_TYPE : PART_TYPE)[i.type]?.[L] : undefined;
   const nf = new Intl.NumberFormat(lang === "sl" ? "sl-SI" : "en-GB", { maximumFractionDigits: 1 });
   const facts = [
-    i.part && `${t("txPart")} ${i.part}`, type, i.area ? `${nf.format(i.area)} m²` : null,
+    i.part && `${t("txPart")} ${i.part}`,
+    i.parts && `${t("txParts")} ${i.parts.length > 6 ? `${i.parts.slice(0, 6).join(", ")} … (${i.parts.length})` : i.parts.join(", ")}`, type, i.area ? `${nf.format(i.area)} m²` : null,
     i.share && !/^(\d+)\/\1$/.test(i.share) ? `${t("txShare")} ${i.share}` : null,
   ].filter(Boolean).join(" · ");
   return (
@@ -43,7 +44,7 @@ function Row({ i, land }: { i: TxItem; land?: boolean }) {
       </div>
       <div style={{ textAlign: "right", flexShrink: 0 }}>
         <Text size="sm" fw={600}>{i.price != null ? `${formatEur(i.price, lang)}${i.kind === "rent" ? t("txPerMonth") : ""}` : "—"}</Text>
-        {i.wholeDeal && i.items > 1 && <Text size="xs" c="dimmed">{t("txWholeDeal").replace("{n}", String(i.items))}</Text>}
+        {i.wholeDeal && i.items > 1 && <Text size="xs" c="dimmed">{t(i.kind === "rent" ? "txWholeLease" : "txWholeDeal").replace("{n}", String(i.items))}</Text>}
         {i.perM2 != null && <Text size="xs" c="dimmed">{nf.format(i.perM2)} €/m²{i.kind === "rent" ? t("txPerMonth") : ""}</Text>}
       </div>
     </Group>

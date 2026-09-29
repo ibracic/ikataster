@@ -32,6 +32,15 @@ describe("transactions", () => {
     expect(buildingTx(tx, 2)).toEqual([]);
   });
 
+  it("groups a lease covering many parts into one row and marks the part view", () => {
+    const lease: KoTx = { ...tx, r: { "7": ["2023-10-13", 60806, 1, 4, "2023-10-13", "2039-12-31"] },
+      rd: { "30/1": [[7, null, 11, 15]], "30/2": [[7, null, 21.2, 15]], "30/10": [[7, null, 11, 15]] } };
+    const rows = buildingTx(lease, 30);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ kind: "rent", price: 60806, wholeDeal: true, items: 3, parts: ["1", "2", "10"], area: 43.2, perM2: null });
+    expect(partTx(lease, 30, 2)[0]).toMatchObject({ wholeDeal: true, items: 3, perM2: null });
+  });
+
   it("fetches tx/ko/<ko>.json once and remembers missing KOs", async () => {
     const calls: string[] = [];
     const t = createTransactions({ name: `tx-${Math.random()}`, base: "https://data.example",
