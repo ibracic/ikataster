@@ -55,11 +55,16 @@ export interface GursLayer {
   minzoom?: number;
 }
 
+/** Below this map zoom the GURS orthophoto service renders nothing (white). */
+export const ORTHO_MIN_ZOOM = 8;
+
 /** GURS raster layers stacked on top of the vector basemap (ortho first, then cadastre overlays). */
 export const GURS_LAYERS: GursLayer[] = [
   {
     id: "ortho",
-    source: { type: "raster", tiles: [wmsTileUrl(GURS_WMS_DTS, "SI.GURS.ZPDZ:DOF025", "image/jpeg", 512)], tileSize: 512, maxzoom: 20, attribution: ATTR_GURS },
+    // GURS returns plain white images for DOF025 when zoomed out further; the street map shows there instead.
+    minzoom: ORTHO_MIN_ZOOM,
+    source: { type: "raster", tiles: [wmsTileUrl(GURS_WMS_DTS, "SI.GURS.ZPDZ:DOF025", "image/jpeg", 512)], tileSize: 512, minzoom: ORTHO_MIN_ZOOM, maxzoom: 20, attribution: ATTR_GURS },
   },
   ...OVERLAYS.map((o) => ({
     id: o.id,

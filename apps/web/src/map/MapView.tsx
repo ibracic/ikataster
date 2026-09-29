@@ -9,6 +9,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 maplibregl.setWorkerUrl(workerUrl);
 import {
   basemapLabelLayers, basemapStyleUrl, GURS_LAYERS, INITIAL_VIEW, layerVisibility, SLOVENIA_BOUNDS, type BasemapId, type OverlayId,
+  ORTHO_MIN_ZOOM,
 } from "./layers";
 
 type MlMap = maplibregl.Map;
@@ -140,7 +141,7 @@ function addGursLayers(m: MlMap, vis: Record<string, "visible" | "none">, labels
   }
   setLabels(m, labels);
   originalPaint.delete(m); originalBg.delete(m); // new style: remember its own colours again
-  styleLabels(m, vis.ortho === "visible");
+  styleLabels(m, vis.ortho === "visible" && m.getZoom() >= ORTHO_MIN_ZOOM);
 }
 function setLabels(m: MlMap, on: boolean) {
   for (const id of labelIds(m)) m.setLayoutProperty(id, "visibility", on ? "visible" : "none");
@@ -240,6 +241,14 @@ export function MapView({ basemap, overlays, labels = true, dark, onZoom, select
     m.on("mouseenter", `${RES}-cluster`, () => { m.getCanvas().style.cursor = "pointer"; });
     m.on("mouseleave", `${RES}-cluster`, () => { m.getCanvas().style.cursor = ""; });
     m.on("zoomend", () => onZoom?.(m.getZoom()));
+    // Orthophoto only exists from ORTHO_MIN_ZOOM; zoomed further out keep the street map visible.
+    let orthoShown: boolean | null = null;
+    m.on("zoom", () => {
+      const on = vis.current.ortho === "visible" && m.getZoom() >= ORTHO_MIN_ZOOM;
+      if (on === orthoShown) return;
+      orthoShown = on;
+      try { styleLabels(m, on); } catch { /* style not ready */ }
+    });
     map.current = m;
     (window as unknown as { __map?: MlMap }).__map = m;
     onZoom?.(m.getZoom());
@@ -259,7 +268,7 @@ export function MapView({ basemap, overlays, labels = true, dark, onZoom, select
     const m = map.current;
     if (!m) return;
     for (const [id, v] of Object.entries(vis.current)) if (m.getLayer(id)) m.setLayoutProperty(id, "visibility", v);
-    try { styleLabels(m, basemap === "ortho"); } catch { /* style not ready; style.load applies it */ }
+    try { styleLabels(m, basemap === "ortho" && m.getZoom() >= ORTHO_MIN_ZOOM); } catch { /* style not ready; style.load applies it */ }
   }, [basemap, overlays]);
 
   useEffect(() => { const m = map.current; if (m?.getStyle()) setLabels(m, labels); }, [labels]);
