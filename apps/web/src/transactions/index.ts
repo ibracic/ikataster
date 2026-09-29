@@ -122,7 +122,19 @@ export interface TxItem {
   part?: string;
   /** All part numbers of this building covered by the same deal (grouped building rows). */
   parts?: string[];
+  /** Per-part lines of a grouped row. */
+  rows?: TxLine[];
+  /** GURS deal kind code (Vrsta kupoprodajnega / najemnega posla). */
+  dealKind: number | null;
+  floor?: string;
+  /** Parcels in the same sale deal. */
+  parcels?: number;
+  /** Lease start / end (rentals). */
+  start?: string;
+  end?: string;
   market: number | null;
+  /** Price recorded for this property alone (null = only the deal total is known). */
+  ownPrice?: number | null;
   /** €/m² when the price refers to this property alone. */
   perM2: number | null;
 }
@@ -137,6 +149,7 @@ function saleItem(tx: KoTx, row: PartSale | ParcelSale, part?: string): TxItem {
   const fullShare = !row[4] || /^(\d+)\/\1$/.test(row[4]);
   return {
     kind: "sale", deal: row[0], date: d[0], price, wholeDeal, items, area, type: row[3], share: row[4] || undefined, part,
+    dealKind: d[2], parcels: d[5] ?? 0, floor: (row as PartSale)[5] || undefined, ownPrice: own,
     market: d[3], perM2: price && area && !wholeDeal && fullShare ? Math.round(price / area) : null,
   };
 }
@@ -158,8 +171,11 @@ function rentItem(tx: KoTx, row: PartRent, part?: string): TxItem {
   const price = row[1] ?? d[1];
   const items = rentParts(tx, row[0]);
   return { kind: "rent", deal: row[0], date: d[0], price, wholeDeal: row[1] == null && items > 1, items, area: row[2], type: row[3], part,
+    dealKind: d[2], start: d[4] || undefined, end: d[5] || undefined, ownPrice: row[1],
     market: d[3], perM2: price && row[2] && row[1] != null ? Math.round((price / row[2]) * 10) / 10 : null };
 }
+
+export interface TxLine { part: string; area: number | null; type: number | null; ownPrice: number | null; share?: string; floor?: string }
 
 const byDate = (a: TxItem, b: TxItem) => b.date.localeCompare(a.date);
 
@@ -187,13 +203,15 @@ export function buildingTx(tx: KoTx | null | undefined, building: number | strin
     if (!i.wholeDeal) { grouped.push(i); continue; }
     const key = `${i.kind}:${i.deal}`;
     const g = byDeal.get(key);
-    if (!g) { const n: TxItem = { ...i, parts: [i.part!] }; byDeal.set(key, n); grouped.push(n); continue; }
-    if (!g.parts!.includes(i.part!)) g.parts!.push(i.part!);
+    const line: TxLine = { part: i.part!, area: i.area, type: i.type, ownPrice: i.ownPrice ?? null, share: i.share, floor: i.floor };
+    if (!g) { const n: TxItem = { ...i, parts: [i.part!], rows: [line] }; byDeal.set(key, n); grouped.push(n); continue; }
+    if (!g.parts!.includes(i.part!)) { g.parts!.push(i.part!); g.rows!.push(line); }
     g.area = g.area != null && i.area != null ? Math.round((g.area + i.area) * 10) / 10 : g.area ?? i.area;
     if (g.type !== i.type) g.type = null;
   }
   for (const g of byDeal.values()) {
     g.parts!.sort((a, b) => Number(a) - Number(b));
+    g.rows!.sort((a, b) => Number(a.part) - Number(b.part));
     if (g.parts!.length > 1) g.part = undefined;
     else g.parts = undefined;
   }
