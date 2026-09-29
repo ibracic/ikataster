@@ -8,7 +8,7 @@ There is no backend and no account: the app is a static site that runs entirely 
 
 - **Map**: street map or aerial photo (GURS orthophoto) with cadastral parcels and building outlines on top.
 - **Search**: by address, parcel (cadastral municipality + number), building, or building manager (*upravnik*).
-- **Details**: parcel area, land use and zoning, link to the GURS mass valuation; building attributes, connections, and every building part with its use, area and floor.
+- **Details**: parcel area, land use and zoning, GURS mass-appraisal value (*posplošena vrednost*); building attributes, connections, and every building part with its use, area and floor.
 - **Area selection**: draw a polygon to collect all parcels or buildings inside it.
 - **List import**: paste or upload CSV/TSV/TXT/XLSX lists of parcels or building parts, validated against GURS.
 - **Land-registry extracts** (desktop, with the extension): queue many e-ZK extracts, respect the daily limit, and parse owners, shares, mortgages, easements and other rights from the PDFs.
@@ -60,6 +60,7 @@ The built app serves the extension zips under `/extension/`. In the app open *Se
 
 - Cadastre, buildings, addresses and orthophoto: [GURS](https://www.e-prostor.gov.si/) public WMS/WFS services, © GURS.
 - Basemap: [OpenFreeMap](https://openfreemap.org/), © OpenStreetMap contributors.
+- Mass-appraisal values: GURS, Evidenca vrednotenja (CC BY 4.0), pre-split per cadastral municipality on the [`data` branch](https://github.com/ibracic/ikataster/tree/data) by `scripts/valuations/build.py` (values only, no ownership data).
 - Land-registry extracts: [e-ZK on e-Sodstvo](https://esodisce.si/), downloaded by the user through their own SI-PASS session.
 
 iKataster is an independent project and is not affiliated with GURS or the Slovenian judiciary. Data is provided as is; always check official sources for legal purposes.

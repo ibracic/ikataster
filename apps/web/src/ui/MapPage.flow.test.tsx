@@ -17,6 +17,12 @@ vi.mock("../map/MapView", () => ({
 import { MapPage } from "./MapPage";
 import { CartContext } from "../cart/useCart";
 import { createCartStore } from "../cart/store";
+import { createValues, ValuesContext } from "../values";
+
+const fakeValues = () => createValues({
+  name: `flow-values-${Math.random()}`, base: "https://data.example",
+  fetch: (async () => new Response(JSON.stringify({ date: "2026-09-26", p: { "1587": 123456 }, d: {} }))) as unknown as typeof fetch,
+});
 
 let cartN = 0;
 
@@ -37,7 +43,7 @@ function renderAt(url: string, r: Route[], cart = createCartStore(`flow-cart-${+
   const client = createGursClient({ fetch: fakeFetch(r) });
   return render(
     <MemoryRouter initialEntries={[url]}>
-      <MantineProvider><I18nProvider><GursContext.Provider value={client}><CartContext.Provider value={cart}><MapPage /></CartContext.Provider></GursContext.Provider></I18nProvider></MantineProvider>
+      <MantineProvider><I18nProvider><GursContext.Provider value={client}><CartContext.Provider value={cart}><ValuesContext.Provider value={fakeValues()}><MapPage /></ValuesContext.Provider></CartContext.Provider></GursContext.Provider></I18nProvider></MantineProvider>
     </MemoryRouter>,
   );
 }
@@ -54,7 +60,7 @@ describe("parcel search flow", () => {
     expect(within(panel).getByText("Osrednja območja centralnih dejavnosti")).toBeInTheDocument();
     expect(within(panel).getByText("Stavba 1879")).toBeInTheDocument();
     expect(within(panel).getByRole("link", { name: /javnem vpogledu/ })).toHaveAttribute("href", "https://ipi.eprostor.gov.si/jv/?eid=100100000222153246");
-    expect(within(panel).getByRole("link", { name: /Posplošena vrednost/ }).getAttribute("href")).toMatch(/^https:\/\/vrednotenje\.gov\.si\/EV_JV\/#\/parcela_\d+$/);
+    expect((await within(panel).findByRole("link", { name: /Posplošena vrednost: 123[.\s\u00a0]456/ })).getAttribute("href")).toMatch(/^https:\/\/vrednotenje\.gov\.si\/EV_JV\/#\/parcela_\d+$/);
     expect(screen.getByTestId("map")).toHaveAttribute("data-selected", "yes");
   });
 

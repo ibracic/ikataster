@@ -1,3 +1,4 @@
+import { valuesInstance } from "../values";
 import { cacheStore } from "../cache/instance";
 import { useEffect, useState } from "react";
 import { Alert, Badge, Button, FileButton, Group, Loader, Modal, Progress, Stack, Text, Title } from "@mantine/core";
@@ -123,7 +124,7 @@ export function DataModal({ opened, onClose, download = browserDownload, onResto
           <Text size="xs" c="dimmed">{t("cachesHelp")}</Text>
           <Group>
             <Button size="xs" variant="default" leftSection={<IconTrash size={14} />} loading={busy === "clear"}
-              onClick={async () => { setBusy("clear"); const n = await clearCaches(undefined, cacheStore); setBusy(null); setMsg({ color: "teal", text: `${t("cachesCleared")} (${n})` }); refresh(); }}>{t("cachesClear")}</Button>
+              onClick={async () => { setBusy("clear"); const n = await clearCaches(undefined, cacheStore); await valuesInstance().clear().catch(() => undefined); setBusy(null); setMsg({ color: "teal", text: `${t("cachesCleared")} (${n})` }); refresh(); }}>{t("cachesClear")}</Button>
           </Group>
         </Stack>
 

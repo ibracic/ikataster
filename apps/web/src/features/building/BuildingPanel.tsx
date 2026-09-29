@@ -4,9 +4,11 @@ import { Button, Checkbox } from "@mantine/core";
 import { AddToCartButton } from "../../cart/AddToCartButton";
 import { itemKey, type CartInput } from "../../cart/store";
 import { useCart } from "../../cart/useCart";
-import { ActionIcon, Alert, Anchor, Badge, CloseButton, Group, Paper, ScrollArea, Skeleton, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
-import { IconArrowLeft, IconCurrencyEuro, IconExternalLink } from "@tabler/icons-react";
+import { Alert, Anchor, Badge, CloseButton, Group, Paper, ScrollArea, Skeleton, Stack, Table, Text, Title } from "@mantine/core";
+import { IconArrowLeft, IconExternalLink } from "@tabler/icons-react";
 import { gursPublicViewUrl, valuationUrl, type Building, type BuildingPart } from "../../gurs";
+import { partValue, useKoValues } from "../../values";
+import { ValueCell, ValueSource } from "../../values/ValueCell";
 import { SheetHandle, SheetSummary, useSheet } from "../../ui/Sheet";
 import { useI18n, type MsgKey } from "../../i18n";
 
@@ -23,6 +25,7 @@ interface Props {
 
 export function BuildingPanel({ building: b, parts, partsError, onClose, onManager, onBack }: Props) {
   const { t, lang } = useI18n();
+  const values = useKoValues(b.koId);
   const nf = new Intl.NumberFormat(lang === "sl" ? "sl-SI" : "en-GB", { maximumFractionDigits: 1 });
   const row = (label: MsgKey, value: React.ReactNode) => (
     <Table.Tr>
@@ -102,7 +105,7 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
         ) : (
           <Table striped fz="sm" verticalSpacing={4} horizontalSpacing={6} layout="fixed" data-testid="parts-table">
             <Table.Thead>
-              <Table.Tr><Table.Th w={30} /><Table.Th w={40}>{t("partNo")}</Table.Th><Table.Th>{t("partUse")}</Table.Th><Table.Th w={86} ta="right">{t("partArea")}</Table.Th><Table.Th w={52} ta="right">{t("partFloor")}</Table.Th><Table.Th w={28} /></Table.Tr>
+              <Table.Tr><Table.Th w={30} /><Table.Th w={40}>{t("partNo")}</Table.Th><Table.Th>{t("partUse")}</Table.Th><Table.Th w={86} ta="right">{t("partArea")}</Table.Th><Table.Th w={46} ta="right">{t("partFloor")}</Table.Th><Table.Th w={84} ta="right">{t("valueShort")}</Table.Th></Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               {parts.map((p) => (
@@ -116,20 +119,13 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
                   <Table.Td style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={p.use ?? undefined}>{p.use ?? "—"}</Table.Td>
                   <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>{p.usableArea ?? p.area ? `${nf.format((p.usableArea ?? p.area)!)} m²` : "—"}</Table.Td>
                   <Table.Td ta="right">{p.floor ?? "—"}</Table.Td>
-                  <Table.Td ta="center" px={0}>
-                    {p.id ? (
-                      <Tooltip label={t("valueOpen")} withArrow>
-                        <ActionIcon component="a" href={valuationUrl("part", p.id)} target="_blank" rel="noopener" variant="subtle" size="sm" aria-label={`${t("valueOpen")} ${p.number}`}>
-                          <IconCurrencyEuro size={15} />
-                        </ActionIcon>
-                      </Tooltip>
-                    ) : null}
-                  </Table.Td>
+                  <Table.Td ta="right"><ValueCell size="xs" state={values} value={partValue(values.status === "ready" ? values.values : null, b.number, p.number)} href={p.id ? valuationUrl("part", p.id) : undefined} label={`${t("value")} ${p.number}`} /></Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
           </Table>
         )}
+        {parts && parts.length > 0 && <ValueSource state={values} />}
       </ScrollArea.Autosize>
       </div>
       <Group justify="space-between" mt="sm" gap={6}>

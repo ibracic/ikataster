@@ -4,6 +4,8 @@ import { Alert, Anchor, Badge, CloseButton, Group, Paper, ScrollArea, Skeleton, 
 import { IconAlertTriangle, IconExternalLink } from "@tabler/icons-react";
 import { gursPublicViewUrl, valuationUrl, type Parcel, type ParcelDetails } from "../../gurs";
 import { useI18n, type MsgKey } from "../../i18n";
+import { formatEur, parcelValue, useKoValues } from "../../values";
+import { ValueCell, ValueSource } from "../../values/ValueCell";
 import { SheetHandle, SheetSummary, useSheet } from "../../ui/Sheet";
 
 interface Props {
@@ -18,6 +20,8 @@ const fmtArea = (m2: number, lang: string) => `${m2.toLocaleString(lang === "sl"
 export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
   const { t, lang } = useI18n();
   const sheet = useSheet(parcel.eid);
+  const values = useKoValues(parcel.koId);
+  const pv = values.status === "ready" ? parcelValue(values.values, parcel.number) : undefined;
   const failed = (k: ParcelDetails["errors"][number]) => details?.errors.includes(k);
 
   const row = (label: MsgKey, value: React.ReactNode, key?: ParcelDetails["errors"][number]) => (
@@ -46,7 +50,7 @@ export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
       </Group>
       <SheetSummary>
         <Text size="sm" data-testid="sheet-summary" onClick={() => sheet.setOpen(true)} style={{ cursor: "pointer" }}>
-          {[fmtArea(parcel.area, lang), details?.intendedUse?.map((u) => u.code).join(", "),
+          {[fmtArea(parcel.area, lang), pv != null ? formatEur(pv, lang) : null, details?.intendedUse?.map((u) => u.code).join(", "),
             details?.buildings?.length ? `${details.buildings.length} × ${t("building").toLowerCase()}` : null].filter(Boolean).join(" · ")}
         </Text>
       </SheetSummary>
@@ -54,6 +58,7 @@ export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
       <ScrollArea.Autosize mah="min(55vh, 520px)" type="auto" offsetScrollbars>
         <Table verticalSpacing={6} fz="sm">
           <Table.Tbody>
+            {row("value", <><ValueCell state={values} value={pv} href={parcel.id ? valuationUrl("parcel", parcel.id) : undefined} label={t("value")} /><ValueSource state={values} /></>)}
             {row("area", fmtArea(parcel.area, lang))}
             {row("soilQuality", parcel.soilQuality ?? t("none"))}
             {row("landUse", details?.landUse?.length ? details.landUse.join(", ") : t("none"), "landUse")}
@@ -77,11 +82,6 @@ export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
         <Anchor href={gursPublicViewUrl(parcel.eid)} target="_blank" rel="noopener" size="sm" display="inline-flex" style={{ alignItems: "center", gap: 4 }}>
           {t("openGurs")} <IconExternalLink size={14} />
         </Anchor>
-        {parcel.id ? (
-          <Anchor href={valuationUrl("parcel", parcel.id)} target="_blank" rel="noopener" size="sm" display="inline-flex" style={{ alignItems: "center", gap: 4 }}>
-            {t("valueOpen")} <IconExternalLink size={14} />
-          </Anchor>
-        ) : null}
         <AddToCartButton item={{ kind: "parcel", koId: parcel.koId, koName: parcel.koName, number: parcel.number, eid: parcel.eid, geometry: parcel.geometry }} />
       </Group>
     </Paper>
