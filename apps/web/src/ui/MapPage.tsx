@@ -43,6 +43,9 @@ const BUILDING_CLICK_ZOOM = 17;
 
 type Mode = "address" | "parcel" | "building" | "manager";
 
+/** Remembered basemap (street map or orthophoto). */
+export const BASEMAP_KEY = "ikataster.basemap";
+
 export function MapPage() {
   const { t, lang, setLang } = useI18n();
   const { setColorScheme } = useMantineColorScheme();
@@ -68,7 +71,8 @@ export function MapPage() {
     features: cart.items.filter((i) => i.geometry).map((i) => ({ type: "Feature", properties: { key: i.key }, geometry: i.geometry! })),
   }), [cart.items]);
   const [params, setParams] = useSearchParams();
-  const [basemap, setBasemap] = useState<BasemapId>("street");
+  const [basemap, setBasemapState] = useState<BasemapId>(() => (localStorage.getItem(BASEMAP_KEY) === "ortho" ? "ortho" : "street"));
+  const setBasemap = (b: BasemapId) => { setBasemapState(b); try { localStorage.setItem(BASEMAP_KEY, b); } catch { /* private mode */ } };
   const [overlays, setOverlays] = useState<Record<OverlayId, boolean>>({ parcels: true, buildings: true });
   const [labels, setLabels] = useState(true);
   const [zoom, setZoom] = useState(0);
@@ -86,6 +90,7 @@ export function MapPage() {
     setParams(ko ? { upr: String(id), ko: String(ko) } : { upr: String(id) }, { replace: true });
   };
   const [managerPts, setManagerPts] = useState<FeatureCollection | null>(null);
+  const [areaFc, setAreaFc] = useState<FeatureCollection | null>(null);
   const onManagerHighlight = useCallback((g: Geometry | null, pts?: FeatureCollection | null) => { setManagerGeom(g); setManagerPts(pts ?? null); if (g) setFitKey((k) => k + 1); }, []);
 
   const initialKo = Number(params.get("ko")) || undefined;
@@ -171,7 +176,7 @@ export function MapPage() {
       <MapView
         basemap={basemap} overlays={overlays} labels={labels} dark={scheme === "dark"} onZoom={setZoom}
         selection={bld.building?.geometry ?? sel.parcel?.geometry ?? (manager ? managerGeom : null)} fitKey={fitKey} onMapClick={onMapClick} cart={cartFc} draft={draw?.points ?? null}
-        results={manager ? managerPts : null} onResultClick={(ko, n) => void showBuilding(ko, n, true)}
+        results={manager ? managerPts : null} areaResults={draw?.done ? areaFc : null} onResultClick={(ko, n) => void showBuilding(ko, n, true)}
       />
 
       <Paper shadow="md" radius="md" p={6} style={{ position: "absolute", top: 12, left: 12, right: 60, maxWidth: 640, zIndex: 4 }}>
@@ -212,7 +217,7 @@ export function MapPage() {
         </Paper>
       )}
       {draw?.done
-        ? <AreaPanel client={gurs} ring={draw.points} kos={kos} onRedraw={startDraw} onClose={() => setDraw(null)} />
+        ? <AreaPanel client={gurs} ring={draw.points} kos={kos} onRedraw={startDraw} onClose={() => setDraw(null)} onHighlight={setAreaFc} />
         : <>
           {manager && (
             <div style={{ display: bld.building ? "none" : undefined }} data-testid="manager-host">

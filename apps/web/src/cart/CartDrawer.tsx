@@ -6,6 +6,8 @@ import type { CartItem } from "./store";
 import { useCart } from "./useCart";
 import { ExtensionStatus } from "../bridge/ExtensionStatus";
 import { QueuePanel } from "../queue/QueuePanel";
+import { useGurs } from "../gurs/instance";
+import { useKos } from "../gurs/useKos";
 
 interface Props {
   opened: boolean;
@@ -22,6 +24,8 @@ export function cartLabel(i: CartItem, t: (k: "parcel" | "building" | "buildingP
 export function CartDrawer({ opened, onClose, onOpenItem, onImport }: Props) {
   const { t } = useI18n();
   const { store, items } = useCart();
+  const { kos } = useKos(useGurs());
+  const koName = (i: CartItem) => i.koName || kos.find((k) => k.id === i.koId)?.name || "";
   const [confirm, setConfirm] = useState(false);
   const mobile = typeof window !== "undefined" && window.innerWidth < 640;
 
@@ -45,7 +49,7 @@ export function CartDrawer({ opened, onClose, onOpenItem, onImport }: Props) {
             <Group key={i.key} justify="space-between" wrap="nowrap" gap={6} py={4} style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }}>
               <UnstyledButton onClick={() => onOpenItem?.(i)} style={{ minWidth: 0, flex: 1 }}>
                 <Text size="sm" fw={600} truncate>{cartLabel(i, t)}</Text>
-                <Text size="xs" c="dimmed" truncate>{t("ko")} {i.koId} {i.koName}{i.note ? ` · ${i.note}` : ""}</Text>
+                <Text size="xs" c="dimmed" truncate>{t("ko")} {i.koId} {koName(i)}{i.note ? ` · ${i.note}` : ""}</Text>
               </UnstyledButton>
               <ActionIcon variant="subtle" color="gray" aria-label={`${t("remove")} ${cartLabel(i, t)}`} onClick={() => void store.remove([i.key])}>
                 <IconX size={16} />

@@ -65,14 +65,15 @@ export function ResultsModal({ opened, onClose, onOpenProperty, parse, download 
       const ex = await import("../export");
       const recs = groups.map((g) => g.record);
       const date = new Date().toISOString().slice(0, 10);
+      const values = await (await import("../values/forRecords")).valuesForRecords(recs).catch(() => new Map<string, number>());
       if (kind === "zip") {
         const pdfs = await store.pdfs(recs.map((r) => r.key));
         const geometries = new Map(cart.items.map((i) => [i.key, i.geometry]));
-        const r = await ex.buildExportZip(recs, { date, pdfs, geometries });
+        const r = await ex.buildExportZip(recs, { date, pdfs, geometries, values });
         download(r.fileName, r.zip, "application/zip");
         setExported({ missing: r.missingPdf });
       } else {
-        const bytes = await ex.toXlsx([{ name: "Lastniki", table: ex.ownerTable(recs) }, { name: "Bremena", table: ex.rightsTable(recs) }]);
+        const bytes = await ex.toXlsx([{ name: "Lastniki", table: ex.ownerTable(recs, undefined, values) }, { name: "Bremena", table: ex.rightsTable(recs) }]);
         download(`ikataster-izvoz-${date}.xlsx`, bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         setExported({ missing: [] });
       }

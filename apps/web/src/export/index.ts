@@ -43,10 +43,13 @@ function propCells(r: ResultRecord): Cell[] {
   return [p.label, p.koId ?? "", p.number ?? "", p.part ?? "", noCode(p.typeLabel), p.address ?? ""];
 }
 
-export function ownerTable(records: ResultRecord[], pdfs?: Pdfs): Table {
+/** Values: result key -> GURS generalised value (EUR). */
+export type Values = Map<string, number>;
+
+export function ownerTable(records: ResultRecord[], pdfs?: Pdfs, values?: Values): Table {
   const paths = pdfPaths(records, pdfs);
   const headers = ["Nepremičnina", "k.o.", "Številka", "Del stavbe", "Vrsta", "Naslov nepremičnine", "Imetnik", "Tip imetnika", "Delež",
-    "Rojen", "Matična št.", "Naslov imetnika", "Omejitve", "Nerešena zadeva", "Datum izpisa", "PDF"];
+    "Rojen", "Matična št.", "Naslov imetnika", "Omejitve", "Nerešena zadeva", "Datum izpisa", "PDF", "Posplošena vrednost GURS (EUR)"];
   const rows: Cell[][] = [];
   for (const r of records) {
     for (const o of r.extract.owners) {
@@ -55,7 +58,7 @@ export function ownerTable(records: ResultRecord[], pdfs?: Pdfs): Table {
         ...propCells(r), h.name, HOLDER_KIND[h.kind], o.share,
         h.kind === "person" ? h.birthDate ?? "" : "", h.kind === "company" ? h.companyId ?? "" : "",
         "address" in h ? h.address ?? "" : "", o.restrictions.length, r.extract.pending ? "da" : "ne",
-        r.extract.createdAt?.slice(0, 10) ?? "", paths.get(r.key) ?? "",
+        r.extract.createdAt?.slice(0, 10) ?? "", paths.get(r.key) ?? "", values?.get(r.key) ?? "",
       ]);
     }
   }
@@ -139,10 +142,10 @@ export interface ExportResult { zip: Uint8Array; missingPdf: string[]; fileName:
 
 /** ZIP: podatki.xlsx, lastniki.csv, bremena.csv and the original PDFs under pdf/. */
 export async function buildExportZip(
-  records: ResultRecord[], opts: { date?: string; pdfs?: Pdfs; geometries?: Map<string, Geometry | null> } = {},
+  records: ResultRecord[], opts: { date?: string; pdfs?: Pdfs; geometries?: Map<string, Geometry | null>; values?: Values } = {},
 ): Promise<ExportResult> {
   const pdfs = opts.pdfs ?? new Map();
-  const owners = ownerTable(records, pdfs);
+  const owners = ownerTable(records, pdfs, opts.values);
   const rights = rightsTable(records, pdfs);
   const paths = pdfPaths(records, pdfs);
   const files: Record<string, Uint8Array | [Uint8Array, { level: 0 }]> = {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { Feature, FeatureCollection } from "geojson";
 import { Alert, Button, CloseButton, Group, Loader, Paper, SegmentedControl, Text } from "@mantine/core";
 import { IconAlertTriangle, IconCheck, IconFilePlus } from "@tabler/icons-react";
 import type { AreaKind, AreaResult, GursClient, Ko } from "../../gurs";
@@ -16,9 +17,11 @@ interface Props {
   kos: Ko[];
   onRedraw: () => void;
   onClose: () => void;
+  /** Found features as outlines for the map (null while loading / on close). */
+  onHighlight?: (fc: FeatureCollection | null) => void;
 }
 
-export function AreaPanel({ client, ring, kos, onRedraw, onClose }: Props) {
+export function AreaPanel({ client, ring, kos, onRedraw, onClose, onHighlight }: Props) {
   const { t } = useI18n();
   const { store, keys } = useCart();
   const [kind, setKind] = useState<AreaKind>("parcel");
@@ -39,6 +42,11 @@ export function AreaPanel({ client, ring, kos, onRedraw, onClose }: Props) {
     const names = new Map(kos.map((k) => [k.id, k.name]));
     return (res?.items ?? []).map((i) => ({ ...i, koName: i.koName || names.get(i.koId) || "" }));
   }, [res, kos]);
+  useEffect(() => {
+    const features: Feature[] = items.filter((i) => i.geometry).map((i) => ({ type: "Feature", properties: { ko: i.koId, n: i.number }, geometry: i.geometry! }));
+    onHighlight?.(features.length ? { type: "FeatureCollection", features } : null);
+  }, [items, onHighlight]);
+  useEffect(() => () => onHighlight?.(null), [onHighlight]);
   const fresh = items.filter((i) => !keys.has(itemKey(i))).length;
 
   return (

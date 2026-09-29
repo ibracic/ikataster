@@ -32,6 +32,8 @@ interface Props {
   /** Search results as markers (props ko, n, parts); a click opens the building. */
   results?: FeatureCollection | null;
   onResultClick?: (ko: number, n: number) => void;
+  /** Parcels/buildings found in a drawn area, highlighted as outlines. */
+  areaResults?: FeatureCollection | null;
 }
 
 const SEL = "selection";
@@ -68,6 +70,16 @@ function addResultLayers(m: MlMap, fc: FeatureCollection | null | undefined) {
     paint: { "text-color": "#ffffff" } });
 }
 const EMPTY_RES: FeatureCollection = { type: "FeatureCollection", features: [] };
+
+const RES_AREA = "results-area";
+function addAreaResultLayers(m: MlMap, fc: FeatureCollection | null | undefined) {
+  const data = fc ?? EMPTY_RES;
+  const src = m.getSource(RES_AREA) as maplibregl.GeoJSONSource | undefined;
+  if (src) { src.setData(data); return; }
+  m.addSource(RES_AREA, { type: "geojson", data });
+  m.addLayer({ id: `${RES_AREA}-fill`, type: "fill", source: RES_AREA, paint: { "fill-color": "#0ca678", "fill-opacity": 0.28 } });
+  m.addLayer({ id: `${RES_AREA}-line`, type: "line", source: RES_AREA, paint: { "line-color": "#087f5b", "line-width": 1.5 } });
+}
 
 function addDraftLayers(m: MlMap, pts: [number, number][] | null | undefined) {
   const data = draftData(pts);
@@ -172,7 +184,9 @@ function styleLabels(m: MlMap, ortho: boolean) {
   }
 }
 
-export function MapView({ basemap, overlays, labels = true, dark, onZoom, selection, fitKey, onMapClick, cart, draft, results, onResultClick }: Props) {
+export function MapView({ basemap, overlays, labels = true, dark, onZoom, selection, fitKey, onMapClick, cart, draft, results, onResultClick, areaResults }: Props) {
+  const areaRef = useRef(areaResults);
+  areaRef.current = areaResults;
   const resultsRef = useRef(results);
   resultsRef.current = results;
   const resClick = useRef(onResultClick);
@@ -209,7 +223,7 @@ export function MapView({ basemap, overlays, labels = true, dark, onZoom, select
     m.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "bottom-right");
     m.addControl(new maplibregl.GeolocateControl({ trackUserLocation: false }), "bottom-right");
     m.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
-    m.on("style.load", () => { addGursLayers(m, vis.current, labelsRef.current); addCartLayers(m, cartRef.current); addSelectionLayers(m, sel.current); addDraftLayers(m, draftRef.current); addResultLayers(m, resultsRef.current); });
+    m.on("style.load", () => { addGursLayers(m, vis.current, labelsRef.current); addCartLayers(m, cartRef.current); addSelectionLayers(m, sel.current); addDraftLayers(m, draftRef.current); addAreaResultLayers(m, areaRef.current); addResultLayers(m, resultsRef.current); });
     m.on("click", (e) => {
       const hit = m.getLayer(`${RES}-dot`) ? m.queryRenderedFeatures(e.point, { layers: [`${RES}-dot`, `${RES}-label`] })[0] : undefined;
       const cl = m.getLayer(`${RES}-cluster`) ? m.queryRenderedFeatures(e.point, { layers: [`${RES}-cluster`, `${RES}-cluster-label`] })[0] : undefined;
@@ -259,6 +273,11 @@ export function MapView({ basemap, overlays, labels = true, dark, onZoom, select
     const m = map.current;
     if (m && (m.getSource(RES) || m.isStyleLoaded())) addResultLayers(m, results);
   }, [results]);
+
+  useEffect(() => {
+    const m = map.current;
+    if (m && (m.getSource(RES_AREA) || m.isStyleLoaded())) addAreaResultLayers(m, areaResults);
+  }, [areaResults]);
 
   useEffect(() => {
     const m = map.current;
