@@ -9,7 +9,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     postInTab: async (tabId, url, body) => {
       const [r] = await chrome.scripting.executeScript({ target: { tabId }, func: ezkPostInPage, args: [url, body] });
       if (!r?.result) throw new Error("e-ZK tab did not answer (reload the e-ZK tab)");
-      return r.result as { status: number; contentType: string; base64: string };
+      return r.result as { status: number; contentType: string; base64: string; url: string };
     },
   }).then(sendResponse);
   return true; // async response

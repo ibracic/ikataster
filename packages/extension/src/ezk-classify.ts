@@ -19,7 +19,10 @@ export function classifyEzkResponse(body: Uint8Array, contentType = ""): EzkOutc
   if (/EZK\.1812|EZK\.1396/.test(text)) return { ok: false, code: "EZK_SYSERR", detail: text.match(/EZK\.\d+[^<]*/)?.[0]?.trim() };
   if (/captcha/i.test(text)) return { ok: false, code: "CAPTCHA" };
   if (/SI-PASS|sipass|prijava|login/i.test(text) && !/odjava/i.test(text)) return { ok: false, code: "SESSION_EXPIRED" };
-  return { ok: false, code: "INVALID_PDF" };
+  const title = text.match(/<title[^>]*>([^<]*)/i)?.[1]?.trim();
+  const err = text.match(/class="errors?"[^>]*>([^<]{1,200})/i)?.[1]?.trim();
+  const snippet = text.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
+  return { ok: false, code: "INVALID_PDF", detail: [contentType, title && `title: ${title}`, err && `error: ${err}`, !err && snippet && `text: ${snippet}`].filter(Boolean).join(" | ") };
 }
 
 export const RETRY_DELAYS_MS = [3000, 6000, 9000];

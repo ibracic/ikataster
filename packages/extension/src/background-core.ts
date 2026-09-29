@@ -9,7 +9,7 @@ export interface BackgroundApi {
   version: string;
   queryTabs(q: { url: string }): Promise<{ id?: number; windowId?: number }[]>;
   /** POST the e-ZK form from inside the given e-ZK tab (same-origin, session cookie included). */
-  postInTab?(tabId: number, url: string, body: string): Promise<{ status: number; contentType: string; base64: string }>;
+  postInTab?(tabId: number, url: string, body: string): Promise<{ status: number; contentType: string; base64: string; url?: string }>;
   sleep?(ms: number): Promise<void>;
 }
 
@@ -38,7 +38,9 @@ export async function handleBackgroundMessage(msg: unknown, sender: SenderLike, 
       try {
         const r = await downloadWithRetry(async () => {
           const res = await api.postInTab!(tab.id!, EZK_FORM_URL, ezkFormBody(req));
-          return classifyEzkResponse(fromBase64(res.base64), res.contentType);
+          const out = classifyEzkResponse(fromBase64(res.base64), res.contentType);
+          if (!out.ok && out.code === "INVALID_PDF") out.detail = `HTTP ${res.status} ${res.url ?? ""} | ${out.detail ?? ""}`;
+          return out;
         }, api.sleep);
         if (!r.ok) return errorResponse(msg.id, r.code, r.detail);
         let bin = ""; for (let i = 0; i < r.pdf.length; i += 0x8000) bin += String.fromCharCode(...r.pdf.subarray(i, i + 0x8000));

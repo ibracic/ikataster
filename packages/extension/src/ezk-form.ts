@@ -36,12 +36,12 @@ export function ezkFileName(r: EzkRequest, date = new Date()): string {
  * Runs INSIDE the e-ZK tab (chrome.scripting.executeScript): a same-origin POST, so the user's
  * SI-PASS session cookie goes along. Must be self-contained (no imports, no closures).
  */
-export async function ezkPostInPage(url: string, body: string): Promise<{ status: number; contentType: string; base64: string }> {
+export async function ezkPostInPage(url: string, body: string): Promise<{ status: number; contentType: string; base64: string; url: string }> {
   const res = await fetch(url, { method: "POST", credentials: "include", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
   const buf = new Uint8Array(await res.arrayBuffer());
   let s = "";
   for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + 0x8000)));
-  return { status: res.status, contentType: res.headers.get("content-type") ?? "", base64: btoa(s) };
+  return { status: res.status, contentType: res.headers.get("content-type") ?? "", base64: btoa(s), url: res.url };
 }
 
 export function fromBase64(b64: string): Uint8Array {
