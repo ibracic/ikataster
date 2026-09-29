@@ -4,7 +4,7 @@ import { BridgeError, createBridgeClient, mockTransport, windowTransport, type B
 const FIXTURES = Object.values(import.meta.glob<string>("../ezk/__private__/*.pdf", { query: "?url", import: "default", eager: true }));
 /**
  * Mock eZK download (?bridge=mock): ~2 s per extract, returns an anonymised fixture PDF (chosen by item),
- * numbers containing "999" are "not in the land registry". Real downloads come with the extension (#10).
+ * numbers containing "999" are "not in the land registry". Real downloads go through the extension.
  */
 async function mockDownload(p: unknown): Promise<{ pdfBase64: string; fileName: string }> {
   const r = p as { koId: number; number: string; part?: number };
