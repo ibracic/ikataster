@@ -13,5 +13,8 @@ declare const chrome: {
     create(p: { url: string }): Promise<unknown>;
     reload(id: number): Promise<void>;
   };
+  scripting: {
+    executeScript<A extends unknown[], R>(p: { target: { tabId: number }; func: (...a: A) => R; args: A }): Promise<{ result?: Awaited<R> }[]>;
+  };
   windows: { update(id: number, p: { focused: boolean }): Promise<unknown> };
 };

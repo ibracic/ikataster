@@ -33,8 +33,8 @@ describe("background", () => {
     await expect(handleBackgroundMessage(msg("hello"), { id: "self", url: "https://app.example/?ko=1" }, api())).resolves.toMatchObject({ ok: true });
   });
 
-  it("reports download as not implemented yet (#10)", async () => {
-    await expect(handleBackgroundMessage(msg("download"), fromApp, api())).resolves.toMatchObject({ ok: false, code: "NOT_IMPLEMENTED" });
+  it("rejects a download without a valid property", async () => {
+    await expect(handleBackgroundMessage(msg("download"), fromApp, api())).resolves.toMatchObject({ ok: false, code: "BAD_REQUEST" });
   });
 });
 
@@ -107,7 +107,7 @@ describe("manifest", () => {
     const f = manifest("firefox", "0.1.0", ["https://app.example"]);
     for (const m of [c, f]) {
       expect(m.manifest_version).toBe(3);
-      expect(m.permissions).toEqual(["tabs"]);
+      expect(m.permissions).toEqual(["tabs", "scripting"]);
       expect(m.host_permissions).toEqual(["https://esodisce.si/*"]);
       const relay = (m.content_scripts as { matches: string[]; js: string[] }[]).find((s) => s.js.includes("relay.js"))!;
       expect(relay.matches).toEqual(["https://app.example/*", "http://localhost/*", "http://127.0.0.1/*"]);

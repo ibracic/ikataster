@@ -10,7 +10,7 @@ export function manifest(target: Target, version: string, origins: readonly stri
     version,
     description: "Poveže spletno aplikacijo iKataster z e-ZK (esodisce.si) in tvojo SI-PASS prijavo. Podatki ne zapustijo brskalnika.",
     icons,
-    permissions: ["tabs"],
+    permissions: ["tabs", "scripting"],
     host_permissions: ["https://esodisce.si/*"],
     action: { default_title: "iKataster", default_popup: "popup.html", default_icon: icons },
     content_scripts: [

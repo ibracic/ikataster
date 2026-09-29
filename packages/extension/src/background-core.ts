@@ -1,11 +1,16 @@
 import { errorResponse, isAllowedOrigin, isAppMessage, okResponse, type ExtMessage } from "@ikataster/bridge";
 import { EZK_MATCH } from "./popup-core";
+import { classifyEzkResponse, downloadWithRetry } from "./ezk-classify";
+import { EZK_FORM_URL, ezkFileName, ezkFormBody, fromBase64, isEzkRequest } from "./ezk-form";
 
 export interface SenderLike { id?: string; origin?: string; url?: string }
 export interface BackgroundApi {
   runtimeId: string;
   version: string;
   queryTabs(q: { url: string }): Promise<{ id?: number; windowId?: number }[]>;
+  /** POST the e-ZK form from inside the given e-ZK tab (same-origin, session cookie included). */
+  postInTab?(tabId: number, url: string, body: string): Promise<{ status: number; contentType: string; base64: string }>;
+  sleep?(ms: number): Promise<void>;
 }
 
 function senderOrigin(s: SenderLike): string | null {
@@ -25,8 +30,23 @@ export async function handleBackgroundMessage(msg: unknown, sender: SenderLike, 
       const tabs = await api.queryTabs({ url: EZK_MATCH });
       return okResponse(msg.id, { ezkTab: tabs.length > 0 });
     }
-    case "download":
-      return errorResponse(msg.id, "NOT_IMPLEMENTED", "eZK download arrives with issue #10");
+    case "download": {
+      if (!isEzkRequest(msg.payload)) return errorResponse(msg.id, "BAD_REQUEST");
+      const req = msg.payload;
+      const tab = (await api.queryTabs({ url: EZK_MATCH })).find((t) => t.id !== undefined);
+      if (!tab || !api.postInTab) return errorResponse(msg.id, "NO_EZK_TAB");
+      try {
+        const r = await downloadWithRetry(async () => {
+          const res = await api.postInTab!(tab.id!, EZK_FORM_URL, ezkFormBody(req));
+          return classifyEzkResponse(fromBase64(res.base64), res.contentType);
+        }, api.sleep);
+        if (!r.ok) return errorResponse(msg.id, r.code, r.detail);
+        let bin = ""; for (let i = 0; i < r.pdf.length; i += 0x8000) bin += String.fromCharCode(...r.pdf.subarray(i, i + 0x8000));
+        return okResponse(msg.id, { pdfBase64: btoa(bin), fileName: ezkFileName(req) });
+      } catch (e) {
+        return errorResponse(msg.id, "EXT_ERR", String((e as Error)?.message ?? e));
+      }
+    }
   }
 }
 
