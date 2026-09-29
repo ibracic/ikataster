@@ -61,7 +61,8 @@ export const fetchKeys = {
   search: (q: string) => `search:${q}`,
   portfolio: (id: number) => `portfolio:${id}`,
   building: (ko: number, n: number) => `building:${ko}:${n}`,
-  parts: (ko: number, n: number) => `parts:${ko}:${n}`,
+  // v2: parts gained detail attributes (address, flat, renovations, status); older lists are refetched once
+  parts: (ko: number, n: number) => `parts2:${ko}:${n}`,
 };
 
 const partRow = (koId: number, building: number, p: BuildingPart, buildingEid?: string | null): PartRow =>

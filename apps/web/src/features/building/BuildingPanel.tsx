@@ -1,5 +1,5 @@
 import { CachedBadge } from "../../sw/CachedBadge";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Checkbox } from "@mantine/core";
 import { AddToCartButton } from "../../cart/AddToCartButton";
 import { itemKey, type CartInput } from "../../cart/store";
@@ -11,6 +11,9 @@ import { partValue, useKoValues } from "../../values";
 import { ValueCell, ValueSource } from "../../values/ValueCell";
 import { buildingTx, useKoTx } from "../../transactions";
 import { TxList } from "../../transactions/TxList";
+import { PartDetails } from "./PartDetails";
+import { Fragment } from "react";
+import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
 import { SheetHandle, SheetSummary, useSheet } from "../../ui/Sheet";
 import { useI18n, type MsgKey } from "../../i18n";
 
@@ -38,6 +41,10 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
   );
   const { store, keys } = useCart();
   const [picked, setPicked] = useState<Set<number>>(new Set());
+  const [openPart, setOpenPart] = useState<number | null>(parts?.length === 1 ? parts[0].number : null);
+  const single = parts?.length === 1 ? parts[0].number : null;
+  useEffect(() => { setOpenPart(single); }, [b.eid, single]);
+  const togglePart = (n: number) => setOpenPart((o) => (o === n ? null : n));
   const partInput = (p: BuildingPart): CartInput => ({
     kind: "part", koId: b.koId, koName: b.koName, number: String(b.number), part: p.number, eid: p.eid, geometry: b.geometry, note: p.use ?? undefined,
   });
@@ -108,22 +115,29 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
         ) : (
           <Table striped fz="sm" verticalSpacing={4} horizontalSpacing={6} layout="fixed" data-testid="parts-table">
             <Table.Thead>
-              <Table.Tr><Table.Th w={30} /><Table.Th w={40}>{t("partNo")}</Table.Th><Table.Th>{t("partUse")}</Table.Th><Table.Th w={86} ta="right">{t("partArea")}</Table.Th><Table.Th w={46} ta="right">{t("partFloor")}</Table.Th><Table.Th w={84} ta="right">{t("valueShort")}</Table.Th></Table.Tr>
+              <Table.Tr><Table.Th w={30} /><Table.Th w={48}>{t("partNo")}</Table.Th><Table.Th>{t("partUse")}</Table.Th><Table.Th w={86} ta="right">{t("partArea")}</Table.Th><Table.Th w={46} ta="right">{t("partFloor")}</Table.Th><Table.Th w={84} ta="right">{t("valueShort")}</Table.Th></Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               {parts.map((p) => (
-                <Table.Tr key={p.eid}>
+                <Fragment key={p.eid}>
+                <Table.Tr style={{ cursor: "pointer" }} onClick={(e) => { if (!(e.target as HTMLElement).closest("input,a,button")) togglePart(p.number); }} aria-expanded={openPart === p.number} data-testid="part-row">
                   <Table.Td>
                     {keys.has(itemKey(partInput(p)))
                       ? <Checkbox size="xs" checked disabled aria-label={`${t("inCart")} ${p.number}`} />
                       : <Checkbox size="xs" checked={picked.has(p.number)} onChange={() => toggle(p.number)} aria-label={`${t("buildingPart")} ${p.number}`} />}
                   </Table.Td>
-                  <Table.Td>{p.number}</Table.Td>
+                  <Table.Td style={{ whiteSpace: "nowrap" }}>{openPart === p.number ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}{p.number}</Table.Td>
                   <Table.Td style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={p.use ?? undefined}>{p.use ?? "—"}</Table.Td>
                   <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>{p.usableArea ?? p.area ? `${nf.format((p.usableArea ?? p.area)!)} m²` : "—"}</Table.Td>
                   <Table.Td ta="right">{p.floor ?? "—"}</Table.Td>
                   <Table.Td ta="right"><ValueCell size="xs" state={values} value={partValue(values.status === "ready" ? values.values : null, b.number, p.number)} href={p.id ? valuationUrl("part", p.id) : undefined} label={`${t("value")} ${p.number}`} /></Table.Td>
                 </Table.Tr>
+                {openPart === p.number && (
+                  <Table.Tr><Table.Td colSpan={6} style={{ background: "var(--mantine-color-body)" }} aria-label={t("partDetails")}>
+                    <PartDetails part={p} building={b.number} values={values} tx={tx} cartItem={partInput(p)} />
+                  </Table.Td></Table.Tr>
+                )}
+                </Fragment>
               ))}
             </Table.Tbody>
           </Table>

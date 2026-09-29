@@ -92,6 +92,15 @@ export interface BuildingPart {
   floor: string | null;
   elevator: boolean | null;
   condominium: boolean | null;
+  /** Detail attributes (absent on parts cached before they were added). */
+  address?: string | null;
+  flat?: number | null;
+  entranceFloor?: number | null;
+  installationsYear?: number | null;
+  windowsYear?: number | null;
+  commonPart?: boolean | null;
+  status?: string | null;
+  areaMethod?: string | null;
   /** Building manager (upravnik) recorded in the cadastre, if any. */
   manager?: { id: number; name: string; status: string | null } | null;
 }
