@@ -6,6 +6,8 @@ import { gursPublicViewUrl, valuationUrl, type Parcel, type ParcelDetails } from
 import { useI18n, type MsgKey } from "../../i18n";
 import { formatEur, parcelValue, useKoValues } from "../../values";
 import { ValueCell, ValueSource } from "../../values/ValueCell";
+import { parcelTx, useKoTx } from "../../transactions";
+import { TxList } from "../../transactions/TxList";
 import { SheetHandle, SheetSummary, useSheet } from "../../ui/Sheet";
 
 interface Props {
@@ -21,6 +23,7 @@ export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
   const { t, lang } = useI18n();
   const sheet = useSheet(parcel.eid);
   const values = useKoValues(parcel.koId);
+  const tx = useKoTx(parcel.koId);
   const pv = values.status === "ready" ? parcelValue(values.values, parcel.number) : undefined;
   const failed = (k: ParcelDetails["errors"][number]) => details?.errors.includes(k);
 
@@ -73,6 +76,8 @@ export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
               : t("noBuildings"), "buildings")}
           </Table.Tbody>
         </Table>
+        <Text size="xs" c="dimmed" tt="uppercase" fw={700} mt="md" mb={4}>{t("txTitle")}</Text>
+        <TxList state={tx} items={parcelTx(tx.status === "ready" ? tx.tx : null, parcel.number)} land />
         {details && details.errors.length > 0 && (
           <Alert mt="xs" color="orange" variant="light" icon={<IconAlertTriangle size={16} />} p="xs">{t("sectionError")}</Alert>
         )}

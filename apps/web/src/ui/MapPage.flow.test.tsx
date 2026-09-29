@@ -18,6 +18,8 @@ import { MapPage } from "./MapPage";
 import { CartContext } from "../cart/useCart";
 import { createCartStore } from "../cart/store";
 import { createValues, ValuesContext } from "../values";
+import { TxContext, type Transactions } from "../transactions";
+const fakeTx: Transactions = { get: async () => null, count: async () => 0, clear: async () => {} };
 
 const fakeValues = () => createValues({
   name: `flow-values-${Math.random()}`, base: "https://data.example",
@@ -43,7 +45,7 @@ function renderAt(url: string, r: Route[], cart = createCartStore(`flow-cart-${+
   const client = createGursClient({ fetch: fakeFetch(r) });
   return render(
     <MemoryRouter initialEntries={[url]}>
-      <MantineProvider><I18nProvider><GursContext.Provider value={client}><CartContext.Provider value={cart}><ValuesContext.Provider value={fakeValues()}><MapPage /></ValuesContext.Provider></CartContext.Provider></GursContext.Provider></I18nProvider></MantineProvider>
+      <MantineProvider><I18nProvider><GursContext.Provider value={client}><CartContext.Provider value={cart}><ValuesContext.Provider value={fakeValues()}><TxContext.Provider value={fakeTx}><MapPage /></TxContext.Provider></ValuesContext.Provider></CartContext.Provider></GursContext.Provider></I18nProvider></MantineProvider>
     </MemoryRouter>,
   );
 }

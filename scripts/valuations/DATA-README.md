@@ -8,3 +8,10 @@ Generalised market values (*posplošena vrednost*) of parcels and building parts
 - Rebuilt weekly by `scripts/valuations/build.py` on `main`; this branch is replaced by a single commit on each update.
 
 Not an official source; for legal purposes check [vrednotenje.gov.si](https://vrednotenje.gov.si/).
+
+## Transactions (`tx/`)
+
+`tx/index.json` and `tx/ko/<ko>.json` hold sales (2007-) and rentals (2013-) from the GURS
+*Evidenca trga nepremičnin* (ETN) open data, split per cadastral municipality.
+Built by `scripts/transactions/build.py`; see its docstring for the file format.
+The ETN open data contains no information on the parties to a deal.

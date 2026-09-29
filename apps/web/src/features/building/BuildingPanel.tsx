@@ -9,6 +9,8 @@ import { IconArrowLeft, IconExternalLink } from "@tabler/icons-react";
 import { gursPublicViewUrl, valuationUrl, type Building, type BuildingPart } from "../../gurs";
 import { partValue, useKoValues } from "../../values";
 import { ValueCell, ValueSource } from "../../values/ValueCell";
+import { buildingTx, useKoTx } from "../../transactions";
+import { TxList } from "../../transactions/TxList";
 import { SheetHandle, SheetSummary, useSheet } from "../../ui/Sheet";
 import { useI18n, type MsgKey } from "../../i18n";
 
@@ -26,6 +28,7 @@ interface Props {
 export function BuildingPanel({ building: b, parts, partsError, onClose, onManager, onBack }: Props) {
   const { t, lang } = useI18n();
   const values = useKoValues(b.koId);
+  const tx = useKoTx(b.koId);
   const nf = new Intl.NumberFormat(lang === "sl" ? "sl-SI" : "en-GB", { maximumFractionDigits: 1 });
   const row = (label: MsgKey, value: React.ReactNode) => (
     <Table.Tr>
@@ -126,6 +129,8 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
           </Table>
         )}
         {parts && parts.length > 0 && <ValueSource state={values} />}
+        <Text size="xs" c="dimmed" tt="uppercase" fw={700} mt="md" mb={4}>{t("txTitle")}</Text>
+        <TxList state={tx} items={buildingTx(tx.status === "ready" ? tx.tx : null, b.number)} />
       </ScrollArea.Autosize>
       </div>
       <Group justify="space-between" mt="sm" gap={6}>
