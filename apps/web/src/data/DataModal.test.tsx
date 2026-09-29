@@ -19,14 +19,15 @@ it("downloads a backup and restores it after confirmation", async () => {
     </ResultsContext.Provider></CartContext.Provider></I18nProvider></MantineProvider>,
   );
   await waitFor(() => expect(screen.getByTestId("persist-state")).toHaveTextContent("Trajna shramba ni podprta")); // jsdom
-  fireEvent.click(screen.getByRole("button", { name: /Prenesi varnostno kopijo/ }));
+  fireEvent.click(screen.getByRole("button", { name: /Shrani kopijo/ }));
   await waitFor(() => expect(file).not.toBeNull());
+  expect(screen.getByTestId("last-backup")).toHaveTextContent("Zadnja: danes");
   expect(file!.name).toMatch(/^ikataster-varnostna-kopija-\d{4}-\d{2}-\d{2}\.zip$/);
 
   await cart.clear();
   const input = document.querySelector('input[type=file]') as HTMLInputElement;
   fireEvent.change(input, { target: { files: [new File([file!.bytes as BlobPart], file!.name)] } });
-  expect(await screen.findByTestId("restore-confirm")).toHaveTextContent(/Seznam za izpise ZK: 1/i);
+  expect(await screen.findByTestId("restore-confirm")).toHaveTextContent(/Za izpis ZK: 1/i);
   expect(await cart.count()).toBe(0); // nothing changes before confirmation
   fireEvent.click(screen.getByRole("button", { name: "Zamenjaj vse podatke" }));
   await waitFor(() => expect(restored).toHaveBeenCalled());

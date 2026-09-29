@@ -12,7 +12,7 @@ import { pinKo } from "./pins";
 const mb = (b: number) => `${(b / 1_048_576).toFixed(1).replace(".", ",")} MB`;
 
 /** Pin KOs for offline lookups: choose, download with progress/cancel, list with size, refresh, remove. */
-export function PinsSection({ onMessage }: { onMessage: (color: string, text: string) => void }) {
+export function PinsSection({ onMessage, hideTitle }: { onMessage: (color: string, text: string) => void; hideTitle?: boolean }) {
   const { t, lang } = useI18n();
   const gurs = useGurs();
   const store = useOffline();
@@ -37,8 +37,8 @@ export function PinsSection({ onMessage }: { onMessage: (color: string, text: st
 
   return (
     <Stack gap={6} data-testid="pins">
-      <Title order={3} size="h6">{t("pinTitle")}</Title>
-      <Text size="xs" c="dimmed">{t("pinHelp")}</Text>
+      {!hideTitle && <Title order={3} size="h6">{t("pinTitle")}</Title>}
+      {!hideTitle && <Text size="xs" c="dimmed">{t("pinHelp")}</Text>}
       <Group gap="xs" align="flex-end" wrap="nowrap">
         <Select
           style={{ flex: 1 }} size="sm" searchable clearable limit={50} placeholder={t("koPlaceholder")} aria-label={t("pinKo")}
