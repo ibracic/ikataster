@@ -1,0 +1,14 @@
+services:
+  ikataster:
+    build:
+      context: .
+      args:
+        IKATASTER_ORIGINS: ${IKATASTER_ORIGINS:?set IKATASTER_ORIGINS in .env (see .env.example)}
+    container_name: ikataster
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3119:80"
+    networks: [proxy-network]
+networks:
+  proxy-network:
+    external: true

@@ -1,0 +1,7 @@
+node_modules
+dist
+*.log
+.env
+
+# Real-world eZK fixtures and the tests that use them stay local only
+apps/web/src/ezk/__private__/

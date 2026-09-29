@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>iKataster</title>
+<style>
+  body { font: 14px/1.4 system-ui, sans-serif; margin: 0; padding: 14px; width: 260px; color: #1a1b1e; }
+  h1 { font-size: 15px; margin: 0 0 8px; color: #087f5b; }
+  p { margin: 0 0 10px; }
+  .ok { color: #2b8a3e; } .warn { color: #e8590c; }
+  button { width: 100%; padding: 8px; border: 0; border-radius: 6px; background: #12b886; color: #fff; font-weight: 600; cursor: pointer; }
+  small { display: block; margin-top: 10px; color: #868e96; }
+</style>
+</head>
+<body>
+  <h1>iKataster</h1>
+  <p id="status">Preverjam …</p>
+  <button id="open" type="button">Odpri e-ZK</button>
+  <small>Za prenos izpisov se na esodisce.si prijavi s SI-PASS. <span id="version"></span></small>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

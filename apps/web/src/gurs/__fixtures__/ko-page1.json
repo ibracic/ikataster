@@ -1,0 +1,63 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "KATASTRSKE_OBCINE.101300000000000011",
+      "geometry": null,
+      "properties": {
+        "KO_ID": 1,
+        "NAZIV": "HODOŠ"
+      },
+      "bbox": [
+        598409.22,
+        186802.12,
+        603054.1,
+        192700.09
+      ]
+    },
+    {
+      "type": "Feature",
+      "id": "KATASTRSKE_OBCINE.101300000000000029",
+      "geometry": null,
+      "properties": {
+        "KO_ID": 2,
+        "NAZIV": "SUHI VRH"
+      },
+      "bbox": [
+        594820.91,
+        173198.85,
+        596896.38,
+        176233.66
+      ]
+    },
+    {
+      "type": "Feature",
+      "id": "KATASTRSKE_OBCINE.101300000000000037",
+      "geometry": null,
+      "properties": {
+        "KO_ID": 3,
+        "NAZIV": "DOLENCI"
+      },
+      "bbox": [
+        595986.06,
+        189829.22,
+        599430,
+        193405.05
+      ]
+    }
+  ],
+  "totalFeatures": 5,
+  "numberMatched": 5,
+  "numberReturned": 3,
+  "timeStamp": "2026-09-28T17:47:19.207Z",
+  "links": [
+    {
+      "title": "next page",
+      "type": "application/json",
+      "rel": "next",
+      "href": "https://ipi.eprostor.gov.si/wfs-si-gurs-kn/wfs?PROPERTYNAME=KO_ID%2CNAZIV&REQUEST=GetFeature&OUTPUTFORMAT=application%2Fjson&VERSION=2.0.0&TYPENAMES=SI.GURS.KN%3AKATASTRSKE_OBCINE&SERVICE=WFS&COUNT=3&STARTINDEX=3"
+    }
+  ],
+  "crs": null
+}

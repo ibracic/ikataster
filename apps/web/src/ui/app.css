@@ -1,0 +1,45 @@
+.parcel-panel {
+  position: absolute;
+  z-index: 3;
+  left: 12px;
+  top: 112px;
+  width: 400px;
+  max-width: calc(100vw - 24px);
+}
+@media (max-width: 640px) {
+  .parcel-panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-width: none;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+}
+.sheet-handle, .sheet-summary { display: none; }
+@media (max-width: 640px) {
+  .parcel-panel { padding-top: 4px !important; }
+  .sheet-handle {
+    display: flex; justify-content: center; align-items: center;
+    width: 100%; height: 22px; margin-bottom: 2px; touch-action: none;
+  }
+  .sheet-handle span {
+    width: 44px; height: 5px; border-radius: 3px;
+    background: var(--mantine-color-default-border);
+  }
+  .parcel-panel[data-sheet="peek"] .sheet-body { display: none; }
+  .parcel-panel[data-sheet="peek"] .sheet-summary { display: block; }
+  .parcel-panel[data-sheet="open"] .sheet-body { max-height: 52dvh; overflow-y: auto; overscroll-behavior: contain; }
+  .parcel-panel .sheet-title { font-size: 1.25rem; }
+}
+.maplibregl-canvas { cursor: crosshair; }
+
+/* Full-screen map app: the document itself must never scroll (iOS scrolls the page
+   under the keyboard, which dragged the address list away). Lists scroll internally. */
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}

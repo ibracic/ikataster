@@ -1,0 +1,54 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "KATASTRSKE_OBCINE.101300000000000045",
+      "geometry": null,
+      "properties": {
+        "KO_ID": 4,
+        "NAZIV": "BUDINCI"
+      },
+      "bbox": [
+        593507.45,
+        190218.54,
+        596755.06,
+        193755.52
+      ]
+    },
+    {
+      "type": "Feature",
+      "id": "KATASTRSKE_OBCINE.101300000000000052",
+      "geometry": null,
+      "properties": {
+        "KO_ID": 5,
+        "NAZIV": "MARKOVCI"
+      },
+      "bbox": [
+        593092.92,
+        187871.66,
+        596080.71,
+        192391.93
+      ]
+    }
+  ],
+  "totalFeatures": 5,
+  "numberMatched": 5,
+  "numberReturned": 2,
+  "timeStamp": "2026-09-28T17:47:19.332Z",
+  "links": [
+    {
+      "title": "previous page",
+      "type": "application/json",
+      "rel": "previous",
+      "href": "https://ipi.eprostor.gov.si/wfs-si-gurs-kn/wfs?PROPERTYNAME=KO_ID%2CNAZIV&REQUEST=GetFeature&OUTPUTFORMAT=application%2Fjson&VERSION=2.0.0&TYPENAMES=SI.GURS.KN%3AKATASTRSKE_OBCINE&SERVICE=WFS&COUNT=3&STARTINDEX=0"
+    },
+    {
+      "title": "next page",
+      "type": "application/json",
+      "rel": "next",
+      "href": "https://ipi.eprostor.gov.si/wfs-si-gurs-kn/wfs?PROPERTYNAME=KO_ID%2CNAZIV&REQUEST=GetFeature&OUTPUTFORMAT=application%2Fjson&VERSION=2.0.0&TYPENAMES=SI.GURS.KN%3AKATASTRSKE_OBCINE&SERVICE=WFS&COUNT=3&STARTINDEX=6"
+    }
+  ],
+  "crs": null
+}

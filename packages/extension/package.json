@@ -1,0 +1,18 @@
+{
+  "name": "@ikataster/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@ikataster/bridge": "0.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "fflate": "^0.8.3"
+  }
+}

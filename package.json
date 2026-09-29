@@ -1,0 +1,11 @@
+{
+  "name": "ikataster",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "npm run dev -w @ikataster/web",
+    "build": "npm run build -w @ikataster/web",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  }
+}
