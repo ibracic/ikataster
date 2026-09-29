@@ -96,6 +96,6 @@ it("uploads PDFs, reports failures, groups owners by property and filters them",
   await waitFor(() => expect(screen.getAllByTestId("owner-row")).toHaveLength(1));
   expect(screen.getAllByTestId("result-group")).toHaveLength(1);
 
-  fireEvent.click(screen.getByText("999 VZORČNA VAS 100/1"));
+  fireEvent.click(screen.getByRole("button", { name: "Pokaži na karti 999 VZORČNA VAS 100/1" }));
   expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ key: "parcel:999:100/1" }));
 });

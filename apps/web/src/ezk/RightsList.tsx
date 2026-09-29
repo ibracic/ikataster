@@ -43,7 +43,7 @@ function RightItem({ r, nested = false }: { r: Right; nested?: boolean }) {
         <Text size="sm">{r.holders.map((h) => holderLabel(h, t("ownerOf"))).join("; ")}</Text>
       )}
       {facts && <Text size="xs" c="dimmed">{facts}</Text>}
-      {r.description && <Text size="xs" style={{ whiteSpace: "pre-wrap" }} lineClamp={nested ? 2 : 4} title={r.description}>{r.description}</Text>}
+      {r.description && <Text size="xs" style={{ whiteSpace: "pre-wrap" }} lineClamp={nested ? 2 : 3}>{r.description}</Text>}
       {r.secondary.map((s) => <RightItem key={s.id} r={s} nested />)}
     </Stack>
   );

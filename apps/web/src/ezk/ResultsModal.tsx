@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import {
   ActionIcon, Alert, Badge, Button, FileButton, Group, Loader, Modal, Paper, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton,
 } from "@mantine/core";
@@ -8,9 +8,9 @@ import { useResults } from "./useResults";
 import { FoldersPanel } from "./FoldersPanel";
 import { useCart } from "../cart/useCart";
 import { groupResults, type ResultRecord } from "./results";
-import { RightsList } from "./RightsList";
+import { ResultCard } from "./ResultCard";
 import { addPdfFiles, type AddFilesResult } from "./addFiles";
-import type { EzkExtract, Holder, Owner } from "./types";
+import type { EzkExtract } from "./types";
 
 interface Props {
   opened: boolean;
@@ -34,25 +34,6 @@ const REASON: Record<string, MsgKey> = {
   notPdf: "ezkNotPdf", tooLarge: "ezkTooLarge", tooManyPages: "ezkTooManyPages", notEzk: "ezkNotEzk", unsupported: "ezkUnsupported",
 };
 
-const fmtDate = (iso?: string) => (iso ? iso.slice(0, 10).split("-").reverse().join(". ").replace(/^0/, "").replace(/\. 0/, ". ") : "");
-
-function holderId(h: Holder) {
-  if (h.kind === "person") return h.birthDate ? fmtDate(h.birthDate) : "";
-  if (h.kind === "company") return h.companyId ?? "";
-  return "";
-}
-
-function RestrictionBadges({ o }: { o: Owner }) {
-  return (
-    <Group gap={4}>
-      {o.restrictions.map((r) => (
-        <Badge key={r.id} size="sm" variant="light" color={r.type.startsWith("401") ? "red" : "gray"} title={`${r.id} · ${r.type}`} style={{ maxWidth: "100%" }}>
-          {r.type.split(" - ")[1]?.replace(/^vknjižena /, "") ?? r.type}
-        </Badge>
-      ))}
-    </Group>
-  );
-}
 
 export function ResultsModal({ opened, onClose, onOpenProperty, parse, download = browserDownload }: Props) {
   const { t } = useI18n();
@@ -65,6 +46,17 @@ export function ResultsModal({ opened, onClose, onOpenProperty, parse, download 
   const cart = useCart();
   const [exporting, setExporting] = useState(false);
   const [exported, setExported] = useState<{ missing: string[] } | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const allOpen = groups.length > 0 && groups.every((g) => expanded.has(g.record.key));
+  const burdened = groups.filter((g) => g.record.extract.pending || (g.record.extract.rights ?? []).some((r) => r.category === "mortgage")).length;
+  const summary = `${groups.length} ${t("summaryProps")} · ${burdened} ${t("summaryMortgaged")}`;
+  const openPdf = async (r: ResultRecord) => {
+    const bytes = (await store.pdfs([r.key])).get(r.key);
+    if (!bytes) return;
+    const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "application/pdf" }));
+    window.open(url, "_blank", "noopener");
+    setTimeout(() => URL.revokeObjectURL(url), 120_000);
+  };
 
   /** Exports what is visible (the owner filter narrows the export too). */
   const doExport = async (kind: "zip" | "xlsx") => {
@@ -135,90 +127,21 @@ export function ResultsModal({ opened, onClose, onOpenProperty, parse, download 
           <Text c="dimmed" size="sm">{t("resultsEmpty")}</Text>
         ) : groups.length === 0 ? (
           <Text c="dimmed" size="sm">{t("resultsNoMatch")}</Text>
-        ) : mobile ? (
-          <Stack gap="sm" data-testid="results-cards">
-            {groups.map(({ record, owners }) => {
-              const p = record.extract.property;
-              return (
-                <Paper key={record.key} withBorder radius="md" p="xs" data-testid="result-group">
-                  <Group justify="space-between" wrap="nowrap" gap="xs" align="flex-start">
-                    <UnstyledButton onClick={() => onOpenProperty?.(record)} style={{ minWidth: 0 }}>
-                      <Text fw={700} size="sm">{p.label}</Text>
-                      <Text size="xs" c="dimmed">{[p.address, `${t("extractDate")} ${fmtDate(record.extract.createdAt)}`].filter(Boolean).join(" · ")}</Text>
-                    </UnstyledButton>
-                    <ActionIcon variant="subtle" color="gray" aria-label={`${t("remove")} ${p.label}`} onClick={() => void store.remove([record.key])}><IconX size={16} /></ActionIcon>
-                  </Group>
-                  {record.extract.pending && <Badge color="red" variant="light" mt={4}>{t("pendingCase")}</Badge>}
-                  {owners.map((o, i) => (
-                    <Stack key={`${o.positionId}-${i}`} gap={2} mt="xs" pt="xs" data-testid="owner-row" style={{ borderTop: "1px solid var(--mantine-color-default-border)" }}>
-                      <Group justify="space-between" wrap="nowrap" gap="xs">
-                        <Text size="sm" fw={600}>{o.holder.kind === "ownerOf" ? `${t("ownerOf")}: ${o.holder.name}` : o.holder.name}</Text>
-                        <Text size="sm" fw={600}>{o.share}</Text>
-                      </Group>
-                      <Text size="xs" c="dimmed">{[holderId(o.holder), "address" in o.holder ? o.holder.address : ""].filter(Boolean).join(" · ")}</Text>
-                      <RestrictionBadges o={o} />
-                    </Stack>
-                  ))}
-                  {(record.extract.rights?.length || record.extract.benefits?.length) ? (
-                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--mantine-color-default-border)" }}><RightsList extract={record.extract} /></div>
-                  ) : null}
-                </Paper>
-              );
-            })}
-          </Stack>
         ) : (
-          <Table.ScrollContainer minWidth={720}>
-            <Table striped={false} verticalSpacing={6} data-testid="results-table">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t("colOwner")}</Table.Th><Table.Th>{t("colShare")}</Table.Th><Table.Th>{t("colId")}</Table.Th>
-                  <Table.Th>{t("colAddress")}</Table.Th><Table.Th>{t("colRestrictions")}</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {groups.map(({ record, owners }) => {
-                  const p = record.extract.property;
-                  return (
-                    <Fragment key={record.key}>
-                      <Table.Tr data-testid="result-group" style={{ background: "var(--mantine-color-default-hover)" }}>
-                        <Table.Td colSpan={5}>
-                          <Group justify="space-between" wrap="nowrap" gap="xs">
-                            <UnstyledButton onClick={() => onOpenProperty?.(record)} title={t("showOnMap")} style={{ minWidth: 0 }}>
-                              <Text fw={700} size="sm">{p.label}</Text>
-                              <Text size="xs" c="dimmed" truncate>
-                                {[p.typeLabel?.replace(/^\d+ - /, ""), p.address, `${t("extractDate")} ${fmtDate(record.extract.createdAt)}`].filter(Boolean).join(" · ")}
-                              </Text>
-                            </UnstyledButton>
-                            <Group gap={6} wrap="nowrap">
-                              {record.extract.pending && <Badge color="red" variant="light">{t("pendingCase")}</Badge>}
-                              <ActionIcon variant="subtle" color="gray" aria-label={`${t("remove")} ${p.label}`} onClick={() => void store.remove([record.key])}>
-                                <IconX size={16} />
-                              </ActionIcon>
-                            </Group>
-                          </Group>
-                        </Table.Td>
-                      </Table.Tr>
-                      {owners.map((o, i) => (
-                        <Table.Tr key={`${o.positionId}-${i}`} data-testid="owner-row">
-                          <Table.Td>
-                            <Text size="sm">{o.holder.kind === "ownerOf" ? `${t("ownerOf")}: ${o.holder.name}` : o.holder.name}</Text>
-                            {o.right && !o.right.startsWith("101 ") && <Text size="xs" c="dimmed">{o.right}</Text>}
-                          </Table.Td>
-                          <Table.Td><Text size="sm">{o.share}</Text></Table.Td>
-                          <Table.Td><Text size="sm">{holderId(o.holder)}</Text></Table.Td>
-                          <Table.Td><Text size="sm">{"address" in o.holder ? o.holder.address : ""}</Text></Table.Td>
-                          <Table.Td><RestrictionBadges o={o} /></Table.Td>
-                        </Table.Tr>
-                      ))}
-                      {(record.extract.rights?.length || record.extract.benefits?.length) ? (
-                        <Table.Tr><Table.Td colSpan={5}><RightsList extract={record.extract} /></Table.Td></Table.Tr>
-                      ) : null}
-                    </Fragment>
-                  );
-                })}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
+          <Stack gap="xs" data-testid="results-list">
+            <Group justify="space-between" gap="xs">
+              <Text size="sm" c="dimmed" data-testid="results-summary">{summary}</Text>
+              <Button size="compact-xs" variant="subtle" onClick={() => setExpanded(allOpen ? new Set() : new Set(groups.map((g) => g.record.key)))}>
+                {allOpen ? t("collapseAll") : t("expandAll")}
+              </Button>
+            </Group>
+            {groups.map(({ record, owners }) => (
+              <ResultCard key={record.key} record={record} owners={owners}
+                open={!!filter.trim() || expanded.has(record.key)}
+                onToggle={() => setExpanded((e) => { const n = new Set(e); if (n.has(record.key)) n.delete(record.key); else n.add(record.key); return n; })}
+                onOpenProperty={onOpenProperty} onOpenPdf={(r) => void openPdf(r)} onRemove={(r) => void store.remove([r.key])} />
+            ))}
+          </Stack>
         )}
       </Stack>
     </Modal>
