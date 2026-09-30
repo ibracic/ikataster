@@ -4,7 +4,7 @@ import {
   ActionIcon, Alert, Badge, Button, Group, Paper, Popover, SegmentedControl, Stack, Switch, Text, Title, Tooltip,
   useComputedColorScheme, useMantineColorScheme,
 } from "@mantine/core";
-import { IconDatabase, IconLanguage, IconMoon, IconPolygon, IconFileText, IconStack2, IconSun, IconUsers } from "@tabler/icons-react";
+import { IconDatabase, IconLanguage, IconMoon, IconPolygon, IconFileText, IconStack2, IconSun, IconUsers, IconBrandGithub } from "@tabler/icons-react";
 import { ResultsModal } from "../ezk/ResultsModal";
 import { useResults } from "../ezk/useResults";
 import type { ResultRecord } from "../ezk/results";
@@ -307,6 +307,11 @@ export function MapPage() {
           <ActionIcon size="lg" variant="default" radius="md" aria-label={t("language")}
             onClick={() => setLang(lang === "sl" ? "en" : "sl")}>
             <Group gap={0}><IconLanguage size={14} /><Text size="10px" fw={700}>{lang.toUpperCase()}</Text></Group>
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label="GitHub" position="left">
+          <ActionIcon component="a" href="https://github.com/ibracic/ikataster" target="_blank" rel="noopener noreferrer" size="lg" variant="default" radius="md" aria-label="GitHub">
+            <IconBrandGithub size={18} />
           </ActionIcon>
         </Tooltip>
       </Stack>
