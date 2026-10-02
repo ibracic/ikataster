@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { PanelWideToggle } from "../../ui/PanelWide";
 import type { Feature, FeatureCollection } from "geojson";
 import { Alert, Button, CloseButton, Group, Loader, Paper, SegmentedControl, Text } from "@mantine/core";
 import { IconAlertTriangle, IconCheck, IconFilePlus } from "@tabler/icons-react";
@@ -53,7 +54,7 @@ export function AreaPanel({ client, ring, kos, onRedraw, onClose, onHighlight }:
     <Paper shadow="lg" radius="md" p="md" className="parcel-panel" data-testid="area-panel">
       <Group justify="space-between" wrap="nowrap" mb="xs">
         <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t("areaTitle")}</Text>
-        <CloseButton aria-label={t("close")} onClick={onClose} />
+        <Group gap={2} wrap="nowrap"><PanelWideToggle /><CloseButton aria-label={t("close")} onClick={onClose} /></Group>
       </Group>
       <SegmentedControl fullWidth size="xs" value={kind} onChange={(v) => setKind(v as AreaKind)}
         data={[{ value: "parcel", label: t("parcels") }, { value: "building", label: t("buildings") }]} />

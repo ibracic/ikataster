@@ -1,4 +1,5 @@
 import { CachedBadge } from "../../sw/CachedBadge";
+import { PanelWideToggle } from "../../ui/PanelWide";
 import { useEffect, useState } from "react";
 import { Button, Checkbox } from "@mantine/core";
 import { AddToCartButton } from "../../cart/AddToCartButton";
@@ -72,7 +73,7 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
           <Text size="sm" c="dimmed">{t("ko")} {b.koId} {b.koName}</Text>
           <CachedBadge />
         </div>
-        <CloseButton aria-label={t("close")} onClick={onClose} />
+        <Group gap={2} wrap="nowrap"><PanelWideToggle /><CloseButton aria-label={t("close")} onClick={onClose} /></Group>
       </Group>
       <SheetSummary>
         <Text size="sm" data-testid="sheet-summary" onClick={() => sheet.setOpen(true)} style={{ cursor: "pointer" }}>

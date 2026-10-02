@@ -18,6 +18,13 @@
     border-bottom-right-radius: 0 !important;
   }
 }
+/* Desktop: widened detail panel (toggle in the panel header) */
+@media (min-width: 641px) {
+  html[data-panel-wide="1"] .parcel-panel { width: min(960px, calc(100vw - 84px)); }
+  html[data-panel-wide="1"] .parcel-panel .sheet-body .mantine-ScrollArea-root,
+  html[data-panel-wide="1"] .parcel-panel .mantine-ScrollArea-root { max-height: calc(100dvh - 330px) !important; }
+}
+@media (max-width: 640px) { .panel-wide-btn { display: none !important; } }
 .sheet-handle, .sheet-summary { display: none; }
 @media (max-width: 640px) {
   .parcel-panel { padding-top: 4px !important; }
