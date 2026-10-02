@@ -1,3 +1,4 @@
+import { SETTINGS } from "../data/inventory";
 import { useSelection, type Mode } from "../selection/useSelection";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -38,9 +39,9 @@ const CLICK_MIN_ZOOM = 15;
 
 
 /** Remembered basemap (street map or orthophoto). */
-export const BASEMAP_KEY = "ikataster.basemap";
+export const BASEMAP_KEY = SETTINGS.basemap;
 /** Show downloaded land-registry extracts on the map. */
-export const EZK_LAYER_KEY = "ikataster.ezkLayer";
+export const EZK_LAYER_KEY = SETTINGS.ezkLayer;
 
 export function MapPage() {
   const { t, lang, setLang } = useI18n();

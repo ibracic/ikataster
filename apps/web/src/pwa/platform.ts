@@ -1,3 +1,4 @@
+import { SETTINGS } from "../data/inventory";
 export type Platform = "ios-safari" | "ios-other" | "android" | "desktop";
 
 /** iPadOS 13+ reports a Mac UA; touch points tell them apart. */
@@ -9,7 +10,7 @@ export function detectPlatform(ua: string, maxTouchPoints = 0): Platform {
 }
 export const isMobile = (p: Platform) => p !== "desktop";
 
-export const HINT_KEY = "ikataster.installHint.dismissed";
+export const HINT_KEY = SETTINGS.installHint;
 
 export type Hint = "ios" | "ios-other" | "prompt" | null;
 /**

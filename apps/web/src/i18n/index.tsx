@@ -1,3 +1,4 @@
+import { SETTINGS } from "../data/inventory";
 import { createContext, useContext, useState, type ReactNode } from "react";
 
 const dict = {
@@ -760,7 +761,7 @@ const dict = {
 export type Lang = keyof typeof dict;
 export type MsgKey = keyof (typeof dict)["sl"];
 
-const LS_KEY = "ikataster.lang";
+const LS_KEY = SETTINGS.language;
 const Ctx = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (k: MsgKey) => string } | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {

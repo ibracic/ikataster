@@ -1,6 +1,7 @@
+import { SETTINGS } from "./inventory";
+import { storageInventory } from "./inventory";
 import { valuesInstance } from "../values";
 import { txInstance } from "../transactions";
-import { cacheStore } from "../cache/instance";
 import { useEffect, useState } from "react";
 import { Accordion, Alert, Badge, Button, FileButton, Group, Loader, Modal, Paper, Progress, SimpleGrid, Stack, Text, ThemeIcon } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
@@ -24,7 +25,7 @@ interface Props {
   onRestored?: () => void;
 }
 
-export const LAST_BACKUP_KEY = "ikataster.lastBackup";
+export const LAST_BACKUP_KEY = SETTINGS.lastBackup;
 
 const browserDownload = (bytes: Uint8Array, name: string) => {
   const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "application/zip" }));
@@ -50,7 +51,8 @@ export function DataModal({ opened, onClose, download = browserDownload, onResto
   const nf = new Intl.NumberFormat(lang === "sl" ? "sl-SI" : "en-GB", { maximumFractionDigits: 1 });
   const mb = (b: number | null) => (b == null ? "?" : `${nf.format(b / 1024 / 1024)} MB`);
   const offline = useOffline();
-  const dbs = { cart: cart.db, results: results.db, gurs: offline.db, queue: queueStore.db };
+  const inventory = storageInventory({ cart, results, gurs: offline, queue: queueStore, values: valuesInstance(), transactions: txInstance() });
+  const dbs = inventory.backupDbs;
 
   const refresh = () => void storageInfo().then(setInfo);
   useEffect(() => { if (opened) { refresh(); setMsg(null); setPending(null); } }, [opened]);
@@ -180,7 +182,7 @@ export function DataModal({ opened, onClose, download = browserDownload, onResto
                 <Text size="xs" c="dimmed">{t("cachesHelp")}</Text>
                 <Group>
                   <Button size="xs" variant="default" leftSection={<IconTrash size={14} />} loading={busy === "clear"}
-                    onClick={async () => { setBusy("clear"); const n = await clearCaches(undefined, cacheStore); await valuesInstance().clear().catch(() => undefined); await txInstance().clear().catch(() => undefined); setBusy(null); setMsg({ color: "teal", text: `${t("cachesCleared")} (${n})` }); refresh(); }}>{t("cachesClear")}</Button>
+                    onClick={async () => { setBusy("clear"); const n = await clearCaches() + await inventory.clearDerived(); setBusy(null); setMsg({ color: "teal", text: `${t("cachesCleared")} (${n})` }); refresh(); }}>{t("cachesClear")}</Button>
                 </Group>
               </Stack>
             </Accordion.Panel>

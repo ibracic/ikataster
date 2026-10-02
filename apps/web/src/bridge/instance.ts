@@ -1,3 +1,4 @@
+import { SETTINGS } from "../data/inventory";
 import { createContext, useContext } from "react";
 import { BridgeError, createBridgeClient, mockTransport, windowTransport, type BridgeClient } from "@ikataster/bridge";
 // Sample extracts for the mock bridge live in a git-ignored folder; without them the mock reports "not available".
@@ -17,7 +18,7 @@ async function mockDownload(p: unknown): Promise<{ pdfBase64: string; fileName: 
   return { pdfBase64: btoa(bin), fileName: `mock_${r.koId}_${r.number}.pdf` };
 }
 
-export const BRIDGE_LS = "ikataster.bridge";
+export const BRIDGE_LS = SETTINGS.bridge;
 export type BridgeMode = "extension" | "mock";
 
 /** ?bridge=mock (persisted in localStorage) switches to the in-page mock; ?bridge=extension switches back. */

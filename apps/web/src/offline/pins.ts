@@ -1,7 +1,8 @@
+import { SETTINGS } from "../data/inventory";
 import type { GursClient, KoDownloadPhase } from "../gurs";
 import type { OfflineStore, Pin } from "./store";
 
-export const PIN_MAX_AGE_KEY = "ikataster.pinMaxAgeDays";
+export const PIN_MAX_AGE_KEY = SETTINGS.pinMaxAge;
 export const PIN_MAX_AGE_DEFAULT = 30;
 export function pinMaxAgeDays(storage: Storage | null = globalThis.localStorage ?? null): number {
   const v = Number(storage?.getItem(PIN_MAX_AGE_KEY));

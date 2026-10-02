@@ -1,3 +1,4 @@
+import { DATABASES } from "../data/inventory";
 /**
  * GURS mass-appraisal values ("posplošena vrednost") per cadastral municipality.
  *
@@ -40,7 +41,7 @@ export interface Values {
 }
 
 export function createValues(opts: { name?: string; base?: string; fetch?: typeof fetch; now?: () => number } = {}): Values {
-  const db = new ValuesDb(opts.name ?? "ikataster-values");
+  const db = new ValuesDb(opts.name ?? DATABASES.values.name);
   const base = (opts.base ?? VALUES_BASE).replace(/\/$/, "");
   const doFetch = opts.fetch ?? ((...a: Parameters<typeof fetch>) => fetch(...a));
   const now = opts.now ?? Date.now;

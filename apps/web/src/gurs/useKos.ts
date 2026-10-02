@@ -1,8 +1,9 @@
+import { SETTINGS } from "../data/inventory";
 import { useEffect, useState } from "react";
 import type { GursClient } from "./client";
 import type { Ko } from "./types";
 
-const LS_KEY = "ikataster.kos.v1";
+const LS_KEY = SETTINGS.kos;
 const TTL_MS = 7 * 24 * 3600 * 1000;
 
 /** KO list, cached in localStorage for a week (it rarely changes). */

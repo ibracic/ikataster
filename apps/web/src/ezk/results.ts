@@ -1,3 +1,4 @@
+import { DATABASES } from "../data/inventory";
 import { propertyKey } from "../property/identity";
 import { ensurePersisted } from "../data/storage";
 import Dexie, { type Table } from "dexie";
@@ -46,7 +47,7 @@ class ResultsDb extends Dexie {
   }
 }
 
-export function createResultsStore(name = "ikataster-results") {
+export function createResultsStore(name: string = DATABASES.results.name) {
   const db = new ResultsDb(name);
   let clock = 0;
   const now = () => (clock = Math.max(clock + 1, Date.now()));

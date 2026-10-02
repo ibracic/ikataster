@@ -1,3 +1,4 @@
+import { backupSetting } from "./inventory";
 import type Dexie from "dexie";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
@@ -8,7 +9,7 @@ import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 export const BACKUP_FORMAT = "ikataster-backup";
 export const BACKUP_VERSION = 1;
 /** localStorage keys worth keeping; caches (KO list) are rebuilt automatically. */
-const LS_KEEP = /^(ikataster\.(?!kos\.)|mantine-color-scheme)/;
+
 
 export interface BackupDbs { [name: string]: Dexie }
 export interface BackupData {
@@ -39,7 +40,7 @@ export async function collectBackup(dbs: BackupDbs, storage: Storage | null = gl
   const local: Record<string, string> = {};
   if (storage) for (let i = 0; i < storage.length; i++) {
     const k = storage.key(i)!;
-    if (LS_KEEP.test(k)) local[k] = storage.getItem(k) ?? "";
+    if (backupSetting(k)) local[k] = storage.getItem(k) ?? "";
   }
   return { format: BACKUP_FORMAT, version: BACKUP_VERSION, createdAt: now.toISOString(), dbs: out, local };
 }
@@ -88,8 +89,8 @@ export async function restoreBackup(d: BackupData, dbs: BackupDbs, storage: Stor
     });
   }
   if (storage) {
-    for (let i = storage.length - 1; i >= 0; i--) { const k = storage.key(i)!; if (LS_KEEP.test(k)) storage.removeItem(k); }
-    for (const [k, v] of Object.entries(d.local ?? {})) if (LS_KEEP.test(k)) storage.setItem(k, v);
+    for (let i = storage.length - 1; i >= 0; i--) { const k = storage.key(i)!; if (backupSetting(k)) storage.removeItem(k); }
+    for (const [k, v] of Object.entries(d.local ?? {})) if (backupSetting(k)) storage.setItem(k, v);
   }
   return summarize(d);
 }

@@ -1,3 +1,5 @@
+import { SETTINGS } from "../data/inventory";
+import { DATABASES } from "../data/inventory";
 import Dexie, { type Table } from "dexie";
 import { itemKey, type CartInput } from "../cart/store";
 import { QUOTA_KEY, type QuotaStorage } from "../ezk/quota";
@@ -26,11 +28,11 @@ class QueueDb extends Dexie {
 }
 
 /** Where the quota lived before it moved into IndexedDB (both names the app had). */
-export const LEGACY_QUOTA_KEYS = ["ikataster.ezk.quota.v1", "parcela.ezk.quota.v1"];
+export const LEGACY_QUOTA_KEYS = [SETTINGS.legacyQuota, "parcela.ezk.quota.v1"];
 export const LEGACY_QUOTA_KEY = LEGACY_QUOTA_KEYS[1];
 
 /** Download queue + small key/value table (eZK quota) in IndexedDB. */
-export function createQueueStore(name = "ikataster-queue", now = () => Date.now()) {
+export function createQueueStore(name: string = DATABASES.queue.name, now = () => Date.now()) {
   const db = new QueueDb(name);
   const kvCache = new Map<string, string>();
   let hydrated: Promise<void> | null = null;

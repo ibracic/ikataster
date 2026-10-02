@@ -44,7 +44,7 @@ it("one click downloads the whole cart with per-item states, retry failed, and o
   expect(screen.getByTestId("ezk-quota")).toHaveTextContent("2 / 400");
 
   fail999 = false;
-  fireEvent.click(screen.getByRole("button", { name: "Ponovi neuspele (1)" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Ponovi neuspele (1)" }));
   await waitFor(() => expect(screen.getByTestId("queue-summary")).toHaveTextContent("Preneseno 3 od 3"));
   v.unmount();
 

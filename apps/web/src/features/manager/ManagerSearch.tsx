@@ -1,3 +1,4 @@
+import { SETTINGS } from "../../data/inventory";
 import { useEffect, useRef, useState } from "react";
 import { Combobox, Group, Loader, ScrollArea, Text, TextInput, useCombobox } from "@mantine/core";
 import { IconBuildingCommunity, IconDatabase } from "@tabler/icons-react";
@@ -7,7 +8,7 @@ import { cacheStore } from "../../cache/instance";
 import { knownManagers, matchManagers } from "../../cache/withCache";
 import type { CacheStore } from "../../cache/store";
 
-export const LAST_KEY = "ikataster.manager.last";
+export const LAST_KEY = SETTINGS.lastManager;
 
 interface Props { client: GursClient; onSelect: (m: Manager) => void; debounceMs?: number; store?: CacheStore }
 

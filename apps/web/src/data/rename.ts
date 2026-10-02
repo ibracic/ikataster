@@ -1,16 +1,15 @@
+import { DATABASE_RENAMES, DATABASES, LEGACY_DATABASES } from "./inventory";
 import Dexie from "dexie";
 import { createCartStore } from "../cart/store";
 import { createResultsStore } from "../ezk/results";
 import { createQueueStore } from "../queue/store";
 
 /** The app was called "Parcela" before it became iKataster: same data, new storage names. */
-export const DB_RENAMES: [from: string, to: string][] = [
-  ["parcela", "ikataster"], ["parcela-results", "ikataster-results"], ["parcela-offline", "ikataster-offline"], ["parcela-queue", "ikataster-queue"],
-];
+export const DB_RENAMES = DATABASE_RENAMES;
 const openTarget = (name: string): Dexie => {
-  if (name === "ikataster") return createCartStore(name).db;
-  if (name === "ikataster-results") return createResultsStore(name).db;
-  if (name === "ikataster-offline") { // legacy layout; moved into ikataster-gurs right after (local/db migrateLegacyStores)
+  if (name === DATABASES.cart.name) return createCartStore(name).db;
+  if (name === DATABASES.results.name) return createResultsStore(name).db;
+  if (name === LEGACY_DATABASES.offline) { // legacy layout; moved into ikataster-gurs right after (local/db migrateLegacyStores)
     const d = new Dexie(name);
     d.version(1).stores({ pins: "&koId", parcels: "[koId+number], koId", buildings: "[koId+number], koId", parts: "[koId+building+number], [koId+building], koId", kos: "&id" });
     return d;

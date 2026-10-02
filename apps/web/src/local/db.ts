@@ -1,3 +1,4 @@
+import { DATABASES, LEGACY_DATABASES } from "../data/inventory";
 import Dexie, { type Table } from "dexie";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import type { Geometry, Polygon, MultiPolygon } from "geojson";
@@ -68,7 +69,7 @@ export const fetchKeys = {
 const partRow = (koId: number, building: number, p: BuildingPart, buildingEid?: string | null): PartRow =>
   ({ koId, building, number: p.number, eid: p.eid, buildingEid: buildingEid ?? null, use: p.use, managerId: p.manager?.id ?? null, part: p });
 
-export function createGursStore(name = "ikataster-gurs") {
+export function createGursStore(name: string = DATABASES.gurs.name) {
   const db = new GursDb(name);
   const cacheTables = () => [db.managers, db.buildings, db.parts, db.fetches];
 
@@ -254,7 +255,7 @@ export type GursStore = ReturnType<typeof createGursStore>;
  * One-time move from the old layout (ikataster-offline tables + ikataster-cache key/value answers)
  * into ikataster-gurs. Pins are kept; the old answer cache is simply dropped (rebuilt on use).
  */
-export async function migrateLegacyStores(target: GursStore, names = { offline: "ikataster-offline", cache: "ikataster-cache" }): Promise<number> {
+export async function migrateLegacyStores(target: GursStore, names = LEGACY_DATABASES): Promise<number> {
   let moved = 0;
   if (await Dexie.exists(names.offline)) {
     const src = new Dexie(names.offline);

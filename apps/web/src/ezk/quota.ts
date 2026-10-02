@@ -1,10 +1,11 @@
+import { SETTINGS } from "../data/inventory";
 import { EZK_DAILY_LIMIT } from "@ikataster/bridge";
 
 /** Local estimate of today's eZK usage (eZK does not expose the counter). Day = Europe/Ljubljana calendar day. */
 export interface QuotaState { day: string; used: number; exhausted: boolean }
 export interface QuotaStorage { getItem(k: string): string | null; setItem(k: string, v: string): void }
 
-export const QUOTA_KEY = "ikataster.ezk.quota.v1";
+export const QUOTA_KEY = SETTINGS.legacyQuota;
 const KEY = QUOTA_KEY;
 export const dayOf = (d: Date) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Ljubljana" }).format(d);
 

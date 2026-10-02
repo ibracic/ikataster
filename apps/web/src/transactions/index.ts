@@ -1,3 +1,4 @@
+import { DATABASES } from "../data/inventory";
 /**
  * Real-estate sales and rentals from the public GURS "Evidenca trga nepremičnin" (ETN),
  * pre-split into one JSON file per KO (scripts/transactions/build.py) on the data branch.
@@ -49,7 +50,7 @@ export interface Transactions {
 const EMPTY = { s: {}, sd: {}, sp: {}, r: {}, rd: {} };
 
 export function createTransactions(opts: { name?: string; base?: string; fetch?: typeof fetch; now?: () => number } = {}): Transactions {
-  const db = new TxDb(opts.name ?? "ikataster-tx");
+  const db = new TxDb(opts.name ?? DATABASES.transactions.name);
   const base = (opts.base ?? VALUES_BASE).replace(/\/$/, "");
   const doFetch = opts.fetch ?? ((...a: Parameters<typeof fetch>) => fetch(...a));
   const now = opts.now ?? Date.now;

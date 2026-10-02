@@ -1,10 +1,11 @@
+import { SETTINGS } from "../data/inventory";
 import { useSyncExternalStore } from "react";
 import { ActionIcon, Tooltip } from "@mantine/core";
 import { IconArrowsMaximize, IconArrowsMinimize } from "@tabler/icons-react";
 import { useI18n } from "../i18n";
 
 /** Desktop: detail panels can be widened (remembered). The flag lives on <html data-panel-wide>, CSS does the rest. */
-export const PANEL_WIDE_KEY = "ikataster.panelWide";
+export const PANEL_WIDE_KEY = SETTINGS.panelWide;
 const subs = new Set<() => void>();
 const read = () => { try { return localStorage.getItem(PANEL_WIDE_KEY) === "1"; } catch { return false; } };
 let wide = read();
