@@ -60,7 +60,7 @@ describe("basemapLabelLayers", () => {
 
 import { isOwnLayer } from "./MapView";
 it("result markers, selection, list and draft layers are app-owned (not hidden on the orthophoto)", () => {
-  for (const id of ["results-dot", "results-cluster", "results-label", "sel-fill", "cart-line", "draft-line"]) expect(isOwnLayer(id)).toBe(true);
+  for (const id of ["results-dot", "results-cluster", "results-label", "selection-fill", "cart-line", "draft-line"]) expect(isOwnLayer(id)).toBe(true);
   expect(isOwnLayer("building")).toBe(false);
 });
 

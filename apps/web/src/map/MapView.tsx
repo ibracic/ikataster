@@ -1,3 +1,5 @@
+import { SEL, CART, DRAFT, RES, EZK, RES_AREA, addResultLayers, addEzkLayers, addAreaResultLayers, addDraftLayers, addCartLayers, addSelectionLayers, bindLayerInteractions, isOwnLayer } from './appLayers';
+export { draftData, isOwnLayer } from './appLayers';
 import { useEffect, useRef } from "react";
 import * as maplibregl from "maplibre-gl";
 import type { FeatureCollection, Geometry, GeometryCollection } from "geojson";
@@ -40,99 +42,6 @@ interface Props {
   areaResults?: FeatureCollection | null;
 }
 
-const SEL = "selection";
-const CART = "cart";
-const DRAFT = "draft";
-
-export function draftData(pts: [number, number][] | null | undefined): FeatureCollection {
-  if (!pts?.length) return EMPTY;
-  const features: FeatureCollection["features"] = pts.map((c) => ({ type: "Feature", properties: { kind: "vertex" }, geometry: { type: "Point", coordinates: c } }));
-  if (pts.length >= 3) features.unshift({ type: "Feature", properties: { kind: "area" }, geometry: { type: "Polygon", coordinates: [[...pts, pts[0]]] } });
-  else if (pts.length === 2) features.unshift({ type: "Feature", properties: { kind: "area" }, geometry: { type: "LineString", coordinates: pts } });
-  return { type: "FeatureCollection", features };
-}
-
-const RES = "results";
-function addResultLayers(m: MlMap, fc: FeatureCollection | null | undefined) {
-  const data = fc ?? EMPTY_RES;
-  const src = m.getSource(RES) as maplibregl.GeoJSONSource | undefined;
-  if (src) { src.setData(data); return; }
-  m.addSource(RES, { type: "geojson", data, cluster: true, clusterRadius: 40, clusterMaxZoom: 15, clusterProperties: { parts: ["+", ["get", "parts"]] } });
-  // clusters: darker ring, label = buildings · parts; a click zooms in
-  m.addLayer({ id: `${RES}-cluster`, type: "circle", source: RES, filter: ["has", "point_count"], paint: {
-    "circle-color": "#087f5b", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2, "circle-opacity": 0.92,
-    "circle-radius": ["interpolate", ["linear"], ["get", "point_count"], 2, 16, 10, 22, 50, 30] } });
-  m.addLayer({ id: `${RES}-cluster-label`, type: "symbol", source: RES, filter: ["has", "point_count"], layout: {
-    "text-field": ["concat", ["to-string", ["get", "point_count"]], " st.\n", ["to-string", ["get", "parts"]]],
-    "text-font": ["Noto Sans Bold"], "text-size": 10, "text-line-height": 1.1, "text-allow-overlap": true, "text-ignore-placement": true },
-    paint: { "text-color": "#ffffff" } });
-  m.addLayer({ id: `${RES}-dot`, type: "circle", source: RES, filter: ["!", ["has", "point_count"]], paint: {
-    "circle-color": "#0ca678", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2,
-    "circle-radius": ["interpolate", ["linear"], ["get", "parts"], 1, 9, 50, 12, 300, 16] } });
-  m.addLayer({ id: `${RES}-label`, type: "symbol", source: RES, filter: ["!", ["has", "point_count"]], layout: {
-    "text-field": ["to-string", ["get", "parts"]], "text-font": ["Noto Sans Bold"], "text-size": 11, "text-allow-overlap": true, "text-ignore-placement": true },
-    paint: { "text-color": "#ffffff" } });
-}
-const EMPTY_RES: FeatureCollection = { type: "FeatureCollection", features: [] };
-
-const EZK = "results-ezk";
-function addEzkLayers(m: MlMap, fc: FeatureCollection | null | undefined) {
-  const data = fc ?? EMPTY_RES;
-  const src = m.getSource(EZK) as maplibregl.GeoJSONSource | undefined;
-  if (src) { src.setData(data); return; }
-  m.addSource(EZK, { type: "geojson", data, cluster: true, clusterRadius: 36, clusterMaxZoom: 15, clusterProperties: { count: ["+", ["get", "count"]] } });
-  m.addLayer({ id: `${EZK}-cluster`, type: "circle", source: EZK, filter: ["has", "point_count"], paint: {
-    "circle-color": "#5f3dc4", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2, "circle-opacity": 0.92,
-    "circle-radius": ["interpolate", ["linear"], ["get", "count"], 2, 14, 20, 20, 200, 28] } });
-  m.addLayer({ id: `${EZK}-cluster-label`, type: "symbol", source: EZK, filter: ["has", "point_count"], layout: {
-    "text-field": ["to-string", ["get", "count"]], "text-font": ["Noto Sans Bold"], "text-size": 11, "text-allow-overlap": true, "text-ignore-placement": true },
-    paint: { "text-color": "#ffffff" } });
-  m.addLayer({ id: `${EZK}-dot`, type: "circle", source: EZK, filter: ["!", ["has", "point_count"]], paint: {
-    "circle-color": "#7048e8", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2, "circle-radius": 9 } });
-  m.addLayer({ id: `${EZK}-label`, type: "symbol", source: EZK, filter: ["all", ["!", ["has", "point_count"]], [">", ["get", "count"], 1]], layout: {
-    "text-field": ["to-string", ["get", "count"]], "text-font": ["Noto Sans Bold"], "text-size": 10, "text-allow-overlap": true, "text-ignore-placement": true },
-    paint: { "text-color": "#ffffff" } });
-}
-
-const RES_AREA = "results-area";
-function addAreaResultLayers(m: MlMap, fc: FeatureCollection | null | undefined) {
-  const data = fc ?? EMPTY_RES;
-  const src = m.getSource(RES_AREA) as maplibregl.GeoJSONSource | undefined;
-  if (src) { src.setData(data); return; }
-  m.addSource(RES_AREA, { type: "geojson", data });
-  m.addLayer({ id: `${RES_AREA}-fill`, type: "fill", source: RES_AREA, paint: { "fill-color": "#0ca678", "fill-opacity": 0.28 } });
-  m.addLayer({ id: `${RES_AREA}-line`, type: "line", source: RES_AREA, paint: { "line-color": "#087f5b", "line-width": 1.5 } });
-}
-
-function addDraftLayers(m: MlMap, pts: [number, number][] | null | undefined) {
-  const data = draftData(pts);
-  const src = m.getSource(DRAFT) as maplibregl.GeoJSONSource | undefined;
-  if (src) { src.setData(data); return; }
-  m.addSource(DRAFT, { type: "geojson", data });
-  m.addLayer({ id: `${DRAFT}-fill`, type: "fill", source: DRAFT, filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#228be6", "fill-opacity": 0.15 } });
-  m.addLayer({ id: `${DRAFT}-line`, type: "line", source: DRAFT, filter: ["!=", ["geometry-type"], "Point"], paint: { "line-color": "#1971c2", "line-width": 2.5 } });
-  m.addLayer({ id: `${DRAFT}-pt`, type: "circle", source: DRAFT, filter: ["==", ["geometry-type"], "Point"], paint: { "circle-radius": 6, "circle-color": "#fff", "circle-stroke-color": "#1971c2", "circle-stroke-width": 2.5 } });
-}
-
-function addCartLayers(m: MlMap, data: FeatureCollection | null | undefined) {
-  const fc = data ?? EMPTY;
-  const src = m.getSource(CART) as maplibregl.GeoJSONSource | undefined;
-  if (src) { src.setData(fc); return; }
-  m.addSource(CART, { type: "geojson", data: fc });
-  m.addLayer({ id: `${CART}-fill`, type: "fill", source: CART, paint: { "fill-color": "#f59f00", "fill-opacity": 0.18 } });
-  m.addLayer({ id: `${CART}-line`, type: "line", source: CART, paint: { "line-color": "#e8590c", "line-width": 2, "line-dasharray": [2, 1] } });
-}
-const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
-
-function addSelectionLayers(m: MlMap, geom: Geometry | null | undefined) {
-  const data: FeatureCollection = geom ? { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: geom }] } : EMPTY;
-  const src = m.getSource(SEL) as maplibregl.GeoJSONSource | undefined;
-  if (src) { src.setData(data); return; }
-  m.addSource(SEL, { type: "geojson", data });
-  m.addLayer({ id: `${SEL}-fill`, type: "fill", source: SEL, paint: { "fill-color": "#12b886", "fill-opacity": 0.22 } });
-  m.addLayer({ id: `${SEL}-line`, type: "line", source: SEL, paint: { "line-color": "#087f5b", "line-width": 3 } });
-}
-
 /** Bounding box [[w,s],[e,n]] of any GeoJSON geometry. */
 export function geometryBounds(g: Geometry): [[number, number], [number, number]] {
   let w = Infinity, s = Infinity, e = -Infinity, n = -Infinity;
@@ -147,9 +56,6 @@ export function geometryBounds(g: Geometry): [[number, number], [number, number]
   return [[w, s], [e, n]];
 }
 
-const GURS_IDS = new Set(GURS_LAYERS.map((l) => l.id));
-/** App-owned layers (never hidden/restyled as basemap layers). */
-export const isOwnLayer = (id: string) => GURS_IDS.has(id) || /^(ikataster-|sel|cart|draft|results)/.test(id);
 const labelIds = (m: MlMap) => basemapLabelLayers(m.getStyle()?.layers ?? [], isOwnLayer);
 
 /** Add GURS raster layers under the basemap labels, so names stay visible on the orthophoto. */
@@ -251,33 +157,7 @@ export function MapView({ basemap, overlays, labels = true, dark, onZoom, select
     m.addControl(new maplibregl.GeolocateControl({ trackUserLocation: false }), "bottom-right");
     m.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
     m.on("style.load", () => { addGursLayers(m, vis.current, labelsRef.current); addCartLayers(m, cartRef.current); addSelectionLayers(m, sel.current); addDraftLayers(m, draftRef.current); addAreaResultLayers(m, areaRef.current); addEzkLayers(m, ezkRef.current); addResultLayers(m, resultsRef.current); });
-    m.on("click", (e) => {
-      const hit = m.getLayer(`${RES}-dot`) ? m.queryRenderedFeatures(e.point, { layers: [`${RES}-dot`, `${RES}-label`] })[0] : undefined;
-      const cl = m.getLayer(`${RES}-cluster`) ? m.queryRenderedFeatures(e.point, { layers: [`${RES}-cluster`, `${RES}-cluster-label`] })[0] : undefined;
-      if (cl) {
-        const src = m.getSource(RES) as maplibregl.GeoJSONSource;
-        void src.getClusterExpansionZoom(Number(cl.properties.cluster_id)).then((z) => m.easeTo({ center: (cl.geometry as GeoJSON.Point).coordinates as [number, number], zoom: z }));
-        return;
-      }
-      if (hit && resClick.current) { const p = hit.properties as { ko: number; n: number }; resClick.current(Number(p.ko), Number(p.n)); return; }
-      const ecl = m.getLayer(`${EZK}-cluster`) ? m.queryRenderedFeatures(e.point, { layers: [`${EZK}-cluster`, `${EZK}-cluster-label`] })[0] : undefined;
-      if (ecl) {
-        const src = m.getSource(EZK) as maplibregl.GeoJSONSource;
-        void src.getClusterExpansionZoom(Number(ecl.properties.cluster_id)).then((z) => m.easeTo({ center: (ecl.geometry as GeoJSON.Point).coordinates as [number, number], zoom: z }));
-        return;
-      }
-      const ehit = m.getLayer(`${EZK}-dot`) ? m.queryRenderedFeatures(e.point, { layers: [`${EZK}-dot`, `${EZK}-label`] })[0] : undefined;
-      if (ehit && ezkClick.current) { const p = ehit.properties as { kind: "parcel" | "building"; ko: number; n: string | number }; ezkClick.current(p.kind, Number(p.ko), String(p.n)); return; }
-      click.current?.(e.lngLat.lng, e.lngLat.lat);
-    });
-    m.on("mouseenter", `${RES}-dot`, () => { m.getCanvas().style.cursor = "pointer"; });
-    m.on("mouseleave", `${RES}-dot`, () => { m.getCanvas().style.cursor = ""; });
-    for (const id of [`${EZK}-dot`, `${EZK}-cluster`]) {
-      m.on("mouseenter", id, () => { m.getCanvas().style.cursor = "pointer"; });
-      m.on("mouseleave", id, () => { m.getCanvas().style.cursor = ""; });
-    }
-    m.on("mouseenter", `${RES}-cluster`, () => { m.getCanvas().style.cursor = "pointer"; });
-    m.on("mouseleave", `${RES}-cluster`, () => { m.getCanvas().style.cursor = ""; });
+    bindLayerInteractions(m, () => ({ result: resClick.current, ezk: ezkClick.current, map: click.current }));
     m.on("zoomend", () => onZoom?.(m.getZoom()));
     // Orthophoto only exists from ORTHO_MIN_ZOOM; zoomed further out keep the street map visible.
     let orthoShown: boolean | null = null;
