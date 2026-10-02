@@ -4,6 +4,45 @@ A fast web app for looking up Slovenian real estate: parcels, buildings, buildin
 
 There is no backend and no account: the app is a static site that runs entirely in your browser, and everything you save (lists, extracts, folders) stays on your device. The user interface is in Slovenian, with an English option.
 
+## How downloading land-registry extracts works
+
+*Plain-language overview. You don't need any technical knowledge.*
+
+iKataster can't log into the land registry for you, and it never sees your password. You log in yourself, the normal way, and the small iKataster browser extension then passes requests between the two tabs.
+
+```mermaid
+flowchart LR
+    U(["You"])
+    A["iKataster<br/>(tab 1)<br/>your list of properties"]
+    X["iKataster extension<br/>(the messenger)"]
+    Z["Land registry, e-ZK<br/>(tab 2)<br/>you are logged in with SI-PASS"]
+    U -- "1. log in with SI-PASS" --> Z
+    U -- "2. click Download all" --> A
+    A -- "3. please get the extract for this property" --> X
+    X -- "4. asks, using your open session" --> Z
+    Z -- "5. official PDF" --> X
+    X -- "6. hands the PDF back" --> A
+```
+
+### Step by step
+
+1. **Install the extension once** (Chrome, Edge or Firefox on a computer). The app shows the steps under *Seznam za izpise ZK → Navodila za namestitev*.
+2. **Open the land registry** ([e-Sodstvo, e-ZK](https://esodisce.si/)) in another tab and **log in with your SI-PASS** as usual. Keep that tab open.
+3. **In iKataster, add properties to the list** *Seznam za izpise ZK* (one by one, by drawing an area, or by importing a spreadsheet).
+4. **Click download.** For each property the extension asks the land-registry tab for the official extract, the same way you would by hand, and gives the PDF back to iKataster.
+5. **iKataster reads the PDFs** and shows owners, shares, mortgages and easements in clear tables that you can filter and export.
+
+### Good to know
+
+| Question | Answer |
+|---|---|
+| Does iKataster see my SI-PASS password? | No. You only enter it on the official SI-PASS/e-Sodstvo pages. |
+| Where are my extracts stored? | Only in your browser, on your computer. Nothing is uploaded to an iKataster server, because there isn't one. |
+| Why do I need the extension? | For security, a website isn't allowed to read another website's tab. The extension is the permitted bridge, and it only talks to iKataster and e-ZK. |
+| What if I log out or the session expires? | Downloads pause and the app asks you to log in to e-ZK again, then continue. |
+| Is there a limit? | Yes. e-Sodstvo allows about 400 extracts per user per day; the app counts them and stops before the limit. |
+| Does it work on a phone? | Searching and the map do. Bulk downloading needs the extension, so use a computer; on a phone you can upload PDFs you already have. |
+
 ## Features
 
 - **Map**: street map or aerial photo (GURS orthophoto) with cadastral parcels and building outlines on top.
