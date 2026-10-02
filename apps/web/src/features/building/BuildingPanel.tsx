@@ -13,7 +13,7 @@ import { ValueCell, ValueSource } from "../../values/ValueCell";
 import { buildingTx, useKoTx } from "../../transactions";
 import { TxList } from "../../transactions/TxList";
 import { PropertyResults } from "../../ezk/PropertyResults";
-import { OwnerLine } from "../../ezk/ResultCard";
+import { PartRow } from "./PartRow";
 import { useResults } from "../../ezk/useResults";
 import { resultsFor } from "../../ezk/points";
 import { PartDetails } from "./PartDetails";
@@ -110,9 +110,9 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
           </Table.Tbody>
         </Table>
 
-        <PropertyResults kind="building" ko={b.koId} n={b.number} defaultOpen />
+        <PropertyResults kind="building" ko={b.koId} n={b.number} excludeParts defaultOpen />
         <Text size="xs" c="dimmed" tt="uppercase" fw={700} mt="md" mb={4}>
-          {t("parts")}{parts ? ` (${parts.length})` : ""}
+          {t("parts")}{parts ? ` (${parts.length})` : ""}{ezkByPart.size ? ` · ${t("ezkParts")}: ${ezkByPart.size}` : ""}
         </Text>
         {!parts ? (
           <Stack gap={6}>{[0, 1, 2].map((i) => <Skeleton key={i} h={16} />)}</Stack>
@@ -121,41 +121,19 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
         ) : parts.length === 0 ? (
           <Text size="sm" c="dimmed">{t("noParts")}</Text>
         ) : (
-          <Table striped fz="sm" verticalSpacing={4} horizontalSpacing={6} layout="fixed" data-testid="parts-table">
-            <Table.Thead>
-              <Table.Tr><Table.Th w={30} /><Table.Th w={48}>{t("partNo")}</Table.Th><Table.Th>{t("partUse")}</Table.Th><Table.Th w={86} ta="right">{t("partArea")}</Table.Th><Table.Th w={46} ta="right">{t("partFloor")}</Table.Th><Table.Th w={84} ta="right">{t("valueShort")}</Table.Th></Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {parts.map((p) => (
-                <Fragment key={p.eid}>
-                <Table.Tr style={{ cursor: "pointer" }} onClick={(e) => { if (!(e.target as HTMLElement).closest("input,a,button")) togglePart(p.number); }} aria-expanded={openPart === p.number} data-testid="part-row">
-                  <Table.Td>
-                    {keys.has(itemKey(partInput(p)))
-                      ? <Checkbox size="xs" checked disabled aria-label={`${t("inCart")} ${p.number}`} />
-                      : <Checkbox size="xs" checked={picked.has(p.number)} onChange={() => toggle(p.number)} aria-label={`${t("buildingPart")} ${p.number}`} />}
-                  </Table.Td>
-                  <Table.Td style={{ whiteSpace: "nowrap" }}>{openPart === p.number ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}{p.number}</Table.Td>
-                  <Table.Td style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={p.use ?? undefined}>
-                    {p.use ?? "—"}
-                  </Table.Td>
-                  <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>{p.usableArea ?? p.area ? `${nf.format((p.usableArea ?? p.area)!)} m²` : "—"}</Table.Td>
-                  <Table.Td ta="right">{p.floor ?? "—"}</Table.Td>
-                  <Table.Td ta="right"><ValueCell size="xs" state={values} value={partValue(values.status === "ready" ? values.values : null, b.number, p.number)} href={p.id ? valuationUrl("part", p.id) : undefined} label={`${t("value")} ${p.number}`} /></Table.Td>
-                </Table.Tr>
-                {ezkByPart.has(p.number) && (
-                  <Table.Tr style={{ cursor: "pointer" }} onClick={() => togglePart(p.number)} data-testid="part-owner-row">
-                    <Table.Td style={{ paddingTop: 0 }} /><Table.Td colSpan={5} style={{ paddingTop: 0, overflow: "hidden" }}><OwnerLine record={ezkByPart.get(p.number)!} /></Table.Td>
-                  </Table.Tr>
-                )}
-                {openPart === p.number && (
-                  <Table.Tr><Table.Td colSpan={6} style={{ background: "var(--mantine-color-body)" }} aria-label={t("partDetails")}>
-                    <PartDetails part={p} building={b.number} values={values} tx={tx} cartItem={partInput(p)} />
-                  </Table.Td></Table.Tr>
-                )}
-                </Fragment>
-              ))}
-            </Table.Tbody>
-          </Table>
+          <div className="part-list" data-testid="parts-table">
+            {parts.map((p) => {
+              const a = p.usableArea ?? p.area;
+              return (
+                <PartRow key={p.eid} part={p} open={openPart === p.number} onToggle={() => togglePart(p.number)}
+                  inCart={keys.has(itemKey(partInput(p)))} picked={picked.has(p.number)} onPick={() => toggle(p.number)}
+                  area={a ? `${nf.format(a)} m²` : null} ezk={ezkByPart.get(p.number)}
+                  value={<ValueCell size="xs" state={values} value={partValue(values.status === "ready" ? values.values : null, b.number, p.number)} href={p.id ? valuationUrl("part", p.id) : undefined} label={`${t("value")} ${p.number}`} />}>
+                  <PartDetails part={p} building={b.number} values={values} tx={tx} cartItem={partInput(p)} hideResults />
+                </PartRow>
+              );
+            })}
+          </div>
         )}
         {parts && parts.length > 0 && <ValueSource state={values} />}
         <Text size="xs" c="dimmed" tt="uppercase" fw={700} mt="md" mb={4}>{t("txTitle")}</Text>

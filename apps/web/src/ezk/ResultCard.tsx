@@ -30,15 +30,15 @@ export function burdenChips(rights: Right[]) {
   return out;
 }
 
-function Chips({ record }: { record: ResultRecord }) {
+export function Chips({ record, size = "sm" }: { record: ResultRecord; size?: "xs" | "sm" }) {
   const { t } = useI18n();
   const chips = burdenChips(record.extract.rights ?? []);
   return (
     <Group gap={4} wrap="wrap">
-      {record.extract.pending && <Badge color="red" variant="filled" size="sm">{t("pendingCase")}</Badge>}
-      {chips.length === 0 && !record.extract.pending && <Badge color="teal" variant="light" size="sm">{t("noBurdens")}</Badge>}
+      {record.extract.pending && <Badge color="red" variant="filled" size={size}>{t("pendingCase")}</Badge>}
+      {chips.length === 0 && !record.extract.pending && <Badge color="teal" variant="light" size={size}>{t("noBurdens")}</Badge>}
       {chips.map((c) => (
-        <Badge key={c.key} color={CAT[c.cat].color} variant="light" size="sm" style={{ textTransform: "none" }}>
+        <Badge key={c.key} color={CAT[c.cat].color} variant="light" size={size} style={{ textTransform: "none" }}>
           {c.count > 1 ? `${c.count}× ` : ""}{t(c.landCharge ? "catLandCharge" : CAT[c.cat].key)}{c.amount ? ` ${c.amount.replace(/,00 EUR$/, " €").replace(/ EUR$/, " €")}` : ""}
         </Badge>
       ))}

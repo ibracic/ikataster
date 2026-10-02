@@ -17,10 +17,12 @@ interface Props {
   values: KoValuesState;
   tx: KoTxState;
   cartItem: CartInput;
+  /** The owner/burden summary is already shown in the row; show the full card anyway? */
+  hideResults?: boolean;
 }
 
 /** Expanded details of one building part: cadastre attributes, GURS value, sales/rentals, actions. */
-export function PartDetails({ part: p, building, values, tx, cartItem }: Props) {
+export function PartDetails({ part: p, building, values, tx, cartItem, hideResults }: Props) {
   const { t, lang } = useI18n();
   const nf = new Intl.NumberFormat(lang === "sl" ? "sl-SI" : "en-GB", { maximumFractionDigits: 1 });
   const yn = (v: boolean | null | undefined) => (v == null ? null : t(v ? "yes" : "no"));
@@ -55,7 +57,7 @@ export function PartDetails({ part: p, building, values, tx, cartItem }: Props) 
           ))}
         </Table.Tbody>
       </Table>
-      <PropertyResults kind="part" ko={cartItem.koId} n={building} part={p.number} defaultOpen />
+      <PropertyResults kind="part" ko={cartItem.koId} n={building} part={p.number} defaultOpen={!hideResults} />
       <Text size="xs" c="dimmed" tt="uppercase" fw={700} mt="sm" mb={4}>{t("txTitle")}</Text>
       <TxList state={tx} items={partTx(tx.status === "ready" ? tx.tx : null, building, p.number)} limit={3} />
       <Group justify="space-between" mt="xs" gap={6}>

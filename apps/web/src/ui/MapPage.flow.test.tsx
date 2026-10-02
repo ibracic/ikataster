@@ -158,7 +158,7 @@ describe("building flow", () => {
     expect(within(panel).getByText("1949")).toBeInTheDocument();
     const table = await within(panel).findByTestId("parts-table");
     expect(within(panel).getByText(/Deli stavbe \(61\)/)).toBeInTheDocument();
-    expect(within(table).getAllByText("stanovanje").length).toBeGreaterThan(10);
+    expect(within(table).getAllByText("Stanovanje").length).toBeGreaterThan(10);
     expect(screen.getByTestId("map")).toHaveAttribute("data-selected", "yes");
     expect(screen.getByRole("radio", { name: "Stavba" })).toBeChecked();
   });

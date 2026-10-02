@@ -21,13 +21,15 @@ interface Props {
   part?: number;
   /** Open the first card (single property). */
   defaultOpen?: boolean;
+  /** Building: only the building's own extract (parts are shown in their rows). */
+  excludeParts?: boolean;
 }
 
 /** Land-registry extracts we already have for this property (shown in the details panels). */
-export function PropertyResults({ kind, ko, n, part, defaultOpen }: Props) {
+export function PropertyResults({ kind, ko, n, part, defaultOpen, excludeParts }: Props) {
   const { t } = useI18n();
   const { store, records } = useResults();
-  const mine = resultsFor(records, kind, ko, n, part)
+  const mine = resultsFor(records, kind, ko, n, part).filter((r) => !excludeParts || r.extract.property.type !== "part")
     .sort((a, b) => (Number(a.extract.property.part ?? 0) - Number(b.extract.property.part ?? 0)));
   const [open, setOpen] = useState<Set<string> | null>(null);
   if (!mine.length) return null;
