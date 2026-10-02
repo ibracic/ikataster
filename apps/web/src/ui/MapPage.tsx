@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
+import { useSelection, type Mode } from "../selection/useSelection";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActionIcon, Alert, Badge, Button, Group, Paper, Popover, SegmentedControl, Stack, Switch, Text, Title, Tooltip,
   useComputedColorScheme, useMantineColorScheme,
@@ -16,11 +16,8 @@ import { useGurs } from "../gurs/instance";
 import { useKos } from "../gurs/useKos";
 import { ParcelSearch } from "../features/parcel/ParcelSearch";
 import { AddressSearch } from "../features/parcel/AddressSearch";
-import type { Address } from "../gurs";
 import { ParcelPanel } from "../features/parcel/ParcelPanel";
-import { useParcelSelection } from "../features/parcel/useParcelSelection";
 import { BuildingPanel } from "../features/building/BuildingPanel";
-import { useBuildingSelection } from "../features/building/useBuildingSelection";
 import { CartDrawer } from "../cart/CartDrawer";
 import { useCart } from "../cart/useCart";
 import type { CartItem } from "../cart/store";
@@ -34,15 +31,11 @@ import { useOffline } from "../offline/instance";
 import { pinMaxAgeDays, refreshStale } from "../offline/pins";
 import { ManagerSearch } from "../features/manager/ManagerSearch";
 import { ManagerPanel } from "../features/manager/ManagerPanel";
-import type { Geometry } from "geojson";
 import "./app.css";
 
 /** Parcels are only clickable once they are drawn (GURS WMS min zoom). */
 const CLICK_MIN_ZOOM = 15;
-/** Building outlines are drawn from z17; clicks there prefer buildings. */
-const BUILDING_CLICK_ZOOM = 17;
 
-type Mode = "address" | "parcel" | "building" | "manager";
 
 /** Remembered basemap (street map or orthophoto). */
 export const BASEMAP_KEY = "ikataster.basemap";
@@ -58,125 +51,43 @@ export function MapPage() {
   // Stale pinned KOs refresh in the background once per app open.
   useEffect(() => { void refreshStale(gurs, offline, pinMaxAgeDays()).catch(() => undefined); }, [gurs, offline]);
   const { kos } = useKos(gurs);
-  const sel = useParcelSelection(gurs);
-  const bld = useBuildingSelection(gurs);
   const cart = useCart();
   const [cartOpen, setCartOpen] = useState(false);
   const [resultsOpen, setResultsOpen] = useState(false);
   const results = useResults();
   const [importOpen, setImportOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
-  /** Polygon selection: drawing (points) → done (ring fixed, AreaPanel open). */
-  const [draw, setDraw] = useState<{ points: [number, number][]; done: boolean } | null>(null);
-  const startDraw = () => { sel.clear(); bld.clear(); setParams({}, { replace: true }); setDraw({ points: [], done: false }); };
   const cartFc = useMemo<FeatureCollection>(() => ({
     type: "FeatureCollection",
     features: cart.items.filter((i) => i.geometry).map((i) => ({ type: "Feature", properties: { key: i.key }, geometry: i.geometry! })),
   }), [cart.items]);
-  const [params, setParams] = useSearchParams();
   const [basemap, setBasemapState] = useState<BasemapId>(() => (localStorage.getItem(BASEMAP_KEY) === "ortho" ? "ortho" : "street"));
   const setBasemap = (b: BasemapId) => { setBasemapState(b); try { localStorage.setItem(BASEMAP_KEY, b); } catch { /* private mode */ } };
   const [overlays, setOverlays] = useState<Record<OverlayId, boolean>>({ parcels: true, buildings: true });
   const [labels, setLabels] = useState(true);
   const [zoom, setZoom] = useState(0);
-  const [fitKey, setFitKey] = useState(0);
-  const [mode, setMode] = useState<Mode>(() => (params.get("upr") ? "manager" : params.get("st") ? "building" : params.get("ko") ? "parcel" : "address"));
-  /** Manager (upravnik) view: id + optional KO filter, deep link ?upr=617&ko=657. */
-  const [manager, setManager] = useState<{ id: number; ko: number | null } | null>(() => {
-    const id = Number(params.get("upr"));
-    return Number.isInteger(id) && id > 0 ? { id, ko: Number(params.get("ko")) || null } : null;
-  });
-  const [managerGeom, setManagerGeom] = useState<Geometry | null>(null);
-  const openManager = (id: number, ko: number | null = null) => {
-    sel.clear(); bld.clear(); setDraw(null); setMode("manager");
-    setManager({ id, ko });
-    setParams(ko ? { upr: String(id), ko: String(ko) } : { upr: String(id) }, { replace: true });
-  };
-  const [managerPts, setManagerPts] = useState<FeatureCollection | null>(null);
+  const { openProperty, sel, bld, draw, setDraw, startDraw, mode, setMode, manager, managerGeom, managerPts,
+    fitKey, initialKo, initialParcel, initialBuilding, openManager, onManagerHighlight,
+    showBuilding, backToManager, doSearch, onAddress, onMapClick, close } = useSelection(gurs, zoom, overlays.buildings);
   const [areaFc, setAreaFc] = useState<FeatureCollection | null>(null);
-  const onManagerHighlight = useCallback((g: Geometry | null, pts?: FeatureCollection | null) => { setManagerGeom(g); setManagerPts(pts ?? null); if (g) setFitKey((k) => k + 1); }, []);
-
-  const initialKo = Number(params.get("ko")) || undefined;
-  const initialParcel = params.get("p") ?? undefined;
-  const initialBuilding = params.get("st") ?? undefined;
-
-  /** `fromManager`: open on top of the manager list, which stays loaded (search, filter, scroll). */
-  const showBuilding = async (ko: number, st: number, fromManager = false) => {
-    sel.clear();
-    if (!fromManager) { setManager(null); setManagerGeom(null); }
-    const b = await bld.search(ko, st);
-    if (b) {
-      if (!fromManager) setParams({ ko: String(b.koId), st: String(b.number) }, { replace: true });
-      setFitKey((k) => k + 1);
-    }
-  };
-  const backToManager = () => { bld.clear(); setFitKey((k) => k + 1); };
-
-  const doSearch = async (ko: number, p: string) => {
-    bld.clear(); setManager(null); setManagerGeom(null);
-    const found = await sel.search(ko, p);
-    if (found) {
-      setParams({ ko: String(found.koId), p: found.number }, { replace: true });
-      setFitKey((k) => k + 1);
-    }
-  };
-
-  // deep link: /?ko=657&p=1587
-  useEffect(() => {
-    if (manager) return;
-    if (initialKo && initialBuilding) void showBuilding(initialKo, Number(initialBuilding));
-    else if (initialKo && initialParcel) void doSearch(initialKo, initialParcel);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const onAddress = async (a: Address) => {
-    bld.clear();
-    const found = await sel.pickAddress(a.e, a.n);
-    if (found) {
-      setParams({ ko: String(found.koId), p: found.number }, { replace: true });
-      setFitKey((k) => k + 1);
-    }
-  };
-
-  const onMapClick = async (lon: number, lat: number) => {
-    if (draw && !draw.done) { setDraw((d) => (d && !d.done ? { ...d, points: [...d.points, [lon, lat]] } : d)); return; }
-    if (draw) return;
-    if (zoom < CLICK_MIN_ZOOM) return;
-    if (zoom >= BUILDING_CLICK_ZOOM && overlays.buildings) {
-      const b = await bld.pick(lon, lat);
-      if (b) {
-        sel.clear();
-        setParams({ ko: String(b.koId), st: String(b.number) }, { replace: true });
-        return;
-      }
-    }
-    bld.clear();
-    const found = await sel.pick(lon, lat);
-    if (found) setParams({ ko: String(found.koId), p: found.number }, { replace: true });
-  };
-
-  const close = () => { sel.clear(); bld.clear(); setManager(null); setManagerGeom(null); setParams({}, { replace: true }); };
 
   const openCartItem = (i: CartItem) => {
     setCartOpen(false);
-    if (i.kind === "parcel") { setMode("parcel"); void doSearch(i.koId, i.number); }
-    else { setMode("building"); void showBuilding(i.koId, Number(i.number)); }
+    void openProperty(i.kind, i.koId, i.number);
   };
 
   const [ezkLayer, setEzkLayer] = useState(() => localStorage.getItem(EZK_LAYER_KEY) !== "0");
   useEffect(() => { localStorage.setItem(EZK_LAYER_KEY, ezkLayer ? "1" : "0"); }, [ezkLayer]);
   const ezkPts = useResultPoints(results.records, gurs, ezkLayer);
   const openEzk = (kind: "parcel" | "building", ko: number, n: string) => {
-    if (kind === "parcel") { setMode("parcel"); void doSearch(ko, n); }
-    else { setMode("building"); void showBuilding(ko, Number(n)); }
+    void openProperty(kind, ko, n);
   };
 
   const openResult = (r: ResultRecord) => {
     const p = r.extract.property;
     if (!p.koId || !p.number) return;
     setResultsOpen(false);
-    if (p.type === "parcel") { setMode("parcel"); void doSearch(p.koId, p.number); }
-    else { setMode("building"); void showBuilding(p.koId, Number(p.number)); }
+    if (p.type !== "other") void openProperty(p.type, p.koId, p.number);
   };
 
   const toggle = (id: OverlayId) => (e: React.ChangeEvent<HTMLInputElement>) =>

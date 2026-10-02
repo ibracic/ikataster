@@ -12,3 +12,5 @@ Slices (each tested, deployed, browser-proven and pushed independently):
 Done: all five integrated through existing callers, regression tests green, TypeScript and all workspace tests green, production desktop/mobile proof, both remotes published. Stop on failed proof or destructive migration needing approval. No new backend, dataset or extension permissions.
 
 Status: slice 1 complete; slice 2 next. Identity is shared by extract-list storage, extract storage, import deduplication, result membership and map position keys. GURS compound table keys and mock response hashes are deliberately not changed (different purposes).
+
+Slice 2 complete: selection/useSelection owns property entry points, selection transitions, manager return context, polygon drawing and URL writes. Existing detail loaders remain private collaborators; navigation has a shared generation guard, in addition to loader guards, so late finds/details cannot reopen closed views or fall back to another property. MapPage only coordinates presentation. Regression coverage includes close during details, stale map fallback, manager return and drawing. No schema or protocol changes.

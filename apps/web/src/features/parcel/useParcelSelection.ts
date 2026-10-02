@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { GursClient, Parcel, ParcelDetails } from "../../gurs";
 import type { MsgKey } from "../../i18n";
 import { errorMessageKey } from "./errorMessage";
@@ -10,7 +10,7 @@ export function useParcelSelection(client: GursClient) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<MsgKey | null>(null);
   const seq = useRef(0);
-  const id0 = () => seq.current;
+  useEffect(() => () => { seq.current++; }, []);
 
   const load = useCallback(async (find: () => Promise<Parcel | null>, notFoundIsError: boolean) => {
     const id = ++seq.current;
@@ -27,7 +27,7 @@ export function useParcelSelection(client: GursClient) {
       setDetails(null);
       const d = await client.parcelDetails(p);
       if (id === seq.current) setDetails(d);
-      return p;
+      return id === seq.current ? p : null;
     } catch (e) {
       if (id === seq.current) setError(errorMessageKey(e));
       return null;
@@ -41,9 +41,11 @@ export function useParcelSelection(client: GursClient) {
     search: (koId: number, number: string) => load(() => client.findParcel(koId, number), true),
     pick: (lon: number, lat: number) => load(() => client.parcelAt(lon, lat), false),
     pickAddress: async (e: number, n: number) => {
-      const p = await load(() => client.parcelAtD96(e, n), false);
-      if (!p && id0() === seq.current) setError("noParcelAtAddress");
-      return p;
+      const pending = load(() => client.parcelAtD96(e, n), false);
+      const id = seq.current;
+      const p = await pending;
+      if (!p && id === seq.current) setError("noParcelAtAddress");
+      return id === seq.current ? p : null;
     },
     clear: () => { seq.current++; setParcel(null); setDetails(null); setError(null); setLoading(false); },
     dismissError: () => setError(null),

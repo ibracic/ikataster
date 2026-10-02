@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Building, BuildingPart, GursClient } from "../../gurs";
 import type { MsgKey } from "../../i18n";
 import { errorMessageKey } from "../parcel/errorMessage";
@@ -11,6 +11,7 @@ export function useBuildingSelection(client: GursClient) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<MsgKey | null>(null);
   const seq = useRef(0);
+  useEffect(() => () => { seq.current++; }, []);
 
   const load = useCallback(async (find: () => Promise<Building | null>, notFoundIsError: boolean) => {
     const id = ++seq.current;
