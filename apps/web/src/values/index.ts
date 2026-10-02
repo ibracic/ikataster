@@ -6,12 +6,11 @@ import { DATABASES } from "../data/inventory";
  * into one small JSON file per KO (see scripts/valuations/build.py). A KO file
  * is fetched once, kept in IndexedDB and refreshed after VALUES_TTL.
  */
-import Dexie, { type Table } from "dexie";
+import { createDataset, DATASET_BASE, DATASET_TTL, type Dataset, type DatasetOptions } from "../datasets/loader";
 import { createContext, useContext, useEffect, useState } from "react";
 
-export const VALUES_BASE: string =
-  (import.meta.env.VITE_IKATASTER_VALUES_URL as string | undefined) ?? "https://raw.githubusercontent.com/ibracic/ikataster/data";
-export const VALUES_TTL = 7 * 24 * 3600 * 1000;
+export const VALUES_BASE = DATASET_BASE;
+export const VALUES_TTL = DATASET_TTL;
 
 export interface KoValues {
   ko: number;
@@ -23,62 +22,13 @@ export interface KoValues {
   d: Record<string, number>;
 }
 
-interface Row extends KoValues { fetchedAt: number; missing?: boolean }
-
-class ValuesDb extends Dexie {
-  kos!: Table<Row, number>;
-  constructor(name: string) {
-    super(name);
-    this.version(1).stores({ kos: "&ko" });
-  }
-}
-
-export interface Values {
-  /** Values for a KO, or null if GURS publishes none for it. Throws only if nothing is cached and the network fails. */
-  get(ko: number): Promise<KoValues | null>;
-  count(): Promise<number>;
-  clear(): Promise<void>;
-}
-
-export function createValues(opts: { name?: string; base?: string; fetch?: typeof fetch; now?: () => number } = {}): Values {
-  const db = new ValuesDb(opts.name ?? DATABASES.values.name);
-  const base = (opts.base ?? VALUES_BASE).replace(/\/$/, "");
-  const doFetch = opts.fetch ?? ((...a: Parameters<typeof fetch>) => fetch(...a));
-  const now = opts.now ?? Date.now;
-  const inflight = new Map<number, Promise<KoValues | null>>();
-
-  const load = async (ko: number): Promise<KoValues | null> => {
-    const cached = await db.kos.get(ko).catch(() => undefined);
-    if (cached && now() - cached.fetchedAt < VALUES_TTL) return cached.missing ? null : cached;
-    try {
-      const res = await doFetch(`${base}/ko/${ko}.json`);
-      if (res.status === 404) {
-        await db.kos.put({ ko, date: "", p: {}, d: {}, fetchedAt: now(), missing: true });
-        return null;
-      }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const j = (await res.json()) as KoValues;
-      const row: Row = { ko, date: j.date, p: j.p ?? {}, d: j.d ?? {}, fetchedAt: now() };
-      await db.kos.put(row);
-      return row;
-    } catch (e) {
-      if (cached) return cached.missing ? null : cached; // stale beats nothing
-      throw e;
-    }
-  };
-
-  return {
-    get(ko) {
-      let p = inflight.get(ko);
-      if (!p) {
-        p = load(ko).finally(() => inflight.delete(ko));
-        inflight.set(ko, p);
-      }
-      return p;
-    },
-    count: () => db.kos.count(),
-    clear: () => db.kos.clear(),
-  };
+export type Values = Dataset<KoValues>;
+export function createValues(opts: DatasetOptions = {}): Values {
+  return createDataset<KoValues>({
+    name: DATABASES.values.name, path: 'ko',
+    empty: ko => ({ ko, date: '', p: {}, d: {} }),
+    decode: (j, ko) => ({ ko, date: j.date, p: j.p ?? {}, d: j.d ?? {} }),
+  }, opts);
 }
 
 export const partValue = (v: KoValues | null | undefined, building: number | string, part: number | string) =>

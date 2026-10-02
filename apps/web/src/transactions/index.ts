@@ -4,11 +4,10 @@ import { DATABASES } from "../data/inventory";
  * pre-split into one JSON file per KO (scripts/transactions/build.py) on the data branch.
  * A KO file is fetched once, kept in IndexedDB and refreshed after TX_TTL.
  */
-import Dexie, { type Table } from "dexie";
+import { createDataset, DATASET_TTL, type Dataset, type DatasetOptions } from "../datasets/loader";
 import { createContext, useContext, useEffect, useState } from "react";
-import { VALUES_BASE } from "../values";
 
-export const TX_TTL = 7 * 24 * 3600 * 1000;
+export const TX_TTL = DATASET_TTL;
 
 /** [date, price, kind, market, nParts, nParcels] */
 export type SaleDeal = [string, number | null, number | null, number | null, number, number];
@@ -31,60 +30,14 @@ export interface KoTx {
   rd: Record<string, PartRent[]>;
 }
 
-interface Row extends KoTx { fetchedAt: number; missing?: boolean }
-
-class TxDb extends Dexie {
-  kos!: Table<Row, number>;
-  constructor(name: string) {
-    super(name);
-    this.version(1).stores({ kos: "&ko" });
-  }
-}
-
-export interface Transactions {
-  get(ko: number): Promise<KoTx | null>;
-  count(): Promise<number>;
-  clear(): Promise<void>;
-}
-
+export type Transactions = Dataset<KoTx>;
 const EMPTY = { s: {}, sd: {}, sp: {}, r: {}, rd: {} };
-
-export function createTransactions(opts: { name?: string; base?: string; fetch?: typeof fetch; now?: () => number } = {}): Transactions {
-  const db = new TxDb(opts.name ?? DATABASES.transactions.name);
-  const base = (opts.base ?? VALUES_BASE).replace(/\/$/, "");
-  const doFetch = opts.fetch ?? ((...a: Parameters<typeof fetch>) => fetch(...a));
-  const now = opts.now ?? Date.now;
-  const inflight = new Map<number, Promise<KoTx | null>>();
-
-  const load = async (ko: number): Promise<KoTx | null> => {
-    const cached = await db.kos.get(ko).catch(() => undefined);
-    if (cached && now() - cached.fetchedAt < TX_TTL) return cached.missing ? null : cached;
-    try {
-      const res = await doFetch(`${base}/tx/ko/${ko}.json`);
-      if (res.status === 404) {
-        await db.kos.put({ ko, date: "", ...EMPTY, fetchedAt: now(), missing: true });
-        return null;
-      }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const j = (await res.json()) as Partial<KoTx>;
-      const row: Row = { ...EMPTY, ...j, ko, date: j.date ?? "", fetchedAt: now() } as Row;
-      await db.kos.put(row);
-      return row;
-    } catch (e) {
-      if (cached) return cached.missing ? null : cached;
-      throw e;
-    }
-  };
-
-  return {
-    get(ko) {
-      let p = inflight.get(ko);
-      if (!p) { p = load(ko).finally(() => inflight.delete(ko)); inflight.set(ko, p); }
-      return p;
-    },
-    count: () => db.kos.count(),
-    clear: () => db.kos.clear(),
-  };
+export function createTransactions(opts: DatasetOptions = {}): Transactions {
+  return createDataset<KoTx>({
+    name: DATABASES.transactions.name, path: 'tx/ko',
+    empty: ko => ({ ...EMPTY, ko, date: '' }),
+    decode: (j, ko) => ({ ...EMPTY, ...j, ko, date: j.date ?? '' }),
+  }, opts);
 }
 
 let instance: Transactions | null = null;
