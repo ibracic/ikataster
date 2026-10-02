@@ -11,6 +11,7 @@ import { partValue, useKoValues } from "../../values";
 import { ValueCell, ValueSource } from "../../values/ValueCell";
 import { buildingTx, useKoTx } from "../../transactions";
 import { TxList } from "../../transactions/TxList";
+import { PropertyResults } from "../../ezk/PropertyResults";
 import { PartDetails } from "./PartDetails";
 import { Fragment } from "react";
 import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
@@ -103,6 +104,7 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
           </Table.Tbody>
         </Table>
 
+        <PropertyResults kind="building" ko={b.koId} n={b.number} defaultOpen />
         <Text size="xs" c="dimmed" tt="uppercase" fw={700} mt="md" mb={4}>
           {t("parts")}{parts ? ` (${parts.length})` : ""}
         </Text>

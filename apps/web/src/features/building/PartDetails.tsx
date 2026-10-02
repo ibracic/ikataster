@@ -6,6 +6,7 @@ import { gursPublicViewUrl, valuationUrl, type BuildingPart } from "../../gurs";
 import { useI18n, type MsgKey } from "../../i18n";
 import { partTx, type KoTxState } from "../../transactions";
 import { TxList } from "../../transactions/TxList";
+import { PropertyResults } from "../../ezk/PropertyResults";
 import type { KoValuesState } from "../../values";
 import { partValue } from "../../values";
 import { ValueCell } from "../../values/ValueCell";
@@ -54,6 +55,7 @@ export function PartDetails({ part: p, building, values, tx, cartItem }: Props) 
           ))}
         </Table.Tbody>
       </Table>
+      <PropertyResults kind="part" ko={cartItem.koId} n={building} part={p.number} defaultOpen />
       <Text size="xs" c="dimmed" tt="uppercase" fw={700} mt="sm" mb={4}>{t("txTitle")}</Text>
       <TxList state={tx} items={partTx(tx.status === "ready" ? tx.tx : null, building, p.number)} limit={3} />
       <Group justify="space-between" mt="xs" gap={6}>

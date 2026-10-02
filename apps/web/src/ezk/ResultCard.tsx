@@ -88,7 +88,7 @@ export function ResultCard({ record, owners, open, onToggle, onOpenProperty, onO
         </UnstyledButton>
         <Group gap={2} wrap="nowrap">
           <Value record={record} />
-          <Tooltip label={t("showOnMap")} withArrow><ActionIcon variant="subtle" aria-label={`${t("showOnMap")} ${p.label}`} onClick={() => onOpenProperty?.(record)}><IconMapPin size={16} /></ActionIcon></Tooltip>
+          {onOpenProperty && <Tooltip label={t("showOnMap")} withArrow><ActionIcon variant="subtle" aria-label={`${t("showOnMap")} ${p.label}`} onClick={() => onOpenProperty(record)}><IconMapPin size={16} /></ActionIcon></Tooltip>}
           {record.hasPdf && onOpenPdf && (
             <Tooltip label={t("openPdf")} withArrow><ActionIcon variant="subtle" aria-label={`${t("openPdf")} ${p.label}`} onClick={() => onOpenPdf(record)}><IconFileTypePdf size={16} /></ActionIcon></Tooltip>
           )}

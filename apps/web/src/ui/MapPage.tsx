@@ -7,6 +7,7 @@ import {
 import { IconDatabase, IconLanguage, IconMoon, IconPolygon, IconFileText, IconStack2, IconSun, IconUsers, IconBrandGithub } from "@tabler/icons-react";
 import { ResultsModal } from "../ezk/ResultsModal";
 import { useResults } from "../ezk/useResults";
+import { useResultPoints } from "../ezk/points";
 import type { ResultRecord } from "../ezk/results";
 import { MapView } from "../map/MapView";
 import type { BasemapId, OverlayId } from "../map/layers";
@@ -45,6 +46,8 @@ type Mode = "address" | "parcel" | "building" | "manager";
 
 /** Remembered basemap (street map or orthophoto). */
 export const BASEMAP_KEY = "ikataster.basemap";
+/** Show downloaded land-registry extracts on the map. */
+export const EZK_LAYER_KEY = "ikataster.ezkLayer";
 
 export function MapPage() {
   const { t, lang, setLang } = useI18n();
@@ -160,6 +163,14 @@ export function MapPage() {
     else { setMode("building"); void showBuilding(i.koId, Number(i.number)); }
   };
 
+  const [ezkLayer, setEzkLayer] = useState(() => localStorage.getItem(EZK_LAYER_KEY) !== "0");
+  useEffect(() => { localStorage.setItem(EZK_LAYER_KEY, ezkLayer ? "1" : "0"); }, [ezkLayer]);
+  const ezkPts = useResultPoints(results.records, gurs, ezkLayer);
+  const openEzk = (kind: "parcel" | "building", ko: number, n: string) => {
+    if (kind === "parcel") { setMode("parcel"); void doSearch(ko, n); }
+    else { setMode("building"); void showBuilding(ko, Number(n)); }
+  };
+
   const openResult = (r: ResultRecord) => {
     const p = r.extract.property;
     if (!p.koId || !p.number) return;
@@ -177,6 +188,7 @@ export function MapPage() {
         basemap={basemap} overlays={overlays} labels={labels} dark={scheme === "dark"} onZoom={setZoom}
         selection={bld.building?.geometry ?? sel.parcel?.geometry ?? (manager ? managerGeom : null)} fitKey={fitKey} onMapClick={onMapClick} cart={cartFc} draft={draw?.points ?? null}
         results={manager ? managerPts : null} areaResults={draw?.done ? areaFc : null} onResultClick={(ko, n) => void showBuilding(ko, n, true)}
+        ezk={ezkPts} onEzkClick={openEzk}
       />
 
       <Paper shadow="md" radius="md" p={6} style={{ position: "absolute", top: 12, left: 12, right: 60, maxWidth: 640, zIndex: 4 }}>
@@ -289,6 +301,7 @@ export function MapPage() {
               {overlays.parcels && zoom < 15 && <Text size="xs" c="dimmed">{t("zoomHintParcels")}</Text>}
               <Switch label={t("buildings")} checked={overlays.buildings} onChange={toggle("buildings")} />
               {overlays.buildings && zoom < 17 && <Text size="xs" c="dimmed">{t("zoomHintBuildings")}</Text>}
+              <Switch label={t("ezkLayer")} checked={ezkLayer} onChange={(e) => setEzkLayer(e.currentTarget.checked)} />
             </Stack>
           </Popover.Dropdown>
         </Popover>

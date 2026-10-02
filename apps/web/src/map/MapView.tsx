@@ -33,6 +33,9 @@ interface Props {
   /** Search results as markers (props ko, n, parts); a click opens the building. */
   results?: FeatureCollection | null;
   onResultClick?: (ko: number, n: number) => void;
+  /** Stored land-registry extracts as markers (props kind parcel|building, ko, n, count). */
+  ezk?: FeatureCollection | null;
+  onEzkClick?: (kind: "parcel" | "building", ko: number, n: string) => void;
   /** Parcels/buildings found in a drawn area, highlighted as outlines. */
   areaResults?: FeatureCollection | null;
 }
@@ -71,6 +74,25 @@ function addResultLayers(m: MlMap, fc: FeatureCollection | null | undefined) {
     paint: { "text-color": "#ffffff" } });
 }
 const EMPTY_RES: FeatureCollection = { type: "FeatureCollection", features: [] };
+
+const EZK = "results-ezk";
+function addEzkLayers(m: MlMap, fc: FeatureCollection | null | undefined) {
+  const data = fc ?? EMPTY_RES;
+  const src = m.getSource(EZK) as maplibregl.GeoJSONSource | undefined;
+  if (src) { src.setData(data); return; }
+  m.addSource(EZK, { type: "geojson", data, cluster: true, clusterRadius: 36, clusterMaxZoom: 15, clusterProperties: { count: ["+", ["get", "count"]] } });
+  m.addLayer({ id: `${EZK}-cluster`, type: "circle", source: EZK, filter: ["has", "point_count"], paint: {
+    "circle-color": "#5f3dc4", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2, "circle-opacity": 0.92,
+    "circle-radius": ["interpolate", ["linear"], ["get", "count"], 2, 14, 20, 20, 200, 28] } });
+  m.addLayer({ id: `${EZK}-cluster-label`, type: "symbol", source: EZK, filter: ["has", "point_count"], layout: {
+    "text-field": ["to-string", ["get", "count"]], "text-font": ["Noto Sans Bold"], "text-size": 11, "text-allow-overlap": true, "text-ignore-placement": true },
+    paint: { "text-color": "#ffffff" } });
+  m.addLayer({ id: `${EZK}-dot`, type: "circle", source: EZK, filter: ["!", ["has", "point_count"]], paint: {
+    "circle-color": "#7048e8", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2, "circle-radius": 9 } });
+  m.addLayer({ id: `${EZK}-label`, type: "symbol", source: EZK, filter: ["all", ["!", ["has", "point_count"]], [">", ["get", "count"], 1]], layout: {
+    "text-field": ["to-string", ["get", "count"]], "text-font": ["Noto Sans Bold"], "text-size": 10, "text-allow-overlap": true, "text-ignore-placement": true },
+    paint: { "text-color": "#ffffff" } });
+}
 
 const RES_AREA = "results-area";
 function addAreaResultLayers(m: MlMap, fc: FeatureCollection | null | undefined) {
@@ -185,7 +207,11 @@ function styleLabels(m: MlMap, ortho: boolean) {
   }
 }
 
-export function MapView({ basemap, overlays, labels = true, dark, onZoom, selection, fitKey, onMapClick, cart, draft, results, onResultClick, areaResults }: Props) {
+export function MapView({ basemap, overlays, labels = true, dark, onZoom, selection, fitKey, onMapClick, cart, draft, results, onResultClick, areaResults, ezk, onEzkClick }: Props) {
+  const ezkRef = useRef(ezk);
+  ezkRef.current = ezk;
+  const ezkClick = useRef(onEzkClick);
+  ezkClick.current = onEzkClick;
   const areaRef = useRef(areaResults);
   areaRef.current = areaResults;
   const resultsRef = useRef(results);
@@ -224,7 +250,7 @@ export function MapView({ basemap, overlays, labels = true, dark, onZoom, select
     m.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "bottom-right");
     m.addControl(new maplibregl.GeolocateControl({ trackUserLocation: false }), "bottom-right");
     m.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
-    m.on("style.load", () => { addGursLayers(m, vis.current, labelsRef.current); addCartLayers(m, cartRef.current); addSelectionLayers(m, sel.current); addDraftLayers(m, draftRef.current); addAreaResultLayers(m, areaRef.current); addResultLayers(m, resultsRef.current); });
+    m.on("style.load", () => { addGursLayers(m, vis.current, labelsRef.current); addCartLayers(m, cartRef.current); addSelectionLayers(m, sel.current); addDraftLayers(m, draftRef.current); addAreaResultLayers(m, areaRef.current); addEzkLayers(m, ezkRef.current); addResultLayers(m, resultsRef.current); });
     m.on("click", (e) => {
       const hit = m.getLayer(`${RES}-dot`) ? m.queryRenderedFeatures(e.point, { layers: [`${RES}-dot`, `${RES}-label`] })[0] : undefined;
       const cl = m.getLayer(`${RES}-cluster`) ? m.queryRenderedFeatures(e.point, { layers: [`${RES}-cluster`, `${RES}-cluster-label`] })[0] : undefined;
@@ -234,10 +260,22 @@ export function MapView({ basemap, overlays, labels = true, dark, onZoom, select
         return;
       }
       if (hit && resClick.current) { const p = hit.properties as { ko: number; n: number }; resClick.current(Number(p.ko), Number(p.n)); return; }
+      const ecl = m.getLayer(`${EZK}-cluster`) ? m.queryRenderedFeatures(e.point, { layers: [`${EZK}-cluster`, `${EZK}-cluster-label`] })[0] : undefined;
+      if (ecl) {
+        const src = m.getSource(EZK) as maplibregl.GeoJSONSource;
+        void src.getClusterExpansionZoom(Number(ecl.properties.cluster_id)).then((z) => m.easeTo({ center: (ecl.geometry as GeoJSON.Point).coordinates as [number, number], zoom: z }));
+        return;
+      }
+      const ehit = m.getLayer(`${EZK}-dot`) ? m.queryRenderedFeatures(e.point, { layers: [`${EZK}-dot`, `${EZK}-label`] })[0] : undefined;
+      if (ehit && ezkClick.current) { const p = ehit.properties as { kind: "parcel" | "building"; ko: number; n: string | number }; ezkClick.current(p.kind, Number(p.ko), String(p.n)); return; }
       click.current?.(e.lngLat.lng, e.lngLat.lat);
     });
     m.on("mouseenter", `${RES}-dot`, () => { m.getCanvas().style.cursor = "pointer"; });
     m.on("mouseleave", `${RES}-dot`, () => { m.getCanvas().style.cursor = ""; });
+    for (const id of [`${EZK}-dot`, `${EZK}-cluster`]) {
+      m.on("mouseenter", id, () => { m.getCanvas().style.cursor = "pointer"; });
+      m.on("mouseleave", id, () => { m.getCanvas().style.cursor = ""; });
+    }
     m.on("mouseenter", `${RES}-cluster`, () => { m.getCanvas().style.cursor = "pointer"; });
     m.on("mouseleave", `${RES}-cluster`, () => { m.getCanvas().style.cursor = ""; });
     m.on("zoomend", () => onZoom?.(m.getZoom()));
@@ -282,6 +320,11 @@ export function MapView({ basemap, overlays, labels = true, dark, onZoom, select
     const m = map.current;
     if (m && (m.getSource(RES) || m.isStyleLoaded())) addResultLayers(m, results);
   }, [results]);
+
+  useEffect(() => {
+    const m = map.current;
+    if (m && (m.getSource(EZK) || m.isStyleLoaded())) addEzkLayers(m, ezk);
+  }, [ezk]);
 
   useEffect(() => {
     const m = map.current;

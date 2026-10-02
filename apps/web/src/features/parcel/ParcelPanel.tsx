@@ -8,6 +8,7 @@ import { formatEur, parcelValue, useKoValues } from "../../values";
 import { ValueCell, ValueSource } from "../../values/ValueCell";
 import { parcelTx, useKoTx } from "../../transactions";
 import { TxList } from "../../transactions/TxList";
+import { PropertyResults } from "../../ezk/PropertyResults";
 import { SheetHandle, SheetSummary, useSheet } from "../../ui/Sheet";
 
 interface Props {
@@ -76,6 +77,7 @@ export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
               : t("noBuildings"), "buildings")}
           </Table.Tbody>
         </Table>
+        <PropertyResults kind="parcel" ko={parcel.koId} n={parcel.number} defaultOpen />
         <Text size="xs" c="dimmed" tt="uppercase" fw={700} mt="md" mb={4}>{t("txTitle")}</Text>
         <TxList state={tx} items={parcelTx(tx.status === "ready" ? tx.tx : null, parcel.number)} land />
         {details && details.errors.length > 0 && (
