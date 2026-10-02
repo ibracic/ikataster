@@ -14,7 +14,7 @@ const CAT: Record<Right["category"], { key: MsgKey; color: string }> = {
 };
 
 const holderId = (h: Holder) => (h.kind === "person" ? (h.birthDate ? fmtDay(h.birthDate) : "") : h.kind === "company" ? h.companyId ?? "" : "");
-const ownerName = (o: Owner, ownerOf: string) => (o.holder.kind === "ownerOf" ? `${ownerOf}: ${o.holder.name}` : o.holder.name);
+export const ownerName = (o: Owner, ownerOf: string) => (o.holder.kind === "ownerOf" ? `${ownerOf}: ${o.holder.name}` : o.holder.name);
 
 /** Short burden chips for the collapsed card: mortgages with amounts, other categories counted. */
 export function burdenChips(rights: Right[]) {
@@ -46,6 +46,27 @@ function Chips({ record }: { record: ResultRecord }) {
   );
 }
 
+/** One-line owner summary (max 2 owners, +N). */
+export function ownersLine(owners: Owner[], ownerOf: string) {
+  return owners.slice(0, 2).map((o) => `${ownerName(o, ownerOf)} ${o.share}`).join(" · ") + (owners.length > 2 ? ` · +${owners.length - 2}` : "");
+}
+
+/** Compact owner + burden line for table rows (building parts). */
+export function OwnerLine({ record }: { record: ResultRecord }) {
+  const { t } = useI18n();
+  const x = record.extract;
+  const rights = x.rights ?? [];
+  const mortgages = rights.filter((r) => r.category === "mortgage").length;
+  const line = ownersLine(x.owners, t("ownerOf"));
+  return (
+    <Group gap={4} wrap="nowrap" data-testid="part-owner" style={{ minWidth: 0 }}>
+      {x.pending && <Badge size="xs" color="red" variant="filled" title={t("pendingCase")}>P</Badge>}
+      {mortgages > 0 && <Badge size="xs" color="red" variant="light" title={t("catMortgage")} style={{ flexShrink: 0 }}>{mortgages > 1 ? `${mortgages}× ` : ""}H</Badge>}
+      <Text size="xs" c="violet.7" truncate title={`${line} (${t("extractDate")} ${fmtDay(x.createdAt)})`}>{line}</Text>
+    </Group>
+  );
+}
+
 function Value({ record }: { record: ResultRecord }) {
   const { lang } = useI18n();
   const p = record.extract.property;
@@ -70,8 +91,7 @@ export function ResultCard({ record, owners, open, onToggle, onOpenProperty, onO
   const x = record.extract;
   const p = x.property;
   const all = x.owners;
-  const shown = owners.slice(0, 2);
-  const ownersLine = shown.map((o) => `${ownerName(o, t("ownerOf"))} ${o.share}`).join(" · ") + (owners.length > 2 ? ` · +${owners.length - 2}` : "");
+  const ownersText = ownersLine(owners, t("ownerOf"));
   return (
     <Paper withBorder radius="md" p="sm" data-testid="result-group">
       <Group justify="space-between" wrap="nowrap" align="flex-start" gap="xs">
@@ -96,7 +116,7 @@ export function ResultCard({ record, owners, open, onToggle, onOpenProperty, onO
         </Group>
       </Group>
       <Stack gap={4} mt={6} pl={24}>
-        <Text size="sm" lineClamp={2}>{ownersLine || "—"}{all.length !== owners.length ? ` (${owners.length}/${all.length})` : ""}</Text>
+        <Text size="sm" lineClamp={2}>{ownersText || "—"}{all.length !== owners.length ? ` (${owners.length}/${all.length})` : ""}</Text>
         <Chips record={record} />
       </Stack>
       <Collapse in={open}>

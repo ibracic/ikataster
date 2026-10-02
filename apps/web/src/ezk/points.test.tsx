@@ -4,6 +4,7 @@ import { MantineProvider } from "@mantine/core";
 import { renderHook } from "@testing-library/react";
 import { resultTargets, resultsFor, useResultPoints } from "./points";
 import { PropertyResults } from "./PropertyResults";
+import { OwnerLine } from "./ResultCard";
 import { ResultsContext } from "./useResults";
 import { createResultsStore, type ResultRecord } from "./results";
 import type { EzkExtract } from "./types";
@@ -62,5 +63,12 @@ describe("eZK results on the map and in panels", () => {
     await waitFor(() => expect(screen.getByTestId("property-results")).toBeTruthy());
     expect(screen.getAllByText(/MARIJA PRIMER/).length).toBeGreaterThan(0);
     expect(screen.getByTestId("other").textContent).toBe("");
+  });
+
+  it("summarises owners and mortgages in one line for a part row", () => {
+    const x = ex("part", 999, "50", 1, "ANA PRIMER");
+    (x as { rights: unknown[] }).rights = [{ id: 1, category: "mortgage", type: "hipoteka", positionIds: [], holders: [], secondary: [] }];
+    render(<MantineProvider><I18nProvider><OwnerLine record={rec(x, "part:999:50:1")} /></I18nProvider></MantineProvider>);
+    expect(screen.getByTestId("part-owner").textContent).toBe("HANA PRIMER 1/1");
   });
 });

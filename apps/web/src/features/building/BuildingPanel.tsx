@@ -13,6 +13,9 @@ import { ValueCell, ValueSource } from "../../values/ValueCell";
 import { buildingTx, useKoTx } from "../../transactions";
 import { TxList } from "../../transactions/TxList";
 import { PropertyResults } from "../../ezk/PropertyResults";
+import { OwnerLine } from "../../ezk/ResultCard";
+import { useResults } from "../../ezk/useResults";
+import { resultsFor } from "../../ezk/points";
 import { PartDetails } from "./PartDetails";
 import { Fragment } from "react";
 import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
@@ -56,6 +59,8 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
     setPicked(new Set());
   };
   const sheet = useSheet(b.eid);
+  const { records } = useResults();
+  const ezkByPart = new Map(resultsFor(records, "building", b.koId, b.number).filter((r) => r.extract.property.type === "part").map((r) => [Number(r.extract.property.part), r]));
   // distinct managers of the parts (usually one per building)
   const managers = [...new Map((parts ?? []).filter((p) => p.manager).map((p) => [p.manager!.id, { ...p.manager!, parts: (parts ?? []).filter((x) => x.manager?.id === p.manager!.id).length }])).values()];
   const util = (Object.keys(b.utilities) as (keyof Building["utilities"])[]).filter((k) => b.utilities[k]);
@@ -130,11 +135,18 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
                       : <Checkbox size="xs" checked={picked.has(p.number)} onChange={() => toggle(p.number)} aria-label={`${t("buildingPart")} ${p.number}`} />}
                   </Table.Td>
                   <Table.Td style={{ whiteSpace: "nowrap" }}>{openPart === p.number ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}{p.number}</Table.Td>
-                  <Table.Td style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={p.use ?? undefined}>{p.use ?? "—"}</Table.Td>
+                  <Table.Td style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={p.use ?? undefined}>
+                    {p.use ?? "—"}
+                  </Table.Td>
                   <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>{p.usableArea ?? p.area ? `${nf.format((p.usableArea ?? p.area)!)} m²` : "—"}</Table.Td>
                   <Table.Td ta="right">{p.floor ?? "—"}</Table.Td>
                   <Table.Td ta="right"><ValueCell size="xs" state={values} value={partValue(values.status === "ready" ? values.values : null, b.number, p.number)} href={p.id ? valuationUrl("part", p.id) : undefined} label={`${t("value")} ${p.number}`} /></Table.Td>
                 </Table.Tr>
+                {ezkByPart.has(p.number) && (
+                  <Table.Tr style={{ cursor: "pointer" }} onClick={() => togglePart(p.number)} data-testid="part-owner-row">
+                    <Table.Td style={{ paddingTop: 0 }} /><Table.Td colSpan={5} style={{ paddingTop: 0, overflow: "hidden" }}><OwnerLine record={ezkByPart.get(p.number)!} /></Table.Td>
+                  </Table.Tr>
+                )}
                 {openPart === p.number && (
                   <Table.Tr><Table.Td colSpan={6} style={{ background: "var(--mantine-color-body)" }} aria-label={t("partDetails")}>
                     <PartDetails part={p} building={b.number} values={values} tx={tx} cartItem={partInput(p)} />
