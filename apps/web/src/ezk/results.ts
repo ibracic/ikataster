@@ -1,3 +1,4 @@
+import { propertyKey } from "../property/identity";
 import { ensurePersisted } from "../data/storage";
 import Dexie, { type Table } from "dexie";
 import type { EzkExtract, Owner } from "./types";
@@ -21,8 +22,7 @@ interface FolderPdf { folderId: string; key: string; bytes: Uint8Array }
 
 export function resultKey(x: EzkExtract): string {
   const p = x.property;
-  if (p.type === "part") return `part:${p.koId}:${p.number}:${p.part}`;
-  if (p.type === "parcel" || p.type === "building") return `${p.type}:${p.koId}:${p.number}`;
+  if (p.type === "part" || p.type === "parcel" || p.type === "building") return propertyKey({ kind: p.type, koId: p.koId, number: p.number, part: p.part });
   return `other:${p.ezkId ?? p.label}`;
 }
 

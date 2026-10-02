@@ -1,3 +1,4 @@
+import { propertyKey } from "../property/identity";
 import { ensurePersisted } from "../data/storage";
 import Dexie, { type Table } from "dexie";
 import type { Geometry } from "geojson";
@@ -25,7 +26,7 @@ export interface CartItem extends CartInput {
 }
 
 export const itemKey = (i: Pick<CartInput, "kind" | "koId" | "number" | "part">) =>
-  i.kind === "part" ? `part:${i.koId}:${i.number}:${i.part}` : `${i.kind}:${i.koId}:${i.number}`;
+  propertyKey(i);
 
 class CartDb extends Dexie {
   items!: Table<CartItem, string>;

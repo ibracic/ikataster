@@ -1,3 +1,4 @@
+import { propertyKey } from "../property/identity";
 import { normalize, type Ko } from "../gurs";
 
 export type ImportKind = "parcel" | "building" | "part";
@@ -68,7 +69,7 @@ export function parseRows(rows: unknown[][], kos: Ko[]): ParsedRow[] {
 
     const target = parseTarget(s);
     if (!target) return bad("malformed");
-    const key = `${target.kind}:${koId}:${target.number}:${target.part ?? ""}`;
+    const key = propertyKey({ ...target, koId });
     if (seen.has(key)) return bad("duplicate");
     seen.add(key);
     out.push({ ok: true, line, raw, koId, ...target });

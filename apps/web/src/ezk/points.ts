@@ -1,3 +1,4 @@
+import { belongsTo, mapIdentity, propertyKey } from "../property/identity";
 import { useEffect, useState } from "react";
 import type { Feature, FeatureCollection, Point } from "geojson";
 import { bboxOf } from "../local/db";
@@ -14,7 +15,7 @@ export function resultTargets(records: ResultRecord[]): ResultTarget[] {
     if (!p.koId || !p.number) continue;
     const kind = p.type === "parcel" ? "parcel" : p.type === "building" || p.type === "part" ? "building" : null;
     if (!kind) continue;
-    const id = `${kind}:${p.koId}:${p.number}`;
+    const id = propertyKey(mapIdentity({ kind, koId: p.koId, number: p.number }));
     const t = by.get(id);
     if (t) t.count++;
     else by.set(id, { kind, ko: p.koId, n: String(p.number), count: 1 });
@@ -26,10 +27,8 @@ export function resultTargets(records: ResultRecord[]): ResultTarget[] {
 export function resultsFor(records: ResultRecord[], kind: "parcel" | "building" | "part", ko: number, n: string | number, part?: number): ResultRecord[] {
   return records.filter((r) => {
     const p = r.extract.property;
-    if (p.koId !== ko || String(p.number) !== String(n)) return false;
-    if (kind === "parcel") return p.type === "parcel";
-    if (kind === "building") return p.type === "building" || p.type === "part";
-    return p.type === "part" && Number(p.part) === part;
+    if (p.type !== 'parcel' && p.type !== 'building' && p.type !== 'part') return false;
+    return belongsTo({ kind: p.type, koId: p.koId, number: p.number, part: p.part }, { kind, koId: ko, number: n, part });
   });
 }
 
@@ -37,7 +36,7 @@ type Pos = [number, number] | null;
 const positions = new Map<string, Pos>();
 
 async function locate(client: GursClient, t: ResultTarget): Promise<Pos> {
-  const id = `${t.kind}:${t.ko}:${t.n}`;
+  const id = propertyKey({ kind: t.kind, koId: t.ko, number: t.n });
   if (positions.has(id)) return positions.get(id)!;
   try {
     const f = t.kind === "parcel" ? await client.findParcel(t.ko, t.n) : await client.findBuilding(t.ko, Number(t.n));
