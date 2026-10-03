@@ -5,7 +5,7 @@ import {
   ActionIcon, Alert, Badge, Button, Group, Paper, Popover, SegmentedControl, Stack, Switch, Text, Title, Tooltip,
   useComputedColorScheme, useMantineColorScheme,
 } from "@mantine/core";
-import { IconDatabase, IconLanguage, IconMoon, IconPolygon, IconFileText, IconStack2, IconSun, IconUsers, IconBrandGithub } from "@tabler/icons-react";
+import { IconDatabase, IconLanguage, IconMoon, IconPolygon, IconFileText, IconStack2, IconSun, IconUsers, IconBrandGithub, IconHelp } from "@tabler/icons-react";
 import { ResultsModal } from "../ezk/ResultsModal";
 import { useResults } from "../ezk/useResults";
 import { useResultPoints } from "../ezk/points";
@@ -25,6 +25,7 @@ import type { CartItem } from "../cart/store";
 import type { FeatureCollection } from "geojson";
 import { AreaPanel } from "../features/area/AreaPanel";
 import { ImportModal } from "../import/ImportModal";
+import { HelpModal } from "./HelpModal";
 import { DataModal } from "../data/DataModal";
 import { InstallHint } from "../pwa/InstallHint";
 import { UpdateToast } from "../pwa/UpdateToast";
@@ -58,6 +59,7 @@ export function MapPage() {
   const results = useResults();
   const [importOpen, setImportOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const cartFc = useMemo<FeatureCollection>(() => ({
     type: "FeatureCollection",
     features: cart.items.filter((i) => i.geometry).map((i) => ({ type: "Feature", properties: { key: i.key }, geometry: i.geometry! })),
@@ -167,6 +169,7 @@ export function MapPage() {
       <UpdateToast />
       <DataModal opened={dataOpen} onClose={() => setDataOpen(false)} />
       <ImportModal opened={importOpen} onClose={() => setImportOpen(false)} client={gurs} kos={kos} />
+      <HelpModal opened={helpOpen} onClose={() => setHelpOpen(false)} />
 
       <Stack gap={8} style={{ position: "absolute", top: 12, right: 12, zIndex: 4 }}>
         <Tooltip label={t("drawArea")} position="left">
@@ -217,6 +220,11 @@ export function MapPage() {
             </Stack>
           </Popover.Dropdown>
         </Popover>
+        <Tooltip label={t("help")} position="left">
+          <ActionIcon size="lg" variant="default" radius="md" aria-label={t("help")} onClick={() => setHelpOpen(true)}>
+            <IconHelp size={18} />
+          </ActionIcon>
+        </Tooltip>
         <Tooltip label={t("data")} position="left">
           <ActionIcon size="lg" variant="default" radius="md" aria-label={t("data")} onClick={() => setDataOpen(true)}>
             <IconDatabase size={18} />
