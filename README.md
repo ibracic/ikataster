@@ -4,8 +4,6 @@ A fast web app for looking up Slovenian real estate: parcels, buildings, buildin
 
 There is no backend and no account: the app is a static site that runs entirely in your browser, and everything you save (lists, extracts, folders) stays on your device. The user interface is in Slovenian, with an English option.
 
-**Try it:** open the live app from the link in this repository's *About* box. Nothing to install for map lookups.
-
 ![Building 682 with its attributes, connections and building parts with GURS values](docs/images/building.jpg)
 
 | Building manager portfolio on the aerial photo | Phone |
