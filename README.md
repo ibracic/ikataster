@@ -4,6 +4,18 @@ A fast web app for looking up Slovenian real estate: parcels, buildings, buildin
 
 There is no backend and no account: the app is a static site that runs entirely in your browser, and everything you save (lists, extracts, folders) stays on your device. The user interface is in Slovenian, with an English option.
 
+**Try it:** open the live app from the link in this repository's *About* box. Nothing to install for map lookups.
+
+![Building 682 with its attributes, connections and building parts with GURS values](docs/images/building.jpg)
+
+| Building manager portfolio on the aerial photo | Phone |
+|---|---|
+| ![All buildings of one building manager on the orthophoto](docs/images/manager.jpg) | ![The same building on a phone, with a bottom sheet](docs/images/mobile.jpg) |
+
+> **Slovensko:** iKataster je brezplačna spletna aplikacija za pregled parcel, stavb, delov stavb in upravnikov na zemljevidu, z javnimi podatki GURS (posplošena vrednost, prodaje in najemi iz ETN). Z razširitvijo za brskalnik prek vaše prijave SI-PASS prenaša izpiske iz zemljiške knjige in iz njih izpiše lastnike, hipoteke in služnosti. Brez strežnika in brez računa: vsi podatki ostanejo v vašem brskalniku.
+
+If iKataster is useful to you, a ⭐ on GitHub helps other people find it.
+
 ## How downloading land-registry extracts works
 
 *Plain-language overview. You don't need any technical knowledge.*
