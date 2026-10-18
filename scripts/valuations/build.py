@@ -48,27 +48,40 @@ def build(zip_path: str, out: str) -> dict:
     z = zipfile.ZipFile(zip_path)
     date = dataset_date(z)
 
-    parcel_ko = {r["EID_PARCELA"]: (r["KO_SIFKO"], r["PARCELA"]) for r in rows(z, "parcela")}
-    parcels = defaultdict(dict)
+    # Memory-bounded (runs on a Raspberry Pi): integer keys, value tables first,
+    # then stream the identity tables and drop each lookup as soon as it is used.
+    pv = {}
     for r in rows(z, "parc_enota"):  # a parcel can have several valuation units -> sum them
-        k = parcel_ko.get(r["EID_PARCELA"])
         v = r["POSPLOSENA_VREDNOST"]
-        if k and v:
-            d = parcels[int(k[0])]
-            d[k[1]] = d.get(k[1], 0) + round(float(v))
-    del parcel_ko
+        if v:
+            e = int(r["EID_PARCELA"])
+            pv[e] = pv.get(e, 0) + round(float(v))
+    parcels = defaultdict(dict)
+    for r in rows(z, "parcela"):
+        v = pv.pop(int(r["EID_PARCELA"]), None)
+        if v is not None:
+            d = parcels[int(r["KO_SIFKO"])]
+            d[r["PARCELA"]] = d.get(r["PARCELA"], 0) + v
+    del pv
 
-    building = {r["EID_STAVBA"]: (r["KO_SIFKO"], r["STEV_ST"]) for r in rows(z, "stavba")}
-    part_value = {}
+    dv = {}
     for r in rows(z, "del_stavbe_enota"):
-        if r["POSPLOSENA_VREDNOST"]:
-            part_value[r["EID_DEL_STAVBE"]] = part_value.get(r["EID_DEL_STAVBE"], 0) + round(float(r["POSPLOSENA_VREDNOST"]))
+        v = r["POSPLOSENA_VREDNOST"]
+        if v:
+            e = int(r["EID_DEL_STAVBE"])
+            dv[e] = dv.get(e, 0) + round(float(v))
+    building = {}
+    for r in rows(z, "stavba"):
+        building[int(r["EID_STAVBA"])] = (int(r["KO_SIFKO"]), sys.intern(r["STEV_ST"]))
     parts = defaultdict(dict)
     for r in rows(z, "del_stavbe"):
-        b = building.get(r["EID_STAVBA"])
-        v = part_value.get(r["EID_DEL_STAVBE"])
-        if b and v is not None:
-            parts[int(b[0])][f"{b[1]}/{r['STEV_DST']}"] = v
+        v = dv.pop(int(r["EID_DEL_STAVBE"]), None)
+        if v is None:
+            continue
+        b = building.get(int(r["EID_STAVBA"]))
+        if b:
+            parts[b[0]][f"{b[1]}/{r['STEV_DST']}"] = v
+    del dv, building
 
     tmp = tempfile.mkdtemp(dir=os.path.dirname(os.path.abspath(out)) or ".")
     os.makedirs(os.path.join(tmp, "ko"))
@@ -99,6 +112,8 @@ def main() -> None:
         download(zip_path)
     t = time.time()
     idx = build(zip_path, a.out)
+    import resource
+    print(f"peak RSS {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024} MB", file=sys.stderr)
     n = sum(p + d for p, d in idx["kos"].values())
     print(f"{idx['date']}: {len(idx['kos'])} KOs, {n} values in {time.time() - t:.0f}s", file=sys.stderr)
 
