@@ -26,7 +26,12 @@ def download(dest: str) -> None:
     with urllib.request.urlopen(urllib.request.Request(API, headers=UA), timeout=60) as r:
         url = json.load(r)["url"]
     with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=3600) as r, open(dest, "wb") as f:
+        name = r.headers.get("Content-Disposition", "")
         shutil.copyfileobj(r, f, 1 << 20)
+    # GURS answers 200 with an empty "file-not-found" body while it regenerates the weekly export.
+    if os.path.getsize(dest) == 0 or "file-not-found" in name:
+        os.remove(dest)
+        raise SystemExit(f"GURS export not available right now ({name or 'empty response'})")
 
 
 def rows(z: zipfile.ZipFile, table: str):
