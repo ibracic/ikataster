@@ -10,9 +10,10 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@ikataster/bridge": "0.1.0",
     "@mantine/core": "^8.3.18",
     "@mantine/hooks": "^8.3.18",
-    "@ikataster/bridge": "0.1.0",
+    "@sentry/browser": "^9.47.2",
     "@tabler/icons-react": "^3.48.0",
     "@turf/boolean-point-in-polygon": "^7.4.0",
     "dexie": "^4.4.6",

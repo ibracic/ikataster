@@ -8,6 +8,8 @@ RUN npm ci
 COPY . .
 ARG IKATASTER_ORIGINS
 ENV IKATASTER_ORIGINS=$IKATASTER_ORIGINS
+ARG VITE_ERRORS_DSN=
+ENV VITE_ERRORS_DSN=$VITE_ERRORS_DSN
 RUN npm run test -w @ikataster/bridge && npm run test -w @ikataster/extension && npm run test -w @ikataster/web \
  && npm run build -w @ikataster/web \
  && node packages/extension/build.mjs --out apps/web/dist/extension

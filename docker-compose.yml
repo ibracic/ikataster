@@ -4,6 +4,7 @@ services:
       context: .
       args:
         IKATASTER_ORIGINS: ${IKATASTER_ORIGINS:?set IKATASTER_ORIGINS in .env (see .env.example)}
+        VITE_ERRORS_DSN: ${VITE_ERRORS_DSN:-}
     container_name: ikataster
     restart: unless-stopped
     ports:

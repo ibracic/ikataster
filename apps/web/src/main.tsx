@@ -8,8 +8,11 @@ import { I18nProvider } from "./i18n";
 import { registerServiceWorker } from "./sw/cacheStatus";
 import { queueStore } from "./queue/instance";
 import { migrateFromParcela } from "./data/rename";
+import { initErrorReporting } from "./errors/report";
 import { migrateLegacyStores } from "./local/db";
 import { gursStore } from "./local/instance";
+
+initErrorReporting();
 
 registerServiceWorker();
 
