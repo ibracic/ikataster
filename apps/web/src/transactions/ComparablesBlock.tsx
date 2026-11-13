@@ -32,9 +32,9 @@ export function ComparablesBlock({ data }: { data: Comparables | null }) {
           </div>
         )}
       </Group>
-      <Stack gap={2}>
+      <Stack gap={2} pr={10}>
         {data.items.map((c) => (
-          <Group key={`${c.key}-${c.date}`} justify="space-between" wrap="nowrap" data-testid="comp-row">
+          <Group key={`${c.key}-${c.date}`} justify="space-between" gap={4} data-testid="comp-row">
             <Text size="sm" style={{ whiteSpace: "nowrap" }}>{fmtDate(c.date)} · {num(c.area)} m² · <Text span c="dimmed" size="sm">{c.key}</Text></Text>
             <Text size="sm" style={{ whiteSpace: "nowrap" }}>{eur(c.price)} <Text span c="dimmed" size="xs">({eur(c.perM2)}/m²)</Text></Text>
           </Group>

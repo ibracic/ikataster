@@ -26,7 +26,7 @@ describe("basemapStyleUrl", () => {
 
 describe("GURS_LAYERS", () => {
   it("stacks ortho below the cadastre overlays", () => {
-    expect(GURS_LAYERS.map((l) => l.id)).toEqual(["ortho", ...OVERLAYS.map((o) => o.id)]);
+    expect(GURS_LAYERS.map((l) => l.id)).toEqual(["ortho", "orthoYear", ...OVERLAYS.map((o) => o.id)]);
   });
 
   it("keeps GURS scale limits as min zoom and credits GURS", () => {
@@ -68,4 +68,32 @@ it("orthophoto uses 512 px tiles (4x fewer requests to the HTTP/1.1 GURS server)
   const o = GURS_LAYERS.find((l) => l.id === "ortho")!;
   expect(o.source.tileSize).toBe(512);
   expect(o.source.tiles![0]).toContain("width=512");
+});
+
+import { ORTHO_YEARS, orthoYearTiles, orthoYearWindow } from "./layers";
+describe("historical orthophoto", () => {
+  it("lists GURS years ascending, newest 2025", () => {
+    expect(ORTHO_YEARS[0]).toBe(1990);
+    expect(ORTHO_YEARS.at(-1)).toBe(2025);
+    expect([...ORTHO_YEARS].sort((a, b) => a - b)).toEqual(ORTHO_YEARS);
+    expect(ORTHO_YEARS).not.toContain(2007);
+  });
+  it("builds a transparent DOF050_Z tile URL for one year", () => {
+    const u = orthoYearTiles(2011)[0];
+    expect(u).toContain("layers=SI.GURS.ZPDZ%3ADOF050_Z");
+    expect(u).toContain("format=image%2Fpng");
+    expect(u).toContain("transparent=true");
+    expect(u).toContain("time=2011-01-01T00:00:00.000Z");
+    expect(u).toContain("{bbox-epsg-3857}");
+  });
+  it("shows the year layer only on the orthophoto with a year picked", () => {
+    expect(layerVisibility("ortho", { parcels: true, buildings: true }, 2011).orthoYear).toBe("visible");
+    expect(layerVisibility("ortho", { parcels: true, buildings: true }, null).orthoYear).toBe("none");
+    expect(layerVisibility("street", { parcels: true, buildings: true }, 2011).orthoYear).toBe("none");
+  });
+  it("snaps a slider value to the nearest available year", () => {
+    expect(orthoYearWindow(2007)).toBe(2006);
+    expect(orthoYearWindow(2008)).toBe(2009);
+    expect(orthoYearWindow(1980)).toBe(1990);
+  });
 });

@@ -1,3 +1,4 @@
+import { OrthoYearBar } from "./OrthoYearBar";
 import { SETTINGS } from "../data/inventory";
 import { useSelection, type Mode } from "../selection/useSelection";
 import { useEffect, useMemo, useState } from "react";
@@ -68,6 +69,7 @@ export function MapPage() {
   const setBasemap = (b: BasemapId) => { setBasemapState(b); try { localStorage.setItem(BASEMAP_KEY, b); } catch { /* private mode */ } };
   const [overlays, setOverlays] = useState<Record<OverlayId, boolean>>({ parcels: true, buildings: true });
   const [labels, setLabels] = useState(true);
+  const [orthoYear, setOrthoYear] = useState<number | null>(null);
   const [zoom, setZoom] = useState(0);
   const { openProperty, sel, bld, draw, setDraw, startDraw, mode, setMode, manager, managerGeom, managerPts,
     fitKey, initialKo, initialParcel, initialBuilding, openManager, onManagerHighlight,
@@ -99,11 +101,15 @@ export function MapPage() {
   return (
     <div style={{ position: "fixed", inset: 0 }}>
       <MapView
-        basemap={basemap} overlays={overlays} labels={labels} dark={scheme === "dark"} onZoom={setZoom}
+        basemap={basemap} overlays={overlays} labels={labels} orthoYear={orthoYear} dark={scheme === "dark"} onZoom={setZoom}
         selection={bld.building?.geometry ?? sel.parcel?.geometry ?? (manager ? managerGeom : null)} fitKey={fitKey} onMapClick={onMapClick} cart={cartFc} draft={draw?.points ?? null}
         results={manager ? managerPts : null} areaResults={draw?.done ? areaFc : null} onResultClick={(ko, n) => void showBuilding(ko, n, true)}
         ezk={ezkPts} onEzkClick={openEzk}
       />
+
+      {basemap === "ortho" && orthoYear !== null && (
+        <OrthoYearBar year={orthoYear} onChange={setOrthoYear} onClose={() => setOrthoYear(null)} />
+      )}
 
       <Paper shadow="md" radius="md" p={6} style={{ position: "absolute", top: 12, left: 12, right: 60, maxWidth: 640, zIndex: 4 }}>
         <Group gap={8} wrap="nowrap">
@@ -210,6 +216,9 @@ export function MapPage() {
                 fullWidth size="xs" value={basemap} onChange={(v) => setBasemap(v as BasemapId)}
                 data={[{ value: "street", label: t("street") }, { value: "ortho", label: t("ortho") }]}
               />
+              {basemap === "ortho" && (
+                <Switch label={t("orthoHistory")} checked={orthoYear !== null} onChange={(e) => setOrthoYear(e.currentTarget.checked ? 2011 : null)} />
+              )}
               <Switch mt={6} label={t("labels")} checked={labels} onChange={(e) => setLabels(e.currentTarget.checked)} />
               <Text size="xs" fw={700} c="dimmed" tt="uppercase" mt={4}>{t("overlays")}</Text>
               <Switch label={t("parcels")} checked={overlays.parcels} onChange={toggle("parcels")} />

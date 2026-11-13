@@ -55,6 +55,20 @@ export interface GursLayer {
   minzoom?: number;
 }
 
+/** Years offered by GURS DOF050_Z (WMS time dimension); not every year covers every area. */
+export const ORTHO_YEARS: number[] = [1990, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
+  2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+
+/** Tile URL template of the historical orthophoto for one year. */
+export function orthoYearTiles(year: number): string[] {
+  return [`${wmsTileUrl(GURS_WMS_DTS, "SI.GURS.ZPDZ:DOF050_Z", "image/png", 512)}&time=${year}-01-01T00:00:00.000Z`];
+}
+
+/** Nearest available year (ties go to the older one). */
+export function orthoYearWindow(v: number): number {
+  return ORTHO_YEARS.reduce((best, y) => (Math.abs(y - v) < Math.abs(best - v) ? y : best), ORTHO_YEARS[0]);
+}
+
 /** Below this map zoom the GURS orthophoto service renders nothing (white). */
 export const ORTHO_MIN_ZOOM = 8;
 
@@ -65,6 +79,12 @@ export const GURS_LAYERS: GursLayer[] = [
     // GURS returns plain white images for DOF025 when zoomed out further; the street map shows there instead.
     minzoom: ORTHO_MIN_ZOOM,
     source: { type: "raster", tiles: [wmsTileUrl(GURS_WMS_DTS, "SI.GURS.ZPDZ:DOF025", "image/jpeg", 512)], tileSize: 512, minzoom: ORTHO_MIN_ZOOM, maxzoom: 20, attribution: ATTR_GURS },
+  },
+  {
+    // Historical orthophoto (transparent PNG): where GURS has no image for the year, today's ortho shows through.
+    id: "orthoYear",
+    minzoom: ORTHO_MIN_ZOOM,
+    source: { type: "raster", tiles: orthoYearTiles(ORTHO_YEARS[ORTHO_YEARS.length - 1]), tileSize: 512, minzoom: ORTHO_MIN_ZOOM, maxzoom: 20, attribution: ATTR_GURS },
   },
   ...OVERLAYS.map((o) => ({
     id: o.id,
@@ -82,8 +102,11 @@ export function basemapLabelLayers(layers: { id: string; type: string }[], own: 
 }
 
 /** Pure: which GURS layers are visible for the current UI state. */
-export function layerVisibility(basemap: BasemapId, overlays: Record<OverlayId, boolean>): Record<string, "visible" | "none"> {
-  const v: Record<string, "visible" | "none"> = { ortho: basemap === "ortho" ? "visible" : "none" };
+export function layerVisibility(basemap: BasemapId, overlays: Record<OverlayId, boolean>, orthoYear: number | null = null): Record<string, "visible" | "none"> {
+  const v: Record<string, "visible" | "none"> = {
+    ortho: basemap === "ortho" ? "visible" : "none",
+    orthoYear: basemap === "ortho" && orthoYear ? "visible" : "none",
+  };
   for (const o of OVERLAYS) v[o.id] = overlays[o.id] ? "visible" : "none";
   return v;
 }

@@ -10,7 +10,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 
 maplibregl.setWorkerUrl(workerUrl);
 import {
-  basemapLabelLayers, basemapStyleUrl, GURS_LAYERS, INITIAL_VIEW, layerVisibility, SLOVENIA_BOUNDS, type BasemapId, type OverlayId,
+  basemapLabelLayers, basemapStyleUrl, GURS_LAYERS, INITIAL_VIEW, orthoYearTiles, layerVisibility, SLOVENIA_BOUNDS, type BasemapId, type OverlayId,
   ORTHO_MIN_ZOOM,
 } from "./layers";
 
@@ -21,6 +21,8 @@ interface Props {
   overlays: Record<OverlayId, boolean>;
   /** Names of places, roads, streets and house numbers (above ortho + cadastre). */
   labels?: boolean;
+  /** Historical orthophoto year on top of today's ortho (null = off). */
+  orthoYear?: number | null;
   dark: boolean;
   onZoom?: (z: number) => void;
   /** Highlighted parcel geometry (WGS84). */
@@ -71,6 +73,13 @@ function addGursLayers(m: MlMap, vis: Record<string, "visible" | "none">, labels
   originalPaint.delete(m); originalBg.delete(m); // new style: remember its own colours again
   styleLabels(m, vis.ortho === "visible" && m.getZoom() >= ORTHO_MIN_ZOOM);
 }
+/** Point the historical ortho source at the chosen year (tiles reload; SW caches each year separately). */
+function setOrthoYear(m: MlMap, year: number | null | undefined) {
+  if (!year) return;
+  const src = m.getSource("orthoYear") as { setTiles?: (t: string[]) => void; tiles?: string[] } | undefined;
+  const tiles = orthoYearTiles(year);
+  if (src?.setTiles && src.tiles?.[0] !== tiles[0]) src.setTiles(tiles);
+}
 function setLabels(m: MlMap, on: boolean) {
   for (const id of labelIds(m)) m.setLayoutProperty(id, "visibility", on ? "visible" : "none");
 }
@@ -113,7 +122,7 @@ function styleLabels(m: MlMap, ortho: boolean) {
   }
 }
 
-export function MapView({ basemap, overlays, labels = true, dark, onZoom, selection, fitKey, onMapClick, cart, draft, results, onResultClick, areaResults, ezk, onEzkClick }: Props) {
+export function MapView({ basemap, overlays, labels = true, orthoYear = null, dark, onZoom, selection, fitKey, onMapClick, cart, draft, results, onResultClick, areaResults, ezk, onEzkClick }: Props) {
   const ezkRef = useRef(ezk);
   ezkRef.current = ezk;
   const ezkClick = useRef(onEzkClick);
@@ -126,8 +135,10 @@ export function MapView({ basemap, overlays, labels = true, dark, onZoom, select
   resClick.current = onResultClick;
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<MlMap | null>(null);
-  const vis = useRef(layerVisibility(basemap, overlays));
-  vis.current = layerVisibility(basemap, overlays);
+  const vis = useRef(layerVisibility(basemap, overlays, orthoYear));
+  vis.current = layerVisibility(basemap, overlays, orthoYear);
+  const yearRef = useRef(orthoYear);
+  yearRef.current = orthoYear;
   const labelsRef = useRef(labels);
   labelsRef.current = labels;
   const sel = useRef(selection);
@@ -156,7 +167,7 @@ export function MapView({ basemap, overlays, labels = true, dark, onZoom, select
     m.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "bottom-right");
     m.addControl(new maplibregl.GeolocateControl({ trackUserLocation: false }), "bottom-right");
     m.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
-    m.on("style.load", () => { addGursLayers(m, vis.current, labelsRef.current); addCartLayers(m, cartRef.current); addSelectionLayers(m, sel.current); addDraftLayers(m, draftRef.current); addAreaResultLayers(m, areaRef.current); addEzkLayers(m, ezkRef.current); addResultLayers(m, resultsRef.current); });
+    m.on("style.load", () => { addGursLayers(m, vis.current, labelsRef.current); setOrthoYear(m, yearRef.current); addCartLayers(m, cartRef.current); addSelectionLayers(m, sel.current); addDraftLayers(m, draftRef.current); addAreaResultLayers(m, areaRef.current); addEzkLayers(m, ezkRef.current); addResultLayers(m, resultsRef.current); });
     bindLayerInteractions(m, () => ({ result: resClick.current, ezk: ezkClick.current, map: click.current }));
     m.on("zoomend", () => onZoom?.(m.getZoom()));
     // Orthophoto only exists from ORTHO_MIN_ZOOM; zoomed further out keep the street map visible.
@@ -187,7 +198,9 @@ export function MapView({ basemap, overlays, labels = true, dark, onZoom, select
     if (!m) return;
     for (const [id, v] of Object.entries(vis.current)) if (m.getLayer(id)) m.setLayoutProperty(id, "visibility", v);
     try { styleLabels(m, basemap === "ortho" && m.getZoom() >= ORTHO_MIN_ZOOM); } catch { /* style not ready; style.load applies it */ }
-  }, [basemap, overlays]);
+  }, [basemap, overlays, orthoYear]);
+
+  useEffect(() => { const m = map.current; if (m) setOrthoYear(m, orthoYear); }, [orthoYear]);
 
   useEffect(() => { const m = map.current; if (m?.getStyle()) setLabels(m, labels); }, [labels]);
 

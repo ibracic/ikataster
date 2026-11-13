@@ -70,3 +70,9 @@ html, body, #root {
 .part-row-details { padding: 2px 8px 10px 40px; border-left: 3px solid var(--mantine-color-teal-6); }
 .part-row[data-ezk] .part-row-details { border-left-color: var(--mantine-color-violet-6); }
 @media (min-width: 641px) { html[data-panel-wide="1"] .part-owner { flex-direction: row; align-items: center; gap: 10px; } }
+
+/* Historical orthophoto year slider: bottom centre on desktop, under the search bar on phones. */
+.ortho-year-bar { position: absolute; z-index: 3; left: 50%; transform: translateX(-50%); bottom: 36px; width: min(440px, calc(100vw - 120px)); }
+@media (max-width: 640px) {
+  .ortho-year-bar { bottom: 48px; left: 8px; right: 56px; transform: none; width: auto; }
+}
