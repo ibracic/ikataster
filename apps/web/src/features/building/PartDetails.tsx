@@ -6,6 +6,8 @@ import { gursPublicViewUrl, valuationUrl, type BuildingPart } from "../../gurs";
 import { useI18n, type MsgKey } from "../../i18n";
 import { partTx, type KoTxState } from "../../transactions";
 import { TxList } from "../../transactions/TxList";
+import { comparableParts, partTypeFromUse } from "../../transactions/comparables";
+import { ComparablesBlock } from "../../transactions/ComparablesBlock";
 import { PropertyResults } from "../../ezk/PropertyResults";
 import type { KoValuesState } from "../../values";
 import { partValue } from "../../values";
@@ -27,6 +29,8 @@ export function PartDetails({ part: p, building, values, tx, cartItem, hideResul
   const nf = new Intl.NumberFormat(lang === "sl" ? "sl-SI" : "en-GB", { maximumFractionDigits: 1 });
   const yn = (v: boolean | null | undefined) => (v == null ? null : t(v ? "yes" : "no"));
   const m2 = (v: number | null | undefined) => (v ? `${nf.format(v)} m²` : null);
+  const koTx = tx.status === "ready" ? tx.tx : null;
+  const own = partTx(koTx, building, p.number);
   const rows: [MsgKey, React.ReactNode][] = [
     ["value", <ValueCell key="v" state={values} value={partValue(values.status === "ready" ? values.values : null, building, p.number)} href={p.id ? valuationUrl("part", p.id) : undefined} label={t("value")} />],
     ["partUse", p.use],
@@ -59,7 +63,8 @@ export function PartDetails({ part: p, building, values, tx, cartItem, hideResul
       </Table>
       <PropertyResults kind="part" ko={cartItem.koId} n={building} part={p.number} defaultOpen={!hideResults} />
       <Text size="xs" c="dimmed" tt="uppercase" fw={700} mt="sm" mb={4}>{t("txTitle")}</Text>
-      <TxList state={tx} items={partTx(tx.status === "ready" ? tx.tx : null, building, p.number)} limit={3} />
+      <TxList state={tx} items={own} limit={3} />
+      <ComparablesBlock data={comparableParts(koTx, { type: partTypeFromUse(p.use) ?? own.find((i) => i.kind === "sale" && i.type != null)?.type ?? null, area: p.usableArea || p.area, exclude: `${building}/${p.number}` })} />
       <Group justify="space-between" mt="xs" gap={6}>
         <Anchor href={gursPublicViewUrl(p.eid)} target="_blank" rel="noopener" size="sm" display="inline-flex" style={{ alignItems: "center", gap: 4 }}>
           {t("openGurs")} <IconExternalLink size={14} />
