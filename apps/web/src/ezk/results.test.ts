@@ -26,6 +26,22 @@ describe("results store", () => {
   });
 });
 
+describe("results store change check", () => {
+  it("records what changed when the same property is downloaded again", async () => {
+    const s = createResultsStore(`chg-${Date.now()}`);
+    const a = extract("999 VZORČNA VAS 100/1", "100/1", [owner("Janez Novak")]);
+    await s.put(a, "a.pdf");
+    expect((await s.list())[0].changes).toBeUndefined();
+    await s.put({ ...a, createdAt: "2026-11-13T10:00:00" }, "a2.pdf");
+    expect((await s.list())[0].changes).toMatchObject({ previousCreatedAt: "2026-09-28T22:43:06", items: [] });
+    await s.put({ ...a, createdAt: "2026-11-14T10:00:00", owners: [owner("Ana Zupan")] }, "a3.pdf");
+    const c = (await s.list())[0].changes!;
+    expect(c.items.map((i) => i.kind)).toEqual(["ownerRemoved", "ownerAdded"]);
+    await s.acknowledge(["parcel:999:100/1"]);
+    expect((await s.list())[0].changes?.seen).toBe(true);
+  });
+});
+
 describe("groupResults", () => {
   const recs: ResultRecord[] = [
     { key: "k1", fileName: "1.pdf", addedAt: 1, extract: extract("999 VZORČNA VAS 100/1", "100/1", [owner("Janez Novak"), owner("Marija Kranjc")]) },

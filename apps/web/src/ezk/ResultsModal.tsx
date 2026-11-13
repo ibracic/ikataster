@@ -9,6 +9,7 @@ import { FoldersPanel } from "./FoldersPanel";
 import { useCart } from "../cart/useCart";
 import { groupResults, type ResultRecord } from "./results";
 import { ResultCard } from "./ResultCard";
+import { RecheckButton } from "./RecheckButton";
 import { addPdfFiles, type AddFilesResult } from "./addFiles";
 import type { EzkExtract } from "./types";
 
@@ -108,6 +109,7 @@ export function ResultsModal({ opened, onClose, onOpenProperty, parse, download 
               onClick={() => void doExport("zip")}>{exporting ? t("exporting") : t("exportZip")}</Button>
             <Button size="xs" variant="subtle" leftSection={<IconFileSpreadsheet size={14} />} disabled={exporting || !groups.length}
               onClick={() => void doExport("xlsx")}>{t("exportXlsx")}</Button>
+            <RecheckButton records={records} />
           </Group>
         )}
         {exported && (
@@ -139,7 +141,10 @@ export function ResultsModal({ opened, onClose, onOpenProperty, parse, download 
             {groups.map(({ record, owners }) => (
               <ResultCard key={record.key} record={record} owners={owners}
                 open={!!filter.trim() || expanded.has(record.key)}
-                onToggle={() => setExpanded((e) => { const n = new Set(e); if (n.has(record.key)) n.delete(record.key); else n.add(record.key); return n; })}
+                onToggle={() => {
+                  if (!expanded.has(record.key) && record.changes?.items.length && !record.changes.seen) void store.acknowledge([record.key]);
+                  setExpanded((e) => { const n = new Set(e); if (n.has(record.key)) n.delete(record.key); else n.add(record.key); return n; });
+                }}
                 onOpenProperty={onOpenProperty} onOpenPdf={(r) => void openPdf(r)} onRemove={(r) => void store.remove([r.key])} />
             ))}
           </Stack>

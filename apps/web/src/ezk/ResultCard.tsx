@@ -1,3 +1,4 @@
+import { ChangesBadge, ChangesList } from "./ChangesNote";
 import { ActionIcon, Badge, Collapse, Group, Paper, Stack, Table, Text, Tooltip, UnstyledButton } from "@mantine/core";
 import { IconChevronDown, IconChevronRight, IconFileTypePdf, IconMapPin, IconX } from "@tabler/icons-react";
 import { useI18n, type MsgKey } from "../i18n";
@@ -117,7 +118,7 @@ export function ResultCard({ record, owners, open, onToggle, onOpenProperty, onO
       </Group>
       <Stack gap={4} mt={6} pl={24}>
         <Text size="sm" lineClamp={2}>{ownersText || "—"}{all.length !== owners.length ? ` (${owners.length}/${all.length})` : ""}</Text>
-        <Chips record={record} />
+        <Group gap={4}><ChangesBadge record={record} /><Chips record={record} /></Group>
       </Stack>
       <Collapse in={open}>
         <Stack gap="sm" mt="sm" pl={24}>
@@ -145,6 +146,7 @@ export function ResultCard({ record, owners, open, onToggle, onOpenProperty, onO
               </Table.Tbody>
             </Table>
           </Table.ScrollContainer>
+          <ChangesList record={record} />
           <RightsList extract={x} />
         </Stack>
       </Collapse>

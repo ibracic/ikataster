@@ -3,6 +3,7 @@ import { propertyKey } from "../property/identity";
 import { ensurePersisted } from "../data/storage";
 import Dexie, { type Table } from "dexie";
 import type { EzkExtract, Owner } from "./types";
+import { diffExtracts, type ExtractChanges } from "./diff";
 
 export interface ResultRecord {
   /** Same key scheme as the cart: parcel:ko:number, building:ko:number, part:ko:number:part */
@@ -12,6 +13,8 @@ export interface ResultRecord {
   extract: EzkExtract;
   /** The original PDF is stored (table `pdfs`, same key); false/missing for results stored before #15. */
   hasPdf?: boolean;
+  /** Set when this property was downloaded again: differences to the previous extract (`seen` once the user looked). */
+  changes?: ExtractChanges & { seen?: boolean };
 }
 
 interface PdfRecord { key: string; bytes: Uint8Array }
@@ -57,12 +60,18 @@ export function createResultsStore(name: string = DATABASES.results.name) {
       const key = resultKey(extract);
       void ensurePersisted(); // first save asks the browser not to evict our data
       return db.transaction("rw", db.results, db.pdfs, async () => {
+        const prev = await db.results.get(key);
         if (pdf) await db.pdfs.put({ key, bytes: pdf });
         else await db.pdfs.delete(key);
-        await db.results.put({ key, fileName, addedAt: now(), extract, hasPdf: !!pdf });
+        const changes = prev ? { checkedAt: now(), previousCreatedAt: prev.extract.createdAt, items: diffExtracts(prev.extract, extract) } : undefined;
+        await db.results.put({ key, fileName, addedAt: prev?.addedAt ?? now(), extract, hasPdf: !!pdf, ...(changes ? { changes } : {}) });
       });
     },
     list: () => db.results.orderBy("addedAt").toArray(),
+    /** Mark change reports as seen (badge goes away, details stay). */
+    acknowledge: (keys: string[]) => db.transaction("rw", db.results, async () => {
+      for (const k of keys) await db.results.where("key").equals(k).modify((r) => { if (r.changes) r.changes.seen = true; });
+    }),
     /** Original PDFs by result key (read outside live queries). */
     pdfs: async (keys: string[]) => {
       const rows = await db.pdfs.bulkGet(keys);

@@ -2,7 +2,10 @@ import { SETTINGS } from "../data/inventory";
 import { createContext, useContext } from "react";
 import { BridgeError, createBridgeClient, mockTransport, windowTransport, type BridgeClient } from "@ikataster/bridge";
 // Sample extracts for the mock bridge live in a git-ignored folder; without them the mock reports "not available".
-const FIXTURES = Object.values(import.meta.glob<string>("../ezk/__private__/*.pdf", { query: "?url", import: "default", eager: true }));
+// Dev only: production builds must never publish these files.
+const FIXTURES: (() => Promise<string>)[] = import.meta.env.DEV
+  ? Object.values(import.meta.glob<string>("../ezk/__private__/*.pdf", { query: "?url", import: "default" }))
+  : [];
 /**
  * Mock eZK download (?bridge=mock): ~2 s per extract, returns an anonymised fixture PDF (chosen by item),
  * numbers containing "999" are "not in the land registry". Real downloads go through the extension.
@@ -13,7 +16,7 @@ async function mockDownload(p: unknown): Promise<{ pdfBase64: string; fileName: 
   if (String(r.number).includes("999")) throw new BridgeError("NOT_IN_ZK", "Nepremičnina ni vpisana v zemljiško knjigo");
   if (!FIXTURES.length) throw new BridgeError("NOT_IMPLEMENTED", "Mock extracts are not available in this build");
   const h = [...`${r.koId}:${r.number}:${r.part ?? ""}`].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
-  const bytes = new Uint8Array(await (await fetch(FIXTURES[h % FIXTURES.length])).arrayBuffer());
+  const bytes = new Uint8Array(await (await fetch(await FIXTURES[h % FIXTURES.length]())).arrayBuffer());
   let bin = ""; for (const b of bytes) bin += String.fromCharCode(b);
   return { pdfBase64: btoa(bin), fileName: `mock_${r.koId}_${r.number}.pdf` };
 }

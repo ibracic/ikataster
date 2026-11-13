@@ -42,14 +42,14 @@ export function createQueueStore(name: string = DATABASES.queue.name, now = () =
     list: () => db.jobs.orderBy("order").toArray(),
     get: (key: string) => db.jobs.get(key),
     /** Add items as queued; failed/deferred ones are re-queued, done and queued ones stay. Returns number queued. */
-    async enqueue(items: CartInput[]): Promise<number> {
+    async enqueue(items: CartInput[], opts: { again?: boolean } = {}): Promise<number> {
       return db.transaction("rw", db.jobs, async () => {
         let order = ((await db.jobs.orderBy("order").last())?.order ?? 0) + 1;
         let n = 0;
         for (const item of items) {
           const key = itemKey(item);
           const old = await db.jobs.get(key);
-          if (old && (old.status === "queued" || old.status === "running" || old.status === "done")) continue;
+          if (old && (old.status === "queued" || old.status === "running" || (old.status === "done" && !opts.again))) continue;
           await db.jobs.put({ key, item, status: "queued", attempts: old?.attempts ?? 0, order: old?.order ?? order++, updatedAt: now() });
           n++;
         }
