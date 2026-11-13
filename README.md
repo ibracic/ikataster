@@ -2,6 +2,8 @@
 
 A fast web app for looking up Slovenian real estate: parcels, buildings, building parts and building managers, on a map, straight from the public data of the Surveying and Mapping Authority (GURS). With the companion browser extension it also downloads land-registry extracts (e-ZK) through your own SI-PASS login and turns them into searchable tables.
 
+**Use it at [ikataster.si](https://ikataster.si).**
+
 There is no backend and no account: the app is a static site that runs entirely in your browser, and everything you save (lists, extracts, folders) stays on your device. The user interface is in Slovenian, with an English option.
 
 ![Building 682 with its attributes, connections and building parts with GURS values](docs/images/building.jpg)
@@ -10,7 +12,7 @@ There is no backend and no account: the app is a static site that runs entirely 
 |---|---|
 | ![All buildings of one building manager on the orthophoto](docs/images/manager.jpg) | ![The same building on a phone, with a bottom sheet](docs/images/mobile.jpg) |
 
-> **Slovensko:** iKataster je brezplačna spletna aplikacija za pregled parcel, stavb, delov stavb in upravnikov na zemljevidu, z javnimi podatki GURS (posplošena vrednost, prodaje in najemi iz ETN). Z razširitvijo za brskalnik prek vaše prijave SI-PASS prenaša izpiske iz zemljiške knjige in iz njih izpiše lastnike, hipoteke in služnosti. Brez strežnika in brez računa: vsi podatki ostanejo v vašem brskalniku.
+> **Slovensko:** iKataster je brezplačna spletna aplikacija za pregled parcel, stavb, delov stavb in upravnikov na zemljevidu, z javnimi podatki GURS (posplošena vrednost, prodaje in najemi iz ETN). Na voljo na [ikataster.si](https://ikataster.si). Z razširitvijo za brskalnik prek vaše prijave SI-PASS prenaša izpiske iz zemljiške knjige in iz njih izpiše lastnike, hipoteke in služnosti. Brez strežnika in brez računa: vsi podatki ostanejo v vašem brskalniku.
 
 If iKataster is useful to you, a ⭐ on GitHub helps other people find it.
 
@@ -100,6 +102,8 @@ docker compose up -d --build
 ```
 
 The image runs the tests, builds the app and the extension, and serves everything with nginx on `127.0.0.1:3119`. Put your own reverse proxy with TLS in front of it.
+
+Any static host works too: `apps/web/dist` is a plain static site, and `apps/web/public/_headers` carries the same security headers for hosts that read that file (Cloudflare Pages, Netlify). The public instance at ikataster.si is hosted this way.
 
 ### Installing the extension
 
