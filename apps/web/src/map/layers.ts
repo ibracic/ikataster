@@ -42,7 +42,7 @@ export function wmsTileUrl(base: string, layer: string, format: "image/png" | "i
   return `${base}?${params.toString()}&bbox={bbox-epsg-3857}`;
 }
 
-const ATTR_GURS = '© <a href="https://www.e-prostor.gov.si/" target="_blank" rel="noopener">GURS</a>';
+const ATTR_GURS = '© <a href="https://www.e-prostor.gov.si/" target="_blank" rel="noopener">Geodetska uprava RS</a>';
 
 /** Vector basemap from OpenFreeMap (free, no API key, OSM data). */
 export function basemapStyleUrl(dark: boolean): string {

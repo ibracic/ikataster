@@ -19,7 +19,7 @@ from collections import defaultdict
 
 API = "https://ipi.eprostor.gov.si/jgp-service-api/display-views/groups/361/composite-products/361/file?filterParam=DRZAVA&filterValue=1"
 UA = {"User-Agent": "ikataster-valuations/1"}
-SOURCE = "GURS, Evidenca vrednotenja (CC BY 4.0)"
+SOURCE = "Geodetska uprava Republike Slovenije, Evidenca vrednotenja (CC BY 4.0)"
 
 
 def download(dest: str) -> None:

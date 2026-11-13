@@ -2,7 +2,7 @@
 
 Generalised market values (*posplošena vrednost*) of parcels and building parts, one JSON file per cadastral municipality (KO), built from the public GURS dataset **Evidenca vrednotenja**.
 
-- Source: GURS, Evidenca vrednotenja, licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Values only; no personal or ownership data.
+- **Vir podatkov / Source: Geodetska uprava Republike Slovenije, Evidenca vrednotenja, stanje {VAL_DATE}; Evidenca trga nepremičnin, stanje {TX_DATE}.** Licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) under the GURS terms of use ([e-prostor.gov.si](https://www.e-prostor.gov.si/dostopi/javni-dostop/)). Values only; no personal or ownership data.
 - `index.json`: `{"date": dataset date, "kos": {"<ko>": [parcels, building parts]}}`
 - `ko/<ko>.json`: `{"p": {"<parcel>": eur}, "d": {"<building>/<part>": eur}}` (parcel value is the sum of its valuation units)
 - Rebuilt weekly by `scripts/valuations/build.py` on `main`; this branch is replaced by a single commit on each update.

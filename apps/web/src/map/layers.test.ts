@@ -33,7 +33,7 @@ describe("GURS_LAYERS", () => {
     for (const o of OVERLAYS) {
       const l = GURS_LAYERS.find((x) => x.id === o.id)!;
       expect(l.minzoom).toBe(o.minzoom);
-      expect(l.source.attribution).toContain("GURS");
+      expect(l.source.attribution).toContain("Geodetska uprava RS");
     }
   });
 });

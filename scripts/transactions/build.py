@@ -24,7 +24,7 @@ from collections import defaultdict
 API = "https://ipi.eprostor.gov.si/jgp-service-api/display-views/groups/127/composite-products/{id}/file?filterParam=DRZAVA&filterValue=1&filterYear={y}"
 SALES, RENTS = 321, 322
 UA = {"User-Agent": "ikataster-transactions/1"}
-SOURCE = "GURS, Evidenca trga nepremičnin (CC BY 4.0)"
+SOURCE = "Geodetska uprava Republike Slovenije, Evidenca trga nepremičnin (CC BY 4.0)"
 
 
 def fetch_year(pid: int, year: int, cache: str, offline: bool = False) -> str | None:

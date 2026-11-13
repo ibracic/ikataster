@@ -111,9 +111,12 @@ The built app serves the extension zips under `/extension/`. In the app open *Se
 
 ## Data sources
 
-- Cadastre, buildings, addresses and orthophoto: [GURS](https://www.e-prostor.gov.si/) public WMS/WFS services, © GURS.
+All GURS data is used under the GURS terms of use, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (*Pogoji uporabe* on [e-prostor.gov.si](https://www.e-prostor.gov.si/dostopi/javni-dostop/)). Source attribution as required by GURS: **Geodetska uprava Republike Slovenije**, data type, and the date of the data:
+
+- Cadastre, buildings, building parts, addresses, current and historical orthophoto: Geodetska uprava Republike Slovenije, Kataster nepremičnin, Register prostorskih enot, Digitalni ortofoto (DOF025, DOF050). Live public WMS/WFS services, so always the current state at the time of viewing.
 - Basemap: [OpenFreeMap](https://openfreemap.org/), © OpenStreetMap contributors.
-- Mass-appraisal values: GURS, Evidenca vrednotenja (CC BY 4.0), pre-split per cadastral municipality on the [`data` branch](https://github.com/ibracic/ikataster/tree/data) by `scripts/valuations/build.py` (values only, no ownership data).
+- Mass-appraisal values: Geodetska uprava Republike Slovenije, Evidenca vrednotenja, pre-split per cadastral municipality on the [`data` branch](https://github.com/ibracic/ikataster/tree/data) by `scripts/valuations/build.py` (values only, no ownership data). Date of the data: `date` in `index.json`, shown in the app next to every value.
+- Sales and rentals: Geodetska uprava Republike Slovenije, Evidenca trga nepremičnin (ETN), split per cadastral municipality in `tx/` on the same branch by `scripts/transactions/build.py`. ETN open data contains no information on the parties to a deal. Date of the data: `date` in `tx/index.json`.
 - Land-registry extracts: [e-ZK on e-Sodstvo](https://esodisce.si/), downloaded by the user through their own SI-PASS session.
 
 iKataster is an independent project and is not affiliated with GURS or the Slovenian judiciary. Data is provided as is; always check official sources for legal purposes.
