@@ -40,6 +40,6 @@ describe("ManagerSearch with saved managers", () => {
     fireEvent.change(screen.getByLabelText("Upravnik stavbe"), { target: { value: "stan" } });
     expect(await screen.findByText("STANINVEST d.o.o.")).toBeTruthy();
     expect(searched).toEqual(["stan"]);
-    expect(screen.getByText("Iskanje v GURS")).toBeTruthy();
+    expect(screen.getByText("Vsi upravniki")).toBeTruthy();
   });
 });

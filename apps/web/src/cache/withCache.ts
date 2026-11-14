@@ -34,7 +34,7 @@ export function matchManagers(list: Manager[], q: string): Manager[] {
  * Cache-first GURS client for the slow, heavy queries. Fresh local answers come straight from
  * IndexedDB (no GURS request at all); stale ones are refreshed, and still used if GURS is down.
  */
-export function withCache(client: GursClient, store: CacheStore, o: { now?: () => number; ttlMs?: number; outlineTtlMs?: number } = {}): GursClient {
+export function withCache(client: GursClient, store: CacheStore, o: { now?: () => number; ttlMs?: number; outlineTtlMs?: number; backgroundDelayMs?: number } = {}): GursClient {
   const now = o.now ?? Date.now;
   const ttl = o.ttlMs ?? CACHE_TTL_MS;
   const outlineTtl = o.outlineTtlMs ?? OUTLINE_TTL_MS;
@@ -43,12 +43,15 @@ export function withCache(client: GursClient, store: CacheStore, o: { now?: () =
   const quiet = <T,>(p: Promise<T>) => p.catch(() => undefined);
 
   /** Fresh completed fetch → local answer; otherwise GURS, saved; stale local answer if GURS is down. */
-  async function cached<T>(key: string, local: () => Promise<T | null>, load: () => Promise<T>, save: (v: T) => Promise<unknown>, keep: (v: T) => boolean = (v) => v != null): Promise<T> {
+  async function cached<T>(key: string, local: () => Promise<T | null>, load: () => Promise<T>, save: (v: T) => Promise<unknown>, keep: (v: T) => boolean = (v) => v != null, background = false): Promise<T> {
     const f = await store.get(key).catch(() => undefined);
     if (f && fresh(f.at)) { const v = await local().catch(() => null); if (v != null) return v; }
     try {
       const v = await load();
-      if (keep(v)) await quiet(save(v));
+      if (keep(v)) {
+        // Large answers (portfolios) are stored after the UI has rendered them: IndexedDB cloning blocks the main thread.
+        if (background && o.backgroundDelayMs !== 0) setTimeout(() => void quiet(save(v)), o.backgroundDelayMs ?? 1500); else await quiet(save(v));
+      }
       return v;
     } catch (e) {
       if (f && isUnavailable(e)) { const v = await local().catch(() => null); if (v != null) return v; }
@@ -96,7 +99,7 @@ export function withCache(client: GursClient, store: CacheStore, o: { now?: () =
     managerPortfolio: async (id, opts = {}) => {
       const all = await cached<ManagerPortfolio | null>(cacheKeys.portfolio(id), () => store.portfolio(id),
         () => client.managerPortfolio(id, { signal: opts.signal, onProgress: opts.onProgress }),
-        (p) => store.putPortfolio(p!.manager, p!.buildings, now()));
+        (p) => store.putPortfolio(p!.manager, p!.buildings, now()), undefined, true); // large portfolios: answer first, store in the background
       if (!all || !opts.koId) return all;
       const buildings = all.buildings.filter((b) => b.koId === opts.koId);
       return buildings.length ? { ...all, buildings, parts: buildings.flatMap((b) => b.parts) } : null;
@@ -116,7 +119,7 @@ export function withCache(client: GursClient, store: CacheStore, o: { now?: () =
       if (!missing.length) return out;
       try {
         const got = await client.buildingOutlines(missing, signal);
-        await quiet(store.putOutlines(got, now()));
+        void quiet(store.putOutlines(got, now()));
         for (const [k, g] of got) out.set(k, g);
       } catch (e) {
         if (!out.size || !isUnavailable(e)) throw e;

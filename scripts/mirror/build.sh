@@ -64,13 +64,14 @@ tippecanoe -q -e "$NEW/tiles" -t "$W/tmp" -Z8 -z14 -d13 --no-tile-compression --
 echo "== ko files $(date -Is)"; rm -f kodata.sqlite "$SITE/../kodata.sqlite"
 python3 "$HERE/kodata.py" gj "$NEW" "$DATE"
 python3 "$HERE/addresses.py" gj "$NEW" "$DATE"
+python3 "$HERE/managers.py" "$NEW" "$DATE"
 printf '{"date":"%s","source":"Geodetska uprava Republike Slovenije, kataster nepremičnin in register naslovov, stanje %s"}\n' "$DATE" "$DATE" > "$NEW/index.json"
 
 FILES=$(find "$NEW" -type f | wc -l)
 KOS=$(ls "$NEW/ko" | wc -l)
 TILES=$(find "$NEW/tiles" -name '*.pbf' | wc -l)
 echo "files $FILES (ko $KOS, tiles $TILES)"
-[ "$KOS" -gt 2500 ] && [ "$TILES" -gt 8000 ] && [ "$FILES" -lt 19000 ] || { echo "sanity check failed"; exit 1; }
+[ "$KOS" -gt 2500 ] && [ "$TILES" -gt 8000 ] && [ "$FILES" -lt 19500 ] && [ -s "$NEW/mgr/index.json" ] || { echo "sanity check failed"; exit 1; }
 rm -rf "$SITE.old"; [ -d "$SITE" ] && mv "$SITE" "$SITE.old"; mv "$NEW" "$SITE"; rm -rf "$SITE.old"
 rm -rf gj tc tmp kodata.sqlite
 echo "== done $DATE $(date -Is)"

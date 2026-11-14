@@ -27,7 +27,7 @@ function setup() {
   } as unknown as GursClient;
   let t = 1_000_000;
   const store = createCacheStore(`cache-test-${++n}`);
-  const client = withCache(base, store, { now: () => t, ttlMs: 1000, outlineTtlMs: 5000 });
+  const client = withCache(base, store, { now: () => t, ttlMs: 1000, outlineTtlMs: 5000, backgroundDelayMs: 0 });
   return { client, store, calls, tick: (ms: number) => { t += ms; }, setDown: (v: boolean) => { down = v; } };
 }
 
@@ -86,7 +86,7 @@ describe("withCache (local answers for slow GURS queries)", () => {
   it("empty manager search results are not cached (typo today, data tomorrow)", async () => {
     const { store } = setup();
     const base = { searchManagers: async () => ({ managers: [], truncated: false }) } as unknown as GursClient;
-    const c = withCache(base, store);
+    const c = withCache(base, store, { backgroundDelayMs: 0 });
     await c.searchManagers("nobody");
     expect(await store.get(cacheKeys.managerSearch("nobody"))).toBeUndefined();
   });
@@ -95,7 +95,7 @@ describe("withCache (local answers for slow GURS queries)", () => {
     const { store } = setup();
     let calls = 0;
     const base = { searchManagers: async (q: string) => { calls++; return { managers: [{ id: 1, name: "INDOMA d.o.o.", address: null, parts: 5 }, { id: 2, name: "INDOOR", address: null, parts: 1 }].filter((m) => m.name.toLowerCase().includes(q)), truncated: false }; } } as unknown as GursClient;
-    const c = withCache(base, store);
+    const c = withCache(base, store, { backgroundDelayMs: 0 });
     await c.searchManagers("indo");
     const r = await c.searchManagers("Indoma");
     expect(r.managers.map((m) => m.id)).toEqual([1]);
@@ -106,7 +106,7 @@ describe("withCache (local answers for slow GURS queries)", () => {
     const { store } = setup();
     let calls = 0;
     const base = { searchManagers: async () => { calls++; return { managers: [{ id: 1, name: "INDOMA", address: null, parts: 5 }], truncated: true }; } } as unknown as GursClient;
-    const c = withCache(base, store);
+    const c = withCache(base, store, { backgroundDelayMs: 0 });
     await c.searchManagers("ind");
     await c.searchManagers("indoma");
     expect(calls).toBe(2);
@@ -116,7 +116,7 @@ describe("withCache (local answers for slow GURS queries)", () => {
     const { client, store } = setup();
     const base = { buildingParts: async () => [{ manager: { id: 99, name: "DOMPLAN d.d.", status: null } }, { manager: { id: 99, name: "DOMPLAN d.d.", status: null } }] } as unknown as GursClient;
     await client.searchManagers("indoma");
-    await withCache(base, store).buildingParts(1, 2);
+    await withCache(base, store, { backgroundDelayMs: 0 }).buildingParts(1, 2);
     const all = await knownManagers(store);
     expect(all.map((m) => m.name)).toEqual(["INDOMA", "DOMPLAN d.d."]);
     expect(matchManagers(all, "domp").map((m) => m.id)).toEqual([99]);

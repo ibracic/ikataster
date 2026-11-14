@@ -1,6 +1,7 @@
 import type { Geometry, Position } from "geojson";
 import { fromD96 } from "../gurs/proj";
 import type { Address, Building, BuildingPart, GursClient, Ko, KoDownload, Parcel } from "../gurs";
+import type { ManagedBuilding, ManagedPart, Manager, ManagerPortfolio, ManagerSearch } from "../gurs/managers";
 
 /**
  * Static per-KO copy of the GURS cadastre published with the app under /mirror
@@ -18,6 +19,8 @@ interface KoDoc {
   d: Record<string, [number, string, number | null, number | null, number | null, YN, YN, number | null, number | null, number | null, YN, number | null, number | null, number | null, number | null][]>;
 }
 type YN = 0 | 1 | null;
+interface MgrIndexDoc { v: 1; date: string; m: [number, string, number, number, number[]][] }
+interface MgrDoc { v: 1; id: number; name: string; b: [number, number, string | null, GeomEnc | null, [number, string, number | null][]][] }
 interface AddrDoc { v: 1; a: [string, string, number, string, string, number, number, string | null][] }
 
 export const MIRROR_BASE = "/mirror";
@@ -76,6 +79,9 @@ export function createMirror(o: MirrorOptions = {}) {
   let index: Promise<IndexDoc> | null = null;
   let loaded: IndexDoc | null = null;
   const shards = new Map<string, Promise<AddrDoc | null>>();
+  let mgrIndex: Promise<MgrIndexDoc> | null = null;
+  const mgrDocs = new Map<number, Promise<MgrDoc>>();
+  const outlines = new Map<string, Geometry>();
   async function json<T>(path: string): Promise<T> {
     const r = await f(`${base}${path}`);
     if (!r.ok) throw new Error(`Mirror ${path}: HTTP ${r.status}`);
@@ -101,6 +107,39 @@ export function createMirror(o: MirrorOptions = {}) {
       if (!idx.kos.some((k) => k[0] === koId)) throw new Error(`Mirror: unknown KO ${koId}`);
       return decodeKo(await json<KoDoc>(`/ko/${koId}.json`), idx.codes);
     },
+    /** Managers whose name contains every word of the query (local, instant). */
+    async searchManagers(query: string, limit = 20): Promise<ManagerSearch> {
+      const words = query.split(/\s+/).map(fold).filter(Boolean);
+      if (!words.length || words.join("").length < 3) return { managers: [], truncated: false };
+      const idx = await (mgrIndex ??= json<MgrIndexDoc>("/mgr/index.json").catch((e) => { mgrIndex = null; throw e; }));
+      const hits = idx.m.filter(([, n]) => { const f = fold(n); return words.every((w) => f.includes(w)); });
+      const managers: Manager[] = hits.slice(0, limit).map(([id, n, parts]) => ({ id, name: n, address: null, parts }));
+      return { managers, truncated: hits.length > limit };
+    },
+    /** Whole portfolio of a manager from one file (optionally one KO). Also primes building outlines. */
+    async managerPortfolio(id: number, koId?: number): Promise<ManagerPortfolio | null> {
+      const idx = await getIndex();
+      let p = mgrDocs.get(id);
+      if (!p) { p = json<MgrDoc>(`/mgr/${id}.json`); mgrDocs.set(id, p); p.catch(() => mgrDocs.delete(id)); }
+      const doc = await p;
+      const buildings: ManagedBuilding[] = [];
+      const parts: ManagedPart[] = [];
+      for (const [ko, number, eid, geom, rows] of doc.b) {
+        if (geom && !outlines.has(`${ko}:${number}`)) outlines.set(`${ko}:${number}`, decodeGeometry(geom));
+        if (koId && ko !== koId) continue;
+        const bp = rows.map(([part, peid, use]) => ({ koId: ko, building: number, part, eid: peid, buildingEid: eid ?? "", use: name(idx.codes.use, use) }));
+        parts.push(...bp);
+        buildings.push({ koId: ko, number, eid: eid ?? "", parts: bp });
+      }
+      if (!parts.length) return null;
+      return { manager: { id, name: doc.name, address: null, parts: parts.length }, parts, buildings };
+    },
+    /** Outlines already loaded with a manager portfolio. */
+    knownOutlines(list: { koId: number; number: number }[]): Map<string, Geometry> {
+      const out = new Map<string, Geometry>();
+      for (const b of list) { const g = outlines.get(`${b.koId}:${b.number}`); if (g) out.set(`${b.koId}:${b.number}`, g); }
+      return out;
+    },
     async searchAddresses(query: string, size = 8): Promise<Address[]> {
       const tokens = query.split(/[\s,]+/).filter(Boolean);
       const at = tokens.findIndex((t) => /^\d/.test(t));
@@ -124,7 +163,7 @@ export function createMirror(o: MirrorOptions = {}) {
 }
 export type Mirror = ReturnType<typeof createMirror>;
 
-/** KO list and KO pinning read the mirror (fast, spares GURS, whose WFS now rejects range filters); GURS is the fallback. */
+/** KO list, KO pinning and manager search/portfolios read the mirror (fast, spares GURS, whose WFS now rejects range filters); GURS is the fallback. */
 export function withMirror(client: GursClient, mirror: Mirror): GursClient {
   return {
     ...client,
@@ -133,6 +172,20 @@ export function withMirror(client: GursClient, mirror: Mirror): GursClient {
     },
     async downloadKo(koId, o) {
       try { return await mirror.downloadKo(koId); } catch { return client.downloadKo(koId, o); }
+    },
+    async searchManagers(q, signal) {
+      try { return await mirror.searchManagers(q); } catch { return client.searchManagers(q, signal); }
+    },
+    async managerPortfolio(id, o = {}) {
+      try { return await mirror.managerPortfolio(id, o.koId); } catch { return client.managerPortfolio(id, o); }
+    },
+    async buildingOutlines(list, signal) {
+      const got = mirror.knownOutlines(list);
+      const missing = list.filter((b) => !got.has(`${b.koId}:${b.number}`));
+      if (missing.length) {
+        try { for (const [k, g] of await client.buildingOutlines(missing, signal)) got.set(k, g); } catch (e) { if (!got.size) throw e; }
+      }
+      return got;
     },
   };
 }

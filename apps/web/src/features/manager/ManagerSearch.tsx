@@ -16,7 +16,7 @@ interface Props { client: GursClient; onSelect: (m: Manager) => void; debounceMs
  * Building-manager (upravnik) search. Managers already saved in this browser are suggested instantly
  * (also with an empty box); GURS is still searched for any text of 3+ letters (~15-30 s the first time).
  */
-export function ManagerSearch({ client, onSelect, debounceMs = 700, store = cacheStore }: Props) {
+export function ManagerSearch({ client, onSelect, debounceMs = 200, store = cacheStore }: Props) {
   const { t, lang } = useI18n();
   const nf = new Intl.NumberFormat(lang === "sl" ? "sl-SI" : "en-GB");
   const combobox = useCombobox({ onDropdownClose: () => combobox.resetSelectedOption() });

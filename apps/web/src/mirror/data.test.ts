@@ -25,11 +25,19 @@ const SHARD = { v: 1, date: "2026-11-13", src: "x", a: [
   ["Trnovska ulica", "3", 1000, "Ljubljana", "Ljubljana", 462000, 100000, null],
 ] };
 
+const MGR_INDEX = { v: 1, date: "2026-11-13", m: [[714, "UPRAVNIK Vzorčni d.o.o.", 3, 2, [999, 998]], [715, "DRUGI UPRAVITELJ", 1, 1, [999]]] };
+const MGR = { v: 1, id: 714, name: "UPRAVNIK Vzorčni d.o.o.", b: [
+  [998, 5, "100200000000000009", null, [[1, "100300000000000009", 2]]],
+  [999, 682, "100200000000000002", [[ring(SQ)]], [[1, "100300000000000003", 2], [2, "100300000000000004", null]]],
+] };
+
 function fakeFetch() {
   return vi.fn(async (u: string) => {
     const p = new URL(u).pathname;
     if (p === "/mirror/ko/index.json") return Response.json(INDEX);
     if (p === "/mirror/ko/999.json") return Response.json(KO);
+    if (p === "/mirror/mgr/index.json") return Response.json(MGR_INDEX);
+    if (p === "/mirror/mgr/714.json") return Response.json(MGR);
     if (p === "/mirror/addr/tr.json") return Response.json(SHARD);
     return new Response("", { status: 404 });
   });
@@ -90,5 +98,37 @@ describe("mirror data", () => {
     expect(gurs.listKos).not.toHaveBeenCalled();
     const down = createMirror({ fetch: (async () => new Response("", { status: 500 })) as unknown as typeof fetch, base: "https://app.example/mirror" });
     expect(await withMirror(gurs, down).listKos()).toEqual([{ id: 1, name: "G" }]);
+  });
+
+  it("searches managers locally by every folded word", async () => {
+    const m = createMirror({ fetch: fakeFetch() as unknown as typeof fetch, base: "https://app.example/mirror" });
+    expect((await m.searchManagers("vzorcni upr")).managers).toEqual([{ id: 714, name: "UPRAVNIK Vzorčni d.o.o.", address: null, parts: 3 }]);
+    expect((await m.searchManagers("up", 20)).managers).toEqual([]);
+    const all = await m.searchManagers("upr", 1);
+    expect(all.managers).toHaveLength(1);
+    expect(all.truncated).toBe(true);
+  });
+
+  it("opens a portfolio from one file, filters by KO and serves its outlines", async () => {
+    const f = fakeFetch();
+    const m = createMirror({ fetch: f as unknown as typeof fetch, base: "https://app.example/mirror" });
+    const p = await m.managerPortfolio(714);
+    expect(p!.buildings.map((b) => [b.koId, b.number, b.parts.length])).toEqual([[998, 5, 1], [999, 682, 2]]);
+    expect(p!.parts[1]).toEqual({ koId: 999, building: 682, part: 1, eid: "100300000000000003", buildingEid: "100200000000000002", use: "stanovanje" });
+    expect((await m.managerPortfolio(714, 999))!.parts).toHaveLength(2);
+    expect(f.mock.calls.filter(([u]) => String(u).endsWith("/mgr/714.json"))).toHaveLength(1);
+    expect([...m.knownOutlines([{ koId: 999, number: 682 }, { koId: 998, number: 5 }]).keys()]).toEqual(["999:682"]);
+  });
+
+  it("withMirror uses the mirror for managers and GURS only for missing outlines", async () => {
+    const gurs = { searchManagers: vi.fn(), managerPortfolio: vi.fn(), buildingOutlines: vi.fn(async () => new Map([["998:5", { type: "Point", coordinates: [0, 0] }]])) } as unknown as GursClient;
+    const c = withMirror(gurs, createMirror({ fetch: fakeFetch() as unknown as typeof fetch, base: "https://app.example/mirror" }));
+    expect((await c.searchManagers("drugi")).managers[0].id).toBe(715);
+    await c.managerPortfolio(714);
+    const o = await c.buildingOutlines([{ koId: 999, number: 682 }, { koId: 998, number: 5 }]);
+    expect([...o.keys()].sort()).toEqual(["998:5", "999:682"]);
+    expect(gurs.buildingOutlines).toHaveBeenCalledWith([{ koId: 998, number: 5 }], undefined);
+    expect(gurs.searchManagers).not.toHaveBeenCalled();
+    expect(gurs.managerPortfolio).not.toHaveBeenCalled();
   });
 });
