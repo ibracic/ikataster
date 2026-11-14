@@ -1,5 +1,6 @@
 import { CachedBadge } from "../../sw/CachedBadge";
 import { PanelWideToggle } from "../../ui/PanelWide";
+import { ShareButton } from "../../ui/ShareButton";
 import { AddToCartButton } from "../../cart/AddToCartButton";
 import { Alert, Anchor, Badge, CloseButton, Group, Paper, ScrollArea, Skeleton, Stack, Table, Text, Title } from "@mantine/core";
 import { IconAlertTriangle, IconExternalLink } from "@tabler/icons-react";
@@ -51,7 +52,7 @@ export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
           <Text size="sm" c="dimmed">{t("ko")} {parcel.koId} {parcel.koName}</Text>
           <CachedBadge />
         </div>
-        <Group gap={2} wrap="nowrap"><PanelWideToggle /><CloseButton aria-label={t("close")} onClick={onClose} /></Group>
+        <Group gap={2} wrap="nowrap"><ShareButton title={document.title} /><PanelWideToggle /><CloseButton aria-label={t("close")} onClick={onClose} /></Group>
       </Group>
       <SheetSummary>
         <Text size="sm" data-testid="sheet-summary" onClick={() => sheet.setOpen(true)} style={{ cursor: "pointer" }}>

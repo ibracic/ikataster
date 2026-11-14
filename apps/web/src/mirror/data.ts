@@ -20,6 +20,9 @@ interface KoDoc {
     YN, YN, YN, YN, number, number, GeomEnc][];
   /** parcel -> [land use [[ids], share], intended use [id, share], buildings [ko, n, area, eid]] (added by extras.py) */
   pe?: Record<string, [[number[], number | null][], [number, number | null][], [number, number, number, string][]]>;
+  /** plan names + parcel -> [EUP code, plan index] (added by eup.py) */
+  plans?: string[];
+  eu?: Record<string, [string, number]>;
   /** building -> [part, floors "1,2", entrance floor, address] */
   de?: Record<string, [number, string | null, number | null, string | null][]>;
   d: Record<string, [number, string, number | null, number | null, number | null, YN, YN, number | null, number | null, number | null, YN, number | null, number | null, number | null, number | null][]>;
@@ -63,6 +66,7 @@ export function decodeKo(doc: KoDoc, codes: Codes): KoDownload {
         intendedUse: (x?.[1] ?? []).map(([id, s]) => { const c = codes.intended?.[String(id)]; return { code: (c?.[0] ?? String(id)) + share(s), description: c?.[1] ?? "" }; }),
         buildings: (x?.[2] ?? []).map(([ko, nr, a, beid]) => ({ eid: beid, koId: ko, number: nr, areaOnParcel: a })),
       };
+      if (doc.eu) { const u = doc.eu[number]; p.extra.spatialPlanUnit = u ? { code: u[0], plan: doc.plans?.[u[1]] ?? "" } : null; }
     }
     return p;
   });

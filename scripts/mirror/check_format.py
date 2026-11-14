@@ -44,6 +44,11 @@ def check_ko(doc, where):
     for b, rs in doc.get("d", {}).items(): rows(f"{where}.d[{b}]", rs, f["d"])
     for p, r in doc.get("pe", {}).items(): rows(f"{where}.pe[{p}]", [r], f["pe"])
     for b, rs in doc.get("de", {}).items(): rows(f"{where}.de[{b}]", rs, f["de"])
+    plans = doc.get("plans", [])
+    if not all(isinstance(x, str) for x in plans): errors.append(f"{where}.plans: not all str")
+    for p, r in doc.get("eu", {}).items():
+        rows(f"{where}.eu[{p}]", [r], f["eu"])
+        if isinstance(r[1], int) and not 0 <= r[1] < len(plans): errors.append(f"{where}.eu[{p}]: plan {r[1]} out of range")
 
 def main():
     site = sys.argv[1]
@@ -62,6 +67,10 @@ def main():
                   "managers": {},
                   "p": p, "b": b, "d": {bld: doc["d"][bld]},
                   "pe": {r[0]: doc["pe"][r[0]] for r in p}, "de": {bld: doc["de"].get(bld, [])}}
+        eu = {r[0]: doc["eu"][r[0]] for r in p if r[0] in doc["eu"]}
+        used = sorted({v[1] for v in eu.values()})
+        sample["plans"] = [doc["plans"][i] for i in used]
+        sample["eu"] = {k: [v[0], used.index(v[1])] for k, v in eu.items()}
         sample["managers"] = {k: v for k, v in doc["managers"].items() if any(str(r[13]) == k for r in doc["d"][bld])}
         keep = {"landUse", "intended"} | set(FMT["index"]["codes"])
         codes = {k: v for k, v in idx["codes"].items() if k in keep}

@@ -39,6 +39,8 @@ export interface ParcelExtra {
   landUse: string[];
   intendedUse: { code: string; description: string }[];
   buildings: BuildingOnParcel[];
+  /** Spatial plan unit from the copy; undefined = this copy has no EUP data (older file). */
+  spatialPlanUnit?: { code: string; plan: string } | null;
 }
 
 export interface ParcelDetails {

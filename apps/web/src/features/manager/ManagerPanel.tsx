@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { PanelWideToggle } from "../../ui/PanelWide";
+import { ShareButton } from "../../ui/ShareButton";
 import { Alert, Button, CloseButton, Group, Loader, Paper, Progress, ScrollArea, Select, Stack, Text, Title, UnstyledButton } from "@mantine/core";
 import { IconCheck, IconRefresh, IconFilePlus } from "@tabler/icons-react";
 import { ageText } from "../../sw/cacheStatus";
@@ -113,7 +114,7 @@ export function ManagerPanel({ client, managerId, kos, koFilter, onKoFilter, onC
           <Title order={2} size="h4" className="sheet-title">{data?.manager.name ?? "…"}</Title>
           {data?.manager.address && <Text size="sm" c="dimmed">{data.manager.address}</Text>}
         </div>
-        <Group gap={2} wrap="nowrap"><PanelWideToggle /><CloseButton aria-label={t("close")} onClick={onClose} /></Group>
+        <Group gap={2} wrap="nowrap"><ShareButton title={document.title} /><PanelWideToggle /><CloseButton aria-label={t("close")} onClick={onClose} /></Group>
       </Group>
 
       {err ? (

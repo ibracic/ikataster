@@ -14,6 +14,7 @@ import type { ResultRecord } from "../ezk/results";
 import { MapView } from "../map/MapView";
 import { useCadastre } from "../map/useCadastre";
 import type { BasemapId, OverlayId } from "../map/layers";
+import { orthoAvailable } from "../map/orthoProbe";
 import { useI18n } from "../i18n";
 import { useGurs } from "../gurs/instance";
 import { useKos } from "../gurs/useKos";
@@ -69,6 +70,15 @@ export function MapPage() {
   const [basemap, setBasemapState] = useState<BasemapId>(() => (localStorage.getItem(BASEMAP_KEY) === "ortho" ? "ortho" : "street"));
   const setBasemap = (b: BasemapId) => { setBasemapState(b); try { localStorage.setItem(BASEMAP_KEY, b); } catch { /* private mode */ } };
   const cadastre = useCadastre();
+  // GURS orthophoto is often blocked outside Slovenia: fall back to the street map (preference kept for next visit).
+  const [orthoDown, setOrthoDown] = useState(false);
+  useEffect(() => {
+    if (basemap !== "ortho" || import.meta.env.MODE === "test") return;
+    let live = true;
+    void orthoAvailable().then((ok) => { if (live && !ok) setOrthoDown(true); });
+    return () => { live = false; };
+  }, [basemap]);
+  const shownBasemap: BasemapId = orthoDown ? "street" : basemap;
   const [overlays, setOverlays] = useState<Record<OverlayId, boolean>>({ parcels: true, buildings: true });
   const [labels, setLabels] = useState(true);
   const [orthoYear, setOrthoYear] = useState<number | null>(null);
@@ -103,13 +113,13 @@ export function MapPage() {
   return (
     <div style={{ position: "fixed", inset: 0 }}>
       <MapView
-        basemap={basemap} overlays={overlays} labels={labels} orthoYear={orthoYear} cadastre={cadastre} dark={scheme === "dark"} onZoom={setZoom}
+        basemap={shownBasemap} overlays={overlays} labels={labels} orthoYear={orthoYear} cadastre={cadastre} dark={scheme === "dark"} onZoom={setZoom}
         selection={bld.building?.geometry ?? sel.parcel?.geometry ?? (manager ? managerGeom : null)} fitKey={fitKey} onMapClick={onMapClick} cart={cartFc} draft={draw?.points ?? null}
         results={manager ? managerPts : null} areaResults={draw?.done ? areaFc : null} onResultClick={(ko, n) => void showBuilding(ko, n, true)}
         ezk={ezkPts} onEzkClick={openEzk}
       />
 
-      {basemap === "ortho" && orthoYear !== null && (
+      {shownBasemap === "ortho" && orthoYear !== null && (
         <OrthoYearBar year={orthoYear} onChange={setOrthoYear} onClose={() => setOrthoYear(null)} />
       )}
 
@@ -218,7 +228,8 @@ export function MapPage() {
                 fullWidth size="xs" value={basemap} onChange={(v) => setBasemap(v as BasemapId)}
                 data={[{ value: "street", label: t("street") }, { value: "ortho", label: t("ortho") }]}
               />
-              {basemap === "ortho" && (
+              {basemap === "ortho" && orthoDown && <Text size="xs" c="orange.8" maw={240} data-testid="ortho-down">{t("orthoDown")}</Text>}
+              {shownBasemap === "ortho" && (
                 <Switch label={t("orthoHistory")} checked={orthoYear !== null} onChange={(e) => setOrthoYear(e.currentTarget.checked ? 2011 : null)} />
               )}
               <Switch mt={6} label={t("labels")} checked={labels} onChange={(e) => setLabels(e.currentTarget.checked)} />

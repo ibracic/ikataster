@@ -103,8 +103,9 @@ export function withCopy(client: GursClient, mirror: Mirror, store: OfflineStore
     async parcelDetails(p: Parcel): Promise<ParcelDetails> {
       const x = p.extra ?? { landUse: [], intendedUse: [], buildings: [] };
       const errors: ParcelDetails["errors"] = p.extra ? [] : ["landUse", "intendedUse", "buildings"];
-      // EUP (spatial plan unit) is the one parcel detail the copy doesn't have.
-      const spatialPlanUnit = await client.spatialPlanUnit(p).catch(() => { errors.push("spatialPlanUnit"); return null; });
+      // EUP is in the copy since 2026-11; older saved KOs without it still ask GURS.
+      const spatialPlanUnit = x.spatialPlanUnit !== undefined ? x.spatialPlanUnit
+        : await client.spatialPlanUnit(p).catch(() => { errors.push("spatialPlanUnit"); return null; });
       return { landUse: x.landUse, intendedUse: x.intendedUse, buildings: x.buildings, spatialPlanUnit, soilQuality: p.soilQuality, errors };
     },
 

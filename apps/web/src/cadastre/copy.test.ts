@@ -81,4 +81,16 @@ describe("cadastre copy client", () => {
     spatialPlanUnit.mockRejectedValueOnce(new GursError("network", "x"));
     expect((await c.parcelDetails(KO.parcels[0])).errors).toEqual(["spatialPlanUnit"]);
   });
+
+  it("uses the EUP from the copy when the KO file has it (no GURS request)", async () => {
+    const spatialPlanUnit = vi.fn();
+    const g = { ...({} as GursClient), spatialPlanUnit } as unknown as GursClient;
+    const c = withCopy(g, mirror(), store(), { pinDelayMs: 0 });
+    const base = KO.parcels[0];
+    const withEup = { ...base, extra: { ...base.extra!, spatialPlanUnit: { code: "LE 5", plan: "OPN Lenart" } } };
+    expect((await c.parcelDetails(withEup)).spatialPlanUnit).toEqual({ code: "LE 5", plan: "OPN Lenart" });
+    const none = { ...base, extra: { ...base.extra!, spatialPlanUnit: null } };
+    expect(await c.parcelDetails(none)).toMatchObject({ spatialPlanUnit: null, errors: [] });
+    expect(spatialPlanUnit).not.toHaveBeenCalled();
+  });
 });

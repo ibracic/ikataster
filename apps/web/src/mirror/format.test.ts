@@ -39,4 +39,14 @@ describe("mirror KO file contract", () => {
       expect(p.area).toBeGreaterThan(0);
     }
   });
+
+  it("decodes spatial plan units (eu + plans); Lenart has none in GURS", () => {
+    const none = decodeKo(doc, codes);
+    for (const p of none.parcels) expect(p.extra?.spatialPlanUnit).toBeNull();
+    const first = doc.p[0][0];
+    const withEu = { ...doc, plans: ["OPN Test"], eu: { [first]: ["LE 5", 0] } } as Arg<0>;
+    const k = decodeKo(withEu, codes);
+    expect(k.parcels[0].extra?.spatialPlanUnit).toEqual({ code: "LE 5", plan: "OPN Test" });
+    for (const r of format.ko.eu) expect(r).toHaveLength(2);
+  });
 });

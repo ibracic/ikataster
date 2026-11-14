@@ -70,6 +70,9 @@ echo "== ko files $(date -Is)"; rm -f kodata.sqlite "$SITE/../kodata.sqlite"
 python3 "$HERE/kodata.py" gj "$NEW" "$DATE"
 ln -sf "$W/gj/RN_SLO_NASLOVI_register_naslovov_${STAMP}.csv" x/
 python3 "$HERE/extras.py" x "$NEW"
+echo "== eup $(date -Is)"; mkdir -p "$W/eup"
+python3 "$HERE/eup.py" harvest "$W/eup" || { [ -s "$W/eup/eup.jsonl" ] && echo "EUP harvest failed, reusing previous eup.jsonl"; } || exit 1
+python3 "$HERE/eup.py" apply "$W/eup" "$NEW"
 python3 "$HERE/addresses.py" gj "$NEW" "$DATE"
 python3 "$HERE/managers.py" "$NEW" "$DATE"
 printf '{"date":"%s","source":"Geodetska uprava Republike Slovenije, kataster nepremičnin in register naslovov, stanje %s"}\n' "$DATE" "$DATE" > "$NEW/index.json"
