@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { cadastreOverride, probeGurs, type CadastreSource } from "./mirror";
+import { setGursDown } from "../mirror/state";
 
 let probed: Promise<boolean> | null = null;
 
@@ -7,10 +8,11 @@ let probed: Promise<boolean> | null = null;
 export function useCadastre(): CadastreSource {
   const forced = cadastreOverride(window.location.search);
   const [src, setSrc] = useState<CadastreSource>(forced ?? "gurs");
+  if (forced) setGursDown(forced === "mirror");
   useEffect(() => {
     if (forced || import.meta.env.MODE === "test") return;
     let live = true;
-    (probed ??= probeGurs()).then((ok) => { if (live && !ok) setSrc("mirror"); });
+    (probed ??= probeGurs()).then((ok) => { if (!ok) setGursDown(true); if (live && !ok) setSrc("mirror"); });
     return () => { live = false; };
   }, [forced]);
   return src;

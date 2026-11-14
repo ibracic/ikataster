@@ -73,6 +73,7 @@ describe("mirror data", () => {
     expect(r[0]).toMatchObject({ label: "Trg osvoboditve 1", place: "2230 Lenart v Slov. goricah", postCode: 2230, municipality: "Lenart", e: 563610, n: 159947, buildingEid: "100200000208213088" });
     expect(r.map((a) => a.label)).toEqual(["Trg osvoboditve 1", "Trg osvoboditve 10"]);
     expect(await m.searchAddresses("x")).toEqual([]);
+    expect((await m.searchAddresses("Trg osvoboditve 1, 2230 Lenart v Slov. goricah"))[0]?.label).toBe("Trg osvoboditve 1");
   });
 
   it("pins KOs from the mirror and falls back to GURS when the mirror fails", async () => {

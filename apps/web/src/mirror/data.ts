@@ -90,6 +90,12 @@ export function createMirror(o: MirrorOptions = {}) {
     async listKos(): Promise<Ko[]> {
       return (await getIndex()).kos.map(([id, n]) => ({ id, name: n }));
     },
+    /** KOs whose bounding box contains the point (candidates for a point lookup, nearest centre first). */
+    async kosAt(lon: number, lat: number): Promise<number[]> {
+      return (await getIndex()).kos.filter(([, , [w, s, e, n]]) => lon >= w && lon <= e && lat >= s && lat <= n)
+        .map(([id, , [w, s, e, n]]) => [id, (lon - (w + e) / 2) ** 2 + (lat - (s + n) / 2) ** 2] as const)
+        .sort((a, b) => a[1] - b[1]).map(([id]) => id);
+    },
     async downloadKo(koId: number): Promise<KoDownload> {
       const idx = await getIndex();
       if (!idx.kos.some((k) => k[0] === koId)) throw new Error(`Mirror: unknown KO ${koId}`);
@@ -106,8 +112,8 @@ export function createMirror(o: MirrorOptions = {}) {
       if (!shards.has(key)) shards.set(key, json<AddrDoc>(`/addr/${key}.json`).catch(() => { shards.delete(key); return null; }));
       const doc = await shards.get(key)!;
       if (!doc) return [];
-      const hits = doc.a.filter(([s, h, , pn, mun]) => fold(s).startsWith(street) && h.toLowerCase().startsWith(hs)
-        && place.every((p) => fold(pn).includes(p) || fold(mun).includes(p)));
+      const hits = doc.a.filter(([s, h, pc, pn, mun]) => fold(s).startsWith(street) && h.toLowerCase().startsWith(hs)
+        && place.every((p) => fold(pn).includes(p) || fold(mun).includes(p) || String(pc) === p));
       if (hs) hits.sort((a, b) => Number(b[1].toLowerCase() === hs) - Number(a[1].toLowerCase() === hs));
       return hits.slice(0, size).map(([s, h, pc, pn, mun, e, n, beid]) => {
         const [lon, lat] = fromD96(e, n);
