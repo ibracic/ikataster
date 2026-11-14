@@ -1,6 +1,7 @@
 import type * as maplibregl from 'maplibre-gl';
 import type { FeatureCollection, Geometry } from 'geojson';
 import { GURS_LAYERS } from './layers';
+import { MIRROR_LAYER_IDS } from './mirror';
 type MlMap = maplibregl.Map;
 export const SEL = 'selection', CART = 'cart', DRAFT = 'draft', RES = 'results', EZK = 'results-ezk', RES_AREA = 'results-area';
 const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] };
@@ -75,7 +76,7 @@ const SEL_DEF: LayerDefinition = { source: SEL, options: { type: "geojson" }, la
 ] };
 export function addSelectionLayers(m: MlMap, geom: Geometry | null | undefined) { installLayer(m, SEL_DEF, geom ? { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: geom }] } : EMPTY); }
 export const APP_LAYERS = [CART_DEF, SEL_DEF, DRAFT_DEF, RES_AREA_DEF, EZK_DEF, RES_DEF];
-export const isOwnLayer = layerOwnership(APP_LAYERS, GURS_LAYERS.map(l => l.id));
+export const isOwnLayer = layerOwnership(APP_LAYERS, [...GURS_LAYERS.map(l => l.id), ...MIRROR_LAYER_IDS]);
 interface MarkerHandlers {
   result?: (ko: number, n: number) => void;
   ezk?: (kind: 'parcel' | 'building', ko: number, n: string) => void;

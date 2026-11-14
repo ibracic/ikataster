@@ -32,6 +32,7 @@ export function classify(url: string, method: string, mode: string, origin: stri
   if (u.origin !== origin) return null;
   if (mode === "navigate") return "navigate";
   if (u.pathname.startsWith("/assets/")) return "asset";
+  if (u.pathname.startsWith("/mirror/tiles/")) return "tiles";
   return null;
 }
 

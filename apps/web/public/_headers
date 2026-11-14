@@ -15,3 +15,11 @@
 /sw.js
   ! Cache-Control
   Cache-Control: no-cache, no-store, must-revalidate
+
+/mirror/*
+  ! Cache-Control
+  Cache-Control: public, max-age=86400
+  Access-Control-Allow-Origin: *
+
+/mirror/tiles/*
+  Content-Type: application/x-protobuf

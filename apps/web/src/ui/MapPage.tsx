@@ -12,6 +12,7 @@ import { useResults } from "../ezk/useResults";
 import { useResultPoints } from "../ezk/points";
 import type { ResultRecord } from "../ezk/results";
 import { MapView } from "../map/MapView";
+import { useCadastre } from "../map/useCadastre";
 import type { BasemapId, OverlayId } from "../map/layers";
 import { useI18n } from "../i18n";
 import { useGurs } from "../gurs/instance";
@@ -67,6 +68,7 @@ export function MapPage() {
   }), [cart.items]);
   const [basemap, setBasemapState] = useState<BasemapId>(() => (localStorage.getItem(BASEMAP_KEY) === "ortho" ? "ortho" : "street"));
   const setBasemap = (b: BasemapId) => { setBasemapState(b); try { localStorage.setItem(BASEMAP_KEY, b); } catch { /* private mode */ } };
+  const cadastre = useCadastre();
   const [overlays, setOverlays] = useState<Record<OverlayId, boolean>>({ parcels: true, buildings: true });
   const [labels, setLabels] = useState(true);
   const [orthoYear, setOrthoYear] = useState<number | null>(null);
@@ -101,7 +103,7 @@ export function MapPage() {
   return (
     <div style={{ position: "fixed", inset: 0 }}>
       <MapView
-        basemap={basemap} overlays={overlays} labels={labels} orthoYear={orthoYear} dark={scheme === "dark"} onZoom={setZoom}
+        basemap={basemap} overlays={overlays} labels={labels} orthoYear={orthoYear} cadastre={cadastre} dark={scheme === "dark"} onZoom={setZoom}
         selection={bld.building?.geometry ?? sel.parcel?.geometry ?? (manager ? managerGeom : null)} fitKey={fitKey} onMapClick={onMapClick} cart={cartFc} draft={draw?.points ?? null}
         results={manager ? managerPts : null} areaResults={draw?.done ? areaFc : null} onResultClick={(ko, n) => void showBuilding(ko, n, true)}
         ezk={ezkPts} onEzkClick={openEzk}
@@ -221,6 +223,7 @@ export function MapPage() {
               )}
               <Switch mt={6} label={t("labels")} checked={labels} onChange={(e) => setLabels(e.currentTarget.checked)} />
               <Text size="xs" fw={700} c="dimmed" tt="uppercase" mt={4}>{t("overlays")}</Text>
+              {cadastre === "mirror" && <Text size="xs" c="orange.8" maw={240} data-testid="cadastre-mirror">{t("cadastreMirror")}</Text>}
               <Switch label={t("parcels")} checked={overlays.parcels} onChange={toggle("parcels")} />
               {overlays.parcels && zoom < 15 && <Text size="xs" c="dimmed">{t("zoomHintParcels")}</Text>}
               <Switch label={t("buildings")} checked={overlays.buildings} onChange={toggle("buildings")} />

@@ -13,6 +13,7 @@ import {
   basemapLabelLayers, basemapStyleUrl, GURS_LAYERS, INITIAL_VIEW, orthoYearTiles, layerVisibility, SLOVENIA_BOUNDS, type BasemapId, type OverlayId,
   ORTHO_MIN_ZOOM,
 } from "./layers";
+import { MIRROR_SOURCE, mirrorLayers, mirrorSource, type CadastreSource } from "./mirror";
 
 type MlMap = maplibregl.Map;
 
@@ -23,6 +24,8 @@ interface Props {
   labels?: boolean;
   /** Historical orthophoto year on top of today's ortho (null = off). */
   orthoYear?: number | null;
+  /** Where parcel/building outlines come from: GURS rasters or our static vector copy. */
+  cadastre?: CadastreSource;
   dark: boolean;
   onZoom?: (z: number) => void;
   /** Highlighted parcel geometry (WGS84). */
@@ -68,6 +71,10 @@ function addGursLayers(m: MlMap, vis: Record<string, "visible" | "none">, labels
     if (!m.getLayer(l.id)) {
       m.addLayer({ id: l.id, type: "raster", source: l.id, ...(l.minzoom ? { minzoom: l.minzoom } : {}), layout: { visibility: vis[l.id] } }, before);
     }
+  }
+  if (!m.getSource(MIRROR_SOURCE)) m.addSource(MIRROR_SOURCE, mirrorSource(window.location.origin));
+  for (const l of mirrorLayers()) {
+    if (!m.getLayer(l.id)) m.addLayer({ ...l, layout: { ...(l.layout ?? {}), visibility: vis[l.id] } } as maplibregl.LayerSpecification, before);
   }
   setLabels(m, labels);
   originalPaint.delete(m); originalBg.delete(m); // new style: remember its own colours again
@@ -122,7 +129,7 @@ function styleLabels(m: MlMap, ortho: boolean) {
   }
 }
 
-export function MapView({ basemap, overlays, labels = true, orthoYear = null, dark, onZoom, selection, fitKey, onMapClick, cart, draft, results, onResultClick, areaResults, ezk, onEzkClick }: Props) {
+export function MapView({ basemap, overlays, labels = true, orthoYear = null, cadastre = "gurs", dark, onZoom, selection, fitKey, onMapClick, cart, draft, results, onResultClick, areaResults, ezk, onEzkClick }: Props) {
   const ezkRef = useRef(ezk);
   ezkRef.current = ezk;
   const ezkClick = useRef(onEzkClick);
@@ -135,8 +142,8 @@ export function MapView({ basemap, overlays, labels = true, orthoYear = null, da
   resClick.current = onResultClick;
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<MlMap | null>(null);
-  const vis = useRef(layerVisibility(basemap, overlays, orthoYear));
-  vis.current = layerVisibility(basemap, overlays, orthoYear);
+  const vis = useRef(layerVisibility(basemap, overlays, orthoYear, cadastre));
+  vis.current = layerVisibility(basemap, overlays, orthoYear, cadastre);
   const yearRef = useRef(orthoYear);
   yearRef.current = orthoYear;
   const labelsRef = useRef(labels);
@@ -198,7 +205,7 @@ export function MapView({ basemap, overlays, labels = true, orthoYear = null, da
     if (!m) return;
     for (const [id, v] of Object.entries(vis.current)) if (m.getLayer(id)) m.setLayoutProperty(id, "visibility", v);
     try { styleLabels(m, basemap === "ortho" && m.getZoom() >= ORTHO_MIN_ZOOM); } catch { /* style not ready; style.load applies it */ }
-  }, [basemap, overlays, orthoYear]);
+  }, [basemap, overlays, orthoYear, cadastre]);
 
   useEffect(() => { const m = map.current; if (m) setOrthoYear(m, orthoYear); }, [orthoYear]);
 

@@ -1,3 +1,5 @@
+import { MIRROR_LAYER_IDS, MIRROR_OVERLAY, type CadastreSource } from "./mirror";
+
 /** Public GURS endpoints (CORS *, no key). */
 export const GURS_WMS_KN = "https://ipi.eprostor.gov.si/wms-si-gurs-kn/wms";
 export const GURS_WMS_DTS = "https://ipi.eprostor.gov.si/wms-si-gurs-dts/wms";
@@ -102,11 +104,12 @@ export function basemapLabelLayers(layers: { id: string; type: string }[], own: 
 }
 
 /** Pure: which GURS layers are visible for the current UI state. */
-export function layerVisibility(basemap: BasemapId, overlays: Record<OverlayId, boolean>, orthoYear: number | null = null): Record<string, "visible" | "none"> {
+export function layerVisibility(basemap: BasemapId, overlays: Record<OverlayId, boolean>, orthoYear: number | null = null, cadastre: CadastreSource = "gurs"): Record<string, "visible" | "none"> {
   const v: Record<string, "visible" | "none"> = {
     ortho: basemap === "ortho" ? "visible" : "none",
     orthoYear: basemap === "ortho" && orthoYear ? "visible" : "none",
   };
-  for (const o of OVERLAYS) v[o.id] = overlays[o.id] ? "visible" : "none";
+  for (const o of OVERLAYS) v[o.id] = overlays[o.id] && cadastre === "gurs" ? "visible" : "none";
+  for (const id of MIRROR_LAYER_IDS) v[id] = overlays[MIRROR_OVERLAY[id]] && cadastre === "mirror" ? "visible" : "none";
   return v;
 }
