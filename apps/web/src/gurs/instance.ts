@@ -10,5 +10,5 @@ import { createMirror, withMirror } from "../mirror/data";
 export const mirror = createMirror();
 
 /** Default client: local answer cache → live GURS (KO pins from the mirror) → pinned KOs when GURS is unavailable. */
-export const GursContext = createContext<GursClient>(withCache(withOffline(withMirror(createGursClient(), mirror), offlineStore, mirror), cacheStore));
+export const GursContext = createContext<GursClient>(withCache(withOffline(withMirror(createGursClient(), mirror), offlineStore, mirror), cacheStore, { copyFirst: true }));
 export const useGurs = () => useContext(GursContext);

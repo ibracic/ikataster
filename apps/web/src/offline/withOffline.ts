@@ -21,7 +21,7 @@ const PIN_FRESH_MS = 7 * 24 * 3600 * 1000;
  * local answers mark the UI as "cached data" with the pin date. With a mirror, KOs that are
  * not pinned yet are loaded from the app's static GURS copy on demand (and kept as pins).
  */
-export function withOffline(client: GursClient, store: OfflineStore, mirror?: Mirror): GursClient {
+export function withOffline(client: GursClient, store: OfflineStore, mirror?: Mirror, o: { pinDelayMs?: number } = {}): GursClient {
   const loading = new Map<number, Promise<boolean>>();
   /** Make sure a KO is available locally; true when it was newly loaded from the mirror. */
   function ensureKo(koId: number): Promise<boolean> {
@@ -39,6 +39,8 @@ export function withOffline(client: GursClient, store: OfflineStore, mirror?: Mi
   }
   /** KOs from the mirror kept in memory (small LRU); stored as pins in the background for offline use. */
   const MEM_KOS = 8;
+  /** Save the pin well after the first answer has rendered (and when the browser is idle). */
+  const PIN_SAVE_DELAY_MS = o.pinDelayMs ?? 8000;
   const memory = new Map<number, Promise<KoIndex | null>>();
   function memKo(koId: number): Promise<KoIndex | null> {
     if (!mirror) return Promise.resolve(null);
@@ -46,7 +48,8 @@ export function withOffline(client: GursClient, store: OfflineStore, mirror?: Mi
     if (p) { memory.delete(koId); memory.set(koId, p); return p; }
     p = mirror.downloadKo(koId).then((d) => {
       // Persist after the answer has rendered: cloning a large KO into IndexedDB blocks the main thread.
-      setTimeout(() => { void store.getPin(koId).then((pin) => (pin && Date.now() - pin.pinnedAt < PIN_FRESH_MS ? undefined : store.savePin(d))).catch(() => undefined); }, 2000);
+      const idle = (f: () => void) => (PIN_SAVE_DELAY_MS > 0 && globalThis.requestIdleCallback ? globalThis.requestIdleCallback(f, { timeout: 30_000 }) : setTimeout(f, 0));
+      setTimeout(() => idle(() => { void store.getPin(koId).then((pin) => (pin && Date.now() - pin.pinnedAt < PIN_FRESH_MS ? undefined : store.savePin(d))).catch(() => undefined); }), PIN_SAVE_DELAY_MS);
       return indexKo(d);
     }).catch(() => { memory.delete(koId); return null; });
     memory.set(koId, p);

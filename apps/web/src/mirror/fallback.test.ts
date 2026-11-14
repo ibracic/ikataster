@@ -31,7 +31,7 @@ beforeEach(() => setGursDown(false));
 describe("GURS unreachable -> mirror", () => {
   it("loads the KO from the mirror on demand and answers parcel, building and parts lookups", async () => {
     const store = createOfflineStore(`fb-${n++}`), m = mirror();
-    const c = withOffline(gurs(), store, m);
+    const c = withOffline(gurs(), store, m, { pinDelayMs: 0 });
     expect((await c.findParcel(999, "100/1"))?.eid).toBe("P1");
     expect((await c.findBuilding(999, 682))?.flats).toBe(12);
     expect((await c.buildingParts(999, 682)).map((p) => p.number)).toEqual([1]);
@@ -41,26 +41,26 @@ describe("GURS unreachable -> mirror", () => {
   });
 
   it("finds parcel and building by map point via the KO index", async () => {
-    const c = withOffline(gurs(), createOfflineStore(`fb-${n++}`), mirror());
+    const c = withOffline(gurs(), createOfflineStore(`fb-${n++}`), mirror(), { pinDelayMs: 0 });
     expect((await c.parcelAt(15.0005, 46.0005))?.number).toBe("100/1");
     expect((await c.buildingAt(15.0002, 46.0002))?.number).toBe(682);
   });
 
   it("searches addresses in the mirror", async () => {
-    const c = withOffline(gurs(), createOfflineStore(`fb-${n++}`), mirror());
+    const c = withOffline(gurs(), createOfflineStore(`fb-${n++}`), mirror(), { pinDelayMs: 0 });
     expect((await c.searchAddresses("trg 1"))[0].label).toBe("Trg 1");
   });
 
   it("treats GURS firewall refusals (403) as unavailable", async () => {
     const g = gurs();
     (g.findBuilding as ReturnType<typeof vi.fn>).mockImplementation(() => { throw new GursError("http", "HTTP 403", 403); });
-    expect((await withOffline(g, createOfflineStore(`fb-${n++}`), mirror()).findBuilding(999, 682))?.number).toBe(682);
+    expect((await withOffline(g, createOfflineStore(`fb-${n++}`), mirror(), { pinDelayMs: 0 }).findBuilding(999, 682))?.number).toBe(682);
   });
 
   it("skips GURS entirely once it is known to be down", async () => {
     setGursDown(true);
     const g = gurs();
-    await withOffline(g, createOfflineStore(`fb-${n++}`), mirror()).findParcel(999, "100/1");
+    await withOffline(g, createOfflineStore(`fb-${n++}`), mirror(), { pinDelayMs: 0 }).findParcel(999, "100/1");
     expect(g.findParcel).not.toHaveBeenCalled();
   });
 
@@ -76,7 +76,7 @@ describe("GURS unreachable -> mirror", () => {
   it("answers from the copy first even when GURS works (GURS is never asked)", async () => {
     const ok = vi.fn(async () => { throw new Error("GURS must not be called"); });
     const g = { ...gurs(), findParcel: ok, findBuilding: ok, buildingParts: ok, buildingAt: ok, parcelAt: ok, searchAddresses: ok } as unknown as GursClient;
-    const c = withOffline(g, createOfflineStore(`fb-${n++}`), mirror());
+    const c = withOffline(g, createOfflineStore(`fb-${n++}`), mirror(), { pinDelayMs: 0 });
     expect((await c.findParcel(999, "100/1"))?.eid).toBe("P1");
     expect((await c.buildingAt(15.0002, 46.0002))?.number).toBe(682);
     expect((await c.buildingParts(999, 682)).length).toBe(1);
@@ -89,7 +89,7 @@ describe("GURS unreachable -> mirror", () => {
     const p = { ...KO.parcels[0], extra };
     const details = vi.fn(async () => { throw new Error("full GURS details must not be called"); });
     const spu = vi.fn(async () => ({ code: "LE 12", plan: "OPN Lenart" }));
-    const c = withOffline({ ...gurs(), parcelDetails: details, spatialPlanUnit: spu } as unknown as GursClient, createOfflineStore(`fb-${n++}`), mirror());
+    const c = withOffline({ ...gurs(), parcelDetails: details, spatialPlanUnit: spu } as unknown as GursClient, createOfflineStore(`fb-${n++}`), mirror(), { pinDelayMs: 0 });
     expect(await c.parcelDetails(p)).toEqual({ ...extra, spatialPlanUnit: { code: "LE 12", plan: "OPN Lenart" }, soilQuality: null, errors: [] });
     setGursDown(true);
     expect((await c.parcelDetails(p)).errors).toEqual(["spatialPlanUnit"]);

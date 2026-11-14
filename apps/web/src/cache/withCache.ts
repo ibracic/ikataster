@@ -34,7 +34,7 @@ export function matchManagers(list: Manager[], q: string): Manager[] {
  * Cache-first GURS client for the slow, heavy queries. Fresh local answers come straight from
  * IndexedDB (no GURS request at all); stale ones are refreshed, and still used if GURS is down.
  */
-export function withCache(client: GursClient, store: CacheStore, o: { now?: () => number; ttlMs?: number; outlineTtlMs?: number; backgroundDelayMs?: number } = {}): GursClient {
+export function withCache(client: GursClient, store: CacheStore, o: { now?: () => number; ttlMs?: number; outlineTtlMs?: number; backgroundDelayMs?: number; copyFirst?: boolean } = {}): GursClient {
   const now = o.now ?? Date.now;
   const ttl = o.ttlMs ?? CACHE_TTL_MS;
   const outlineTtl = o.outlineTtlMs ?? OUTLINE_TTL_MS;
@@ -127,8 +127,11 @@ export function withCache(client: GursClient, store: CacheStore, o: { now?: () =
       return out;
     },
 
-    findBuilding: (ko, n) => cached<Building | null>(cacheKeys.building(ko, n), () => store.getBuilding(ko, n), () => client.findBuilding(ko, n), (b) => store.putBuilding(b!, now())),
-    buildingParts: async (ko, n) => {
+    // With the app's own copy (mirror) single lookups are answered from memory; an IndexedDB round-trip first
+    // would only add latency, and the copy is stored as a KO pin for offline use anyway.
+    ...(o.copyFirst ? {} : {
+    findBuilding: (ko: number, n: number) => cached<Building | null>(cacheKeys.building(ko, n), () => store.getBuilding(ko, n), () => client.findBuilding(ko, n), (b) => store.putBuilding(b!, now())),
+    buildingParts: async (ko: number, n: number) => {
       const parts = await cached<BuildingPart[]>(cacheKeys.parts(ko, n), () => store.getBuildingParts(ko, n), () => client.buildingParts(ko, n),
         (v) => store.putBuildingParts(ko, n, v, now()), (v) => v.length > 0);
       const ms = new Map<number, Manager>();
@@ -136,5 +139,6 @@ export function withCache(client: GursClient, store: CacheStore, o: { now?: () =
       await quiet(store.putManagers([...ms.values()], now()));
       return parts;
     },
+    }),
   };
 }

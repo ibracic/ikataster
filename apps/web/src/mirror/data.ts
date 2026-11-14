@@ -122,9 +122,12 @@ export function createMirror(o: MirrorOptions = {}) {
         .sort((a, b) => a[1] - b[1]).map(([id]) => id);
     },
     async downloadKo(koId: number): Promise<KoDownload> {
+      // Index and KO file in parallel: the KO file is the slow part, don't wait for the index first.
+      const file = json<KoDoc>(`/ko/${koId}.json`);
+      file.catch(() => undefined);
       const idx = await getIndex();
       if (!idx.kos.some((k) => k[0] === koId)) throw new Error(`Mirror: unknown KO ${koId}`);
-      return decodeKo(await json<KoDoc>(`/ko/${koId}.json`), idx.codes);
+      return decodeKo(await file, idx.codes);
     },
     /** Managers whose name contains every word of the query (local, instant). */
     async searchManagers(query: string, limit = 20): Promise<ManagerSearch> {
