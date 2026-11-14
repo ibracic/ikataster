@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { PanelWideToggle } from "../../ui/PanelWide";
 import { Alert, Button, CloseButton, Group, Loader, Paper, Progress, ScrollArea, Select, Stack, Text, Title, UnstyledButton } from "@mantine/core";
 import { IconCheck, IconRefresh, IconFilePlus } from "@tabler/icons-react";
-import { cacheStore } from "../../cache/instance";
-import { cacheKeys } from "../../cache/withCache";
 import { ageText } from "../../sw/cacheStatus";
 import { bboxOf } from "../../local/db";
 import type { Feature, FeatureCollection, Point, Geometry, MultiPolygon, Polygon } from "geojson";
@@ -57,7 +55,6 @@ export function ManagerPanel({ client, managerId, kos, koFilter, onKoFilter, onC
   const [outlines, setOutlines] = useState<Map<string, Geometry>>(new Map());
   const [added, setAdded] = useState<number | null>(null);
   const [reload, setReload] = useState(0);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
   const sheet = useSheet(`upr-${managerId}`);
   const koName = useMemo(() => new Map(kos.map((k) => [k.id, k.name])), [kos]);
 
@@ -68,13 +65,10 @@ export function ManagerPanel({ client, managerId, kos, koFilter, onKoFilter, onC
       .then(async (p) => {
         if (ctl.signal.aborted) return;
         if (p) setData(p); else setErr("managerNotFound");
-        const hit = await cacheStore.get(cacheKeys.portfolio(managerId)).catch(() => undefined);
-        if (!ctl.signal.aborted) setSavedAt(hit?.at ?? null);
       })
       .catch((e) => { if (!ctl.signal.aborted && (e as Error)?.name !== "AbortError") setErr(errorMessageKey(e)); });
     return () => ctl.abort();
   }, [client, managerId, reload]);
-  const refresh = async () => { await cacheStore.delete(cacheKeys.portfolio(managerId)).catch(() => undefined); setSavedAt(null); setReload((r) => r + 1); };
 
   const byKo = useMemo(() => {
     const m = new Map<number, { buildings: number; parts: number }>();
@@ -140,12 +134,6 @@ export function ManagerPanel({ client, managerId, kos, koFilter, onKoFilter, onC
             <Text size="sm" mb={6} data-testid="manager-totals">
               {nf.format(data.buildings.length)} {t("managerBuildings")} · {nf.format(data.parts.length)} {t("managerParts")} · {byKo.length} KO
             </Text>
-            {savedAt != null && (
-              <Group gap={6} mb={6} data-testid="manager-saved">
-                <Text size="xs" c="dimmed">{t("savedLocally")} · {ageText(savedAt, Date.now(), lang)}</Text>
-                <Button size="compact-xs" variant="subtle" leftSection={<IconRefresh size={12} />} onClick={() => void refresh()}>{t("refresh")}</Button>
-              </Group>
-            )}
             <Select
               size="xs" mb="xs" clearable searchable placeholder={t("managerAllKos")} aria-label={t("ko")}
               value={koFilter ? String(koFilter) : null} onChange={(v) => { setAdded(null); onKoFilter(v ? Number(v) : null); }}
