@@ -121,6 +121,10 @@ export function createMirror(o: MirrorOptions = {}) {
         .map(([id, , [w, s, e, n]]) => [id, (lon - (w + e) / 2) ** 2 + (lat - (s + n) / 2) ** 2] as const)
         .sort((a, b) => a[1] - b[1]).map(([id]) => id);
     },
+    /** KOs whose bounding box overlaps [w, s, e, n]. */
+    async kosIn([bw, bs, be, bn]: [number, number, number, number]): Promise<number[]> {
+      return (await getIndex()).kos.filter(([, , [w, s, e, n]]) => w <= be && e >= bw && s <= bn && n >= bs).map(([id]) => id);
+    },
     async downloadKo(koId: number): Promise<KoDownload> {
       // Index and KO file in parallel: the KO file is the slow part, don't wait for the index first.
       const file = json<KoDoc>(`/ko/${koId}.json`);
@@ -184,30 +188,3 @@ export function createMirror(o: MirrorOptions = {}) {
   };
 }
 export type Mirror = ReturnType<typeof createMirror>;
-
-/** KO list, KO pinning and manager search/portfolios read the mirror (fast, spares GURS, whose WFS now rejects range filters); GURS is the fallback. */
-export function withMirror(client: GursClient, mirror: Mirror): GursClient {
-  return {
-    ...client,
-    async listKos() {
-      try { return await mirror.listKos(); } catch { return client.listKos(); }
-    },
-    async downloadKo(koId, o) {
-      try { return await mirror.downloadKo(koId); } catch { return client.downloadKo(koId, o); }
-    },
-    async searchManagers(q, signal) {
-      try { return await mirror.searchManagers(q); } catch { return client.searchManagers(q, signal); }
-    },
-    async managerPortfolio(id, o = {}) {
-      try { return await mirror.managerPortfolio(id, o.koId); } catch { return client.managerPortfolio(id, o); }
-    },
-    async buildingOutlines(list, signal) {
-      const got = mirror.knownOutlines(list);
-      const missing = list.filter((b) => !got.has(`${b.koId}:${b.number}`));
-      if (missing.length) {
-        try { for (const [k, g] of await client.buildingOutlines(missing, signal)) got.set(k, g); } catch (e) { if (!got.size) throw e; }
-      }
-      return got;
-    },
-  };
-}

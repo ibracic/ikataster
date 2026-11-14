@@ -3,7 +3,7 @@ import { MantineProvider } from "@mantine/core";
 import { MemoryRouter } from "react-router";
 import { I18nProvider } from "../i18n";
 import { GursContext } from "../gurs/instance";
-import { createGursClient } from "../gurs";
+import { type GursClient, createGursClient } from "../gurs";
 import { fromD96 } from "../gurs";
 import { act } from "@testing-library/react";
 import { fakeFetch, fixture, typeIs, type Route } from "../gurs/testFetch";
@@ -38,11 +38,11 @@ const routes = (parcel = "parcel-657-1587.json"): Route[] => [
   [typeIs("SI.MNVP.PA:EUP_OPN"), fixture("eup.json")],
 ];
 
-function renderAt(url: string, r: Route[], cart = createCartStore(`flow-cart-${++cartN}`)) {
+function renderAt(url: string, r: Route[], cart = createCartStore(`flow-cart-${++cartN}`), over: Partial<GursClient> = {}) {
   window.matchMedia ||= ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as never;
   globalThis.ResizeObserver ||= class { observe() {} unobserve() {} disconnect() {} } as never;
   localStorage.clear();
-  const client = createGursClient({ fetch: fakeFetch(r) });
+  const client = { ...createGursClient({ fetch: fakeFetch(r) }), ...over } as GursClient;
   return render(
     <MemoryRouter initialEntries={[url]}>
       <MantineProvider><I18nProvider><GursContext.Provider value={client}><CartContext.Provider value={cart}><ValuesContext.Provider value={fakeValues()}><TxContext.Provider value={fakeTx}><MapPage /></TxContext.Provider></ValuesContext.Provider></CartContext.Provider></GursContext.Provider></I18nProvider></MantineProvider>
@@ -266,12 +266,12 @@ const KO_657 = JSON.stringify({ type: "FeatureCollection", numberMatched: 1, fea
 
 describe("list import flow", () => {
   it("pastes a list, adds valid rows to the cart and reports invalid rows with reasons", async () => {
-    renderAt("/", [
-      [typeIs("SI.GURS.KN:KATASTRSKE_OBCINE"), KO_657],
-      [typeIs("SI.GURS.KN:PARCELE"), fixture("imp-parcels-657.json")],
-      [typeIs("SI.GURS.KN:STAVBE_OBRIS"), fixture("imp-buildings-657.json")],
-      [typeIs("SI.GURS.KN:DELI_STAVB"), fixture("imp-parts-657.json")],
-    ]);
+    const sq = { type: "Polygon" as const, coordinates: [[[15, 46], [15.001, 46], [15.001, 46.001], [15, 46]]] };
+    renderAt("/", [[typeIs("SI.GURS.KN:KATASTRSKE_OBCINE"), KO_657]], undefined, {
+      findParcel: (async (_k: number, n: string) => (n === "1587" ? { eid: "P1587", geometry: sq } : null)) as never,
+      findBuilding: (async (_k: number, n: number) => (n === 130 ? { eid: "B130", geometry: sq } : null)) as never,
+      buildingParts: (async (_k: number, n: number) => (n === 130 ? [{ number: 2, eid: "D2", use: "stanovanje" }] : [])) as never,
+    });
     fireEvent.click(screen.getByRole("button", { name: /^Seznam za izpise ZK/ }));
     fireEvent.click(await screen.findByRole("button", { name: "Uvozi seznam" }));
     const box = await screen.findByRole("textbox", { name: "Seznam" });

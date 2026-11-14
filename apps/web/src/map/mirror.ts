@@ -36,13 +36,3 @@ export function cadastreOverride(search: string): CadastreSource | null {
   return v === "1" ? "mirror" : v === "0" ? "gurs" : null;
 }
 
-/** Tiny GURS WMS request; false when blocked, failing or slower than `timeoutMs`. */
-export const GURS_PROBE_URL = "https://ipi.eprostor.gov.si/wms-si-gurs-kn/wms?service=WMS&request=GetCapabilities&version=1.3.0";
-export async function probeGurs(fetchFn: typeof fetch = fetch, timeoutMs = 8000): Promise<boolean> {
-  const ctrl = new AbortController();
-  const timer = new Promise<boolean>((r) => setTimeout(() => { ctrl.abort(); r(false); }, timeoutMs));
-  const req = fetchFn(`${GURS_PROBE_URL}&_probe=${Date.now()}`, { cache: "no-store", signal: ctrl.signal })
-    .then((res) => res.ok && !res.headers.get("x-ikataster-cached"))
-    .catch(() => false);
-  return Promise.race([req, timer]);
-}

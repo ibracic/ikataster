@@ -223,7 +223,7 @@ export function MapPage() {
               )}
               <Switch mt={6} label={t("labels")} checked={labels} onChange={(e) => setLabels(e.currentTarget.checked)} />
               <Text size="xs" fw={700} c="dimmed" tt="uppercase" mt={4}>{t("overlays")}</Text>
-              {cadastre === "mirror" && <Text size="xs" c="orange.8" maw={240} data-testid="cadastre-mirror">{t("cadastreMirror")}</Text>}
+              {cadastre === "mirror" && <Text size="xs" c="dimmed" maw={240} data-testid="cadastre-mirror">{t("cadastreMirror")}</Text>}
               <Switch label={t("parcels")} checked={overlays.parcels} onChange={toggle("parcels")} />
               {overlays.parcels && zoom < 15 && <Text size="xs" c="dimmed">{t("zoomHintParcels")}</Text>}
               <Switch label={t("buildings")} checked={overlays.buildings} onChange={toggle("buildings")} />

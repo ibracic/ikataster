@@ -11,6 +11,8 @@ export interface KoIndex {
   parts(building: number): BuildingPart[];
   parcelAt(lon: number, lat: number): Parcel | null;
   buildingAt(lon: number, lat: number): Building | null;
+  /** Parcels or buildings whose bounding box overlaps [w, s, e, n]. */
+  within(kind: "parcel" | "building", box: [number, number, number, number]): (Parcel | Building)[];
 }
 
 type Boxed<T> = { v: T; b: [number, number, number, number] };
@@ -42,5 +44,11 @@ export function indexKo(d: KoDownload): KoIndex {
     parts: (b) => parts.get(b) ?? [],
     parcelAt: (x, y) => hit((pBoxes ??= d.parcels.filter((p) => p.geometry).map((v) => ({ v, b: bboxOf(v.geometry!) }))), x, y),
     buildingAt: (x, y) => hit((bBoxes ??= d.buildings.filter((b) => b.geometry).map((v) => ({ v, b: bboxOf(v.geometry!) }))), x, y),
+    within: (kind, [w, s, e, n]) => {
+      const list: Boxed<Parcel | Building>[] = kind === "parcel"
+        ? (pBoxes ??= d.parcels.filter((p) => p.geometry).map((v) => ({ v, b: bboxOf(v.geometry!) })))
+        : (bBoxes ??= d.buildings.filter((b) => b.geometry).map((v) => ({ v, b: bboxOf(v.geometry!) })));
+      return list.filter(({ b }) => b[0] <= e && b[2] >= w && b[1] <= n && b[3] >= s).map(({ v }) => v);
+    },
   };
 }

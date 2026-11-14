@@ -1,6 +1,11 @@
 import type { Geometry } from "geojson";
 import type { Building, BuildingPart, GursClient, Manager, ManagerPortfolio, ManagerSearch } from "../gurs";
-import { isUnavailable } from "../offline/withOffline";
+import { GursError } from "../gurs";
+
+/** GURS unreachable or broken (as opposed to "not found" / bad input). 403 = GURS firewall refusing the query. */
+export function isUnavailable(e: unknown): boolean {
+  return e instanceof GursError && (e.kind === "network" || e.kind === "timeout" || (e.kind === "http" && ((e.status ?? 0) >= 500 || e.status === 403)));
+}
 import type { CacheStore } from "./store";
 import { fetchKeys } from "../local/db";
 

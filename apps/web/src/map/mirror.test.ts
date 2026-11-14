@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { MIRROR_LAYER_IDS, mirrorSource, mirrorLayers, cadastreOverride, probeGurs } from "./mirror";
+import { MIRROR_LAYER_IDS, mirrorSource, mirrorLayers, cadastreOverride } from "./mirror";
 import { layerVisibility } from "./layers";
 import { isOwnLayer } from "./appLayers";
 import { classify } from "../sw/policy";
@@ -41,15 +41,6 @@ describe("mirror vector tiles", () => {
     expect(cadastreOverride("")).toBeNull();
   });
 
-  it("probes GURS without cache and reports unreachable on error, timeout or HTTP error", async () => {
-    const ok = vi.fn(async (_u: string) => new Response("x", { status: 200 }));
-    expect(await probeGurs(ok as unknown as typeof fetch)).toBe(true);
-    expect(String(ok.mock.calls[0][0])).toContain("ipi.eprostor.gov.si");
-    expect(await probeGurs((async () => { throw new TypeError("blocked"); }) as unknown as typeof fetch)).toBe(false);
-    expect(await probeGurs((async () => new Response("", { status: 403 })) as unknown as typeof fetch)).toBe(false);
-    const hang = (() => new Promise<Response>(() => {})) as unknown as typeof fetch;
-    expect(await probeGurs(hang, 20)).toBe(false);
-  });
 
   it("caches mirror tiles in the service worker like GURS tiles", () => {
     expect(classify("https://app.example/mirror/tiles/14/1/2.pbf", "GET", "cors", "https://app.example")).toBe("tiles");
