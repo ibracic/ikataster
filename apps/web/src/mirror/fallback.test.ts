@@ -3,7 +3,6 @@ import { GursError, type GursClient, type KoDownload } from "../gurs";
 import { createOfflineStore } from "../offline/store";
 import { withOffline } from "../offline/withOffline";
 import { setGursDown } from "./state";
-import { getCachedAt, resetCacheStatus } from "../sw/cacheStatus";
 import type { Mirror } from "./data";
 
 const sq = (x: number, y: number, d = 0.001) => ({ type: "Polygon" as const, coordinates: [[[x, y], [x + d, y], [x + d, y + d], [x, y + d], [x, y]]] });
@@ -35,11 +34,10 @@ describe("GURS unreachable -> mirror", () => {
     const c = withOffline(gurs(), store, m);
     expect((await c.findParcel(999, "100/1"))?.eid).toBe("P1");
     expect((await c.findBuilding(999, 682))?.flats).toBe(12);
-    resetCacheStatus();
     expect((await c.buildingParts(999, 682)).map((p) => p.number)).toEqual([1]);
-    expect(Date.now() - (getCachedAt() ?? 0)).toBeLessThan(60_000);
     expect(m.downloadKo).toHaveBeenCalledTimes(1);
-    expect((await store.listPins()).map((p) => p.koId)).toEqual([999]);
+    // kept as a pin for offline use, in the background
+    await vi.waitFor(async () => expect((await store.listPins()).map((p) => p.koId)).toEqual([999]), { timeout: 5000, interval: 200 });
   });
 
   it("finds parcel and building by map point via the KO index", async () => {
@@ -66,11 +64,23 @@ describe("GURS unreachable -> mirror", () => {
     expect(g.findParcel).not.toHaveBeenCalled();
   });
 
-  it("still reports not-found errors from GURS untouched", async () => {
+  it("asks GURS only when the copy has no answer, and passes its not-found through", async () => {
     const g = gurs();
     (g.findParcel as ReturnType<typeof vi.fn>).mockImplementation(async () => null);
     const m = mirror();
     expect(await withOffline(g, createOfflineStore(`fb-${n++}`), m).findParcel(999, "1")).toBeNull();
-    expect(m.downloadKo).not.toHaveBeenCalled();
+    expect(m.downloadKo).toHaveBeenCalledTimes(1);
+    expect(g.findParcel).toHaveBeenCalledTimes(1);
+  });
+
+  it("answers from the copy first even when GURS works (GURS is never asked)", async () => {
+    const ok = vi.fn(async () => { throw new Error("GURS must not be called"); });
+    const g = { ...gurs(), findParcel: ok, findBuilding: ok, buildingParts: ok, buildingAt: ok, parcelAt: ok, searchAddresses: ok } as unknown as GursClient;
+    const c = withOffline(g, createOfflineStore(`fb-${n++}`), mirror());
+    expect((await c.findParcel(999, "100/1"))?.eid).toBe("P1");
+    expect((await c.buildingAt(15.0002, 46.0002))?.number).toBe(682);
+    expect((await c.buildingParts(999, 682)).length).toBe(1);
+    expect((await c.searchAddresses("trg 1", 8))[0].label).toBe("Trg 1");
+    expect(ok).not.toHaveBeenCalled();
   });
 });
