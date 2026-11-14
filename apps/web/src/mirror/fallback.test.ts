@@ -83,4 +83,17 @@ describe("GURS unreachable -> mirror", () => {
     expect((await c.searchAddresses("trg 1", 8))[0].label).toBe("Trg 1");
     expect(ok).not.toHaveBeenCalled();
   });
+
+  it("serves parcel details from the copy and asks GURS only for the spatial plan unit", async () => {
+    const extra = { landUse: ["gozdna zemljišča"], intendedUse: [{ code: "stanovanjske površine", description: "" }], buildings: [] };
+    const p = { ...KO.parcels[0], extra };
+    const details = vi.fn(async () => { throw new Error("full GURS details must not be called"); });
+    const spu = vi.fn(async () => ({ code: "LE 12", plan: "OPN Lenart" }));
+    const c = withOffline({ ...gurs(), parcelDetails: details, spatialPlanUnit: spu } as unknown as GursClient, createOfflineStore(`fb-${n++}`), mirror());
+    expect(await c.parcelDetails(p)).toEqual({ ...extra, spatialPlanUnit: { code: "LE 12", plan: "OPN Lenart" }, soilQuality: null, errors: [] });
+    setGursDown(true);
+    expect((await c.parcelDetails(p)).errors).toEqual(["spatialPlanUnit"]);
+    expect(spu).toHaveBeenCalledTimes(1);
+    expect(details).not.toHaveBeenCalled();
+  });
 });

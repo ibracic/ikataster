@@ -342,6 +342,12 @@ export function createGursClient(o: GursClientOptions = {}) {
       return out;
     },
 
+    /** Spatial plan unit (EUP) at the parcel centroid. */
+    async spatialPlanUnit(p: Parcel): Promise<{ code: string; plan: string } | null> {
+      const fc = await wfsGet<{ EUP_OZN: string; NAZIV_PA: string }>(WFS_MNVP_PA, { typeNames: "SI.MNVP.PA:EUP_OPN", count: 5, propertyName: "EUP_OZN,NAZIV_PA", cql_filter: `INTERSECTS(GEOM,${pointWkt(p.centroidD96)})` }, opt);
+      const f = fc.features[0];
+      return f ? { code: f.properties.EUP_OZN, plan: f.properties.NAZIV_PA } : null;
+    },
     async parcelDetails(p: Parcel): Promise<ParcelDetails> {
       const at = `INTERSECTS(GEOM,${pointWkt(p.centroidD96)})`;
       const errors: ParcelDetails["errors"] = [];
@@ -369,11 +375,7 @@ export function createGursClient(o: GursClientOptions = {}) {
             .map((f): BuildingOnParcel => ({ eid: String(f.properties.EID_STAVBA), koId: f.properties.KO_ID, number: f.properties.ST_STAVBE, areaOnParcel: f.properties.POVRSINA }))
             .sort((a, b) => a.number - b.number);
         }),
-        safe("spatialPlanUnit", async () => {
-          const fc = await wfsGet<{ EUP_OZN: string; NAZIV_PA: string }>(WFS_MNVP_PA, { typeNames: "SI.MNVP.PA:EUP_OPN", count: 5, propertyName: "EUP_OZN,NAZIV_PA", cql_filter: at }, opt);
-          const f = fc.features[0];
-          return f ? { code: f.properties.EUP_OZN, plan: f.properties.NAZIV_PA } : null;
-        }),
+        safe("spatialPlanUnit", () => client.spatialPlanUnit(p)),
       ]);
       return { landUse, intendedUse, buildings, spatialPlanUnit, soilQuality: p.soilQuality, errors };
     },

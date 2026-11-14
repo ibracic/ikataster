@@ -1,4 +1,4 @@
-import { GursError, type GursClient } from "../gurs";
+import { GursError, type GursClient, type Parcel, type ParcelDetails } from "../gurs";
 import { fromD96 } from "../gurs/proj";
 import { noteCached } from "../sw/cacheStatus";
 import type { Mirror } from "../mirror/data";
@@ -138,6 +138,15 @@ export function withOffline(client: GursClient, store: OfflineStore, mirror?: Mi
       return mirror.searchAddresses(q, size);
     },
     ...(mirror ? {
+      parcelDetails: async (p: Parcel): Promise<ParcelDetails> => {
+        const x = p.extra;
+        if (!x) return client.parcelDetails(p);
+        const errors: ParcelDetails["errors"] = [];
+        let spatialPlanUnit: ParcelDetails["spatialPlanUnit"] = null;
+        if (gursDown()) errors.push("spatialPlanUnit");
+        else spatialPlanUnit = await client.spatialPlanUnit(p).catch(() => { errors.push("spatialPlanUnit"); return null; });
+        return { landUse: x.landUse, intendedUse: x.intendedUse, buildings: x.buildings, spatialPlanUnit, soilQuality: p.soilQuality, errors };
+      },
       findParcel: (ko: number, n: string) => copyFirst(one(ko), (k) => k.parcel(n), () => store.findParcel(ko, n), () => client.findParcel(ko, n)),
       parcelAt: (lon: number, lat: number) => copyFirst(at(lon, lat), (k) => k.parcelAt(lon, lat), () => store.parcelAt(lon, lat), () => client.parcelAt(lon, lat)),
       parcelAtD96: (e: number, n: number) => { const [lon, lat] = fromD96(e, n); return copyFirst(at(lon, lat), (k) => k.parcelAt(lon, lat), () => store.parcelAt(lon, lat), () => client.parcelAtD96(e, n)); },

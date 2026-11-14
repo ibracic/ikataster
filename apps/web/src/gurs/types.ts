@@ -18,6 +18,8 @@ export interface Parcel {
   area: number;
   /** Soil quality (boniteta), null when not recorded. */
   soilQuality: number | null;
+  /** Detail sections that came with the parcel from the mirror (no GURS query needed). */
+  extra?: ParcelExtra;
   /** [lon, lat] */
   centroid: [number, number];
   /** Centroid in D96/TM metres [E, N] as provided by GURS. */
@@ -31,6 +33,12 @@ export interface BuildingOnParcel {
   number: number;
   /** Building footprint area on this parcel, m². */
   areaOnParcel: number;
+}
+
+export interface ParcelExtra {
+  landUse: string[];
+  intendedUse: { code: string; description: string }[];
+  buildings: BuildingOnParcel[];
 }
 
 export interface ParcelDetails {

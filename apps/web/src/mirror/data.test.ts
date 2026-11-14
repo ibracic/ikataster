@@ -132,3 +132,32 @@ describe("mirror data", () => {
     expect(gurs.managerPortfolio).not.toHaveBeenCalled();
   });
 });
+
+describe("mirror details (extras)", () => {
+  const docs = (extra: object) => vi.fn(async (u: string) => {
+    const p = new URL(u).pathname;
+    if (p === "/mirror/ko/index.json") return Response.json({ ...INDEX, codes: { ...INDEX.codes, landUse: { 10: "gozdna zemljišča", 11: "poseljena zemljišča" }, intended: { 3: ["stanovanjske površine", "opis"] } } });
+    if (p === "/mirror/ko/999.json") return Response.json({ ...KO, ...extra });
+    return new Response("", { status: 404 });
+  }) as unknown as typeof fetch;
+
+  it("decodes parcel land use, intended use, buildings and part floor/entrance/address", async () => {
+    const m = createMirror({ fetch: docs({
+      pe: { "100/1": [[[[10], 60], [[11], 40]], [[3, 100]], [[999, 682, 120, "100200000000000002"]]] },
+      de: { 682: [[1, "2,3", 2, "Trg osvoboditve 1, 2230 Lenart v Slov. goricah, stan. 1"]] },
+    }), base: "https://app.example/mirror" });
+    const d = await m.downloadKo(999);
+    expect(d.parcels[0].extra).toEqual({
+      landUse: ["gozdna zemljišča (60 %)", "poseljena zemljišča (40 %)"],
+      intendedUse: [{ code: "stanovanjske površine", description: "opis" }],
+      buildings: [{ eid: "100200000000000002", koId: 999, number: 682, areaOnParcel: 120 }],
+    });
+    expect(d.parts[0].part).toMatchObject({ floor: "2,3", entranceFloor: 2, address: "Trg osvoboditve 1, 2230 Lenart v Slov. goricah, stan. 1" });
+  });
+
+  it("leaves extra undefined for old files without details", async () => {
+    const d = await createMirror({ fetch: docs({}), base: "https://app.example/mirror" }).downloadKo(999);
+    expect(d.parcels[0].extra).toBeUndefined();
+    expect(d.parts[0].part.floor).toBeNull();
+  });
+});

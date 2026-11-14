@@ -30,14 +30,19 @@ echo "GURS data $DATE, published $OLD"
 if [ "$DATE" = "$OLD" ] && [ "$FORCE" != "--force" ]; then exit 3; fi
 
 echo "== unpack $(date -Is)"
-rm -rf shp gj tc tmp; mkdir -p shp gj tc tmp
-unzip -o -q parcele.zip "KN_SLO_PARCELE_SLO_parcele_${STAMP}.zip"
+rm -rf shp gj tc tmp x; mkdir -p shp gj tc tmp
+unzip -o -q parcele.zip "KN_SLO_PARCELE_SLO_parcele_${STAMP}.zip" "KN_SLO_PARCELE_SLO_stavbe_parcele_${STAMP}.zip"
+mkdir -p x; unzip -o -q -d x parcele.zip 'KN_SLO_PARCELE_SLO_parcele_x_*_rabe_*.csv' 'sifranti/VRSTE_DEJANSKE_RABE.CSV' 'sifranti/VRSTE_NAMENSKE_RABE.CSV'
+unzip -o -q -d x stavbe.zip 'KN_SLO_STAVBE_SLO_etaze_2*.zip' 'KN_SLO_STAVBE_SLO_etaze_x_deli_stavb_*.zip'
+for z in x/*.zip KN_SLO_PARCELE_SLO_stavbe_parcele_*.zip; do unzip -o -q "$z" '*.dbf' -x '*tocka*' -d x && rm -f "$z"; done
 unzip -o -q stavbe.zip "KN_SLO_STAVBE_SLO_tloris_*.zip" "KN_SLO_STAVBE_SLO_nadzemni_tloris_*.zip" "KN_SLO_STAVBE_SLO_stavbe_*.zip" \
   "KN_SLO_STAVBE_SLO_deli_stavb_*.csv" "KN_SLO_STAVBE_SLO_upravniki_*.csv" 'sifranti/*.CSV' -x "*stavbe_parcele*"
 unzip -o -q ko.zip
 for z in KN_SLO_PARCELE_SLO_parcele_*.zip KN_SLO_STAVBE_SLO_tloris_*.zip KN_SLO_STAVBE_SLO_nadzemni_tloris_*.zip KN_SLO_STAVBE_SLO_stavbe_*.zip KN_SLO_KAT_OBCINE_*.zip; do
   unzip -o -q "$z" -d shp && rm -f "$z"
 done
+( cd x; for f in *.dbf; do ogr2ogr -f CSV "${f%.dbf}.csv" "$f" 2>/dev/null; rm -f "$f"; done )
+cp KN_SLO_STAVBE_SLO_deli_stavb_*.csv x/
 mv KN_SLO_STAVBE_SLO_deli_stavb_*.csv KN_SLO_STAVBE_SLO_upravniki_*.csv sifranti gj/
 unzip -o -q -d gj naslovi.zip
 
@@ -63,6 +68,8 @@ tippecanoe -q -e "$NEW/tiles" -t "$W/tmp" -Z8 -z14 -d13 --no-tile-compression --
   -n "iKataster GURS mirror" -A "Geodetska uprava Republike Slovenije"
 echo "== ko files $(date -Is)"; rm -f kodata.sqlite "$SITE/../kodata.sqlite"
 python3 "$HERE/kodata.py" gj "$NEW" "$DATE"
+ln -sf "$W/gj/RN_SLO_NASLOVI_register_naslovov_${STAMP}.csv" x/
+python3 "$HERE/extras.py" x "$NEW"
 python3 "$HERE/addresses.py" gj "$NEW" "$DATE"
 python3 "$HERE/managers.py" "$NEW" "$DATE"
 printf '{"date":"%s","source":"Geodetska uprava Republike Slovenije, kataster nepremičnin in register naslovov, stanje %s"}\n' "$DATE" "$DATE" > "$NEW/index.json"
@@ -73,5 +80,5 @@ TILES=$(find "$NEW/tiles" -name '*.pbf' | wc -l)
 echo "files $FILES (ko $KOS, tiles $TILES)"
 [ "$KOS" -gt 2500 ] && [ "$TILES" -gt 8000 ] && [ "$FILES" -lt 19500 ] && [ -s "$NEW/mgr/index.json" ] || { echo "sanity check failed"; exit 1; }
 rm -rf "$SITE.old"; [ -d "$SITE" ] && mv "$SITE" "$SITE.old"; mv "$NEW" "$SITE"; rm -rf "$SITE.old"
-rm -rf gj tc tmp kodata.sqlite
+rm -rf gj tc tmp x kodata.sqlite
 echo "== done $DATE $(date -Is)"

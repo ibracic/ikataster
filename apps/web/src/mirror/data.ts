@@ -8,7 +8,9 @@ import type { ManagedBuilding, ManagedPart, Manager, ManagerPortfolio, ManagerSe
  * (built weekly by scripts/mirror). Same shapes as the GURS client, so callers don't care where data came from.
  * Source: Geodetska uprava Republike Slovenije (CC BY 4.0).
  */
-type Codes = Record<"use" | "type" | "structure" | "status" | "areaMethod" | "mgrStatus", Record<string, string>>;
+type Codes = Record<"use" | "type" | "structure" | "status" | "areaMethod" | "mgrStatus", Record<string, string>> & {
+  landUse?: Record<string, string>; intended?: Record<string, [string, string]>;
+};
 interface IndexDoc { v: 1; date: string; src: string; codes: Codes; kos: [number, string, [number, number, number, number], number, number][] }
 type GeomEnc = number[][][];
 interface KoDoc {
@@ -16,6 +18,10 @@ interface KoDoc {
   p: [string, string, number | null, number | null, number, number, GeomEnc][];
   b: [number, string, number | null, number | null, number | null, number | null, number | null, number | null, number | null,
     YN, YN, YN, YN, number, number, GeomEnc][];
+  /** parcel -> [land use [[ids], share], intended use [id, share], buildings [ko, n, area, eid]] (added by extras.py) */
+  pe?: Record<string, [[number[], number | null][], [number, number | null][], [number, number, number, string][]]>;
+  /** building -> [part, floors "1,2", entrance floor, address] */
+  de?: Record<string, [number, string | null, number | null, string | null][]>;
   d: Record<string, [number, string, number | null, number | null, number | null, YN, YN, number | null, number | null, number | null, YN, number | null, number | null, number | null, number | null][]>;
 }
 type YN = 0 | 1 | null;
@@ -47,9 +53,21 @@ export function addressKey(s: string): string {
 
 export function decodeKo(doc: KoDoc, codes: Codes): KoDownload {
   const [koId, koName] = doc.ko;
-  const parcels: Parcel[] = doc.p.map(([number, eid, area, soil, e, n, g]) => ({
-    eid, koId, koName, number, area: area ?? 0, soilQuality: soil, centroidD96: [e, n], centroid: fromD96(e, n), geometry: decodeGeometry(g),
-  }));
+  const share = (s: number | null) => (s !== null && s < 100 ? ` (${s} %)` : "");
+  const parcels: Parcel[] = doc.p.map(([number, eid, area, soil, e, n, g]) => {
+    const p: Parcel = { eid, koId, koName, number, area: area ?? 0, soilQuality: soil, centroidD96: [e, n], centroid: fromD96(e, n), geometry: decodeGeometry(g) };
+    const x = doc.pe?.[number];
+    if (doc.pe) {
+      p.extra = {
+        landUse: (x?.[0] ?? []).map(([ids, s]) => ids.map((id) => codes.landUse?.[String(id)] ?? String(id)).join(", ") + share(s)).filter(Boolean),
+        intendedUse: (x?.[1] ?? []).map(([id, s]) => { const c = codes.intended?.[String(id)]; return { code: (c?.[0] ?? String(id)) + share(s), description: c?.[1] ?? "" }; }),
+        buildings: (x?.[2] ?? []).map(([ko, nr, a, beid]) => ({ eid: beid, koId: ko, number: nr, areaOnParcel: a })),
+      };
+    }
+    return p;
+  });
+  const extraParts = new Map<string, [string | null, number | null, string | null]>();
+  for (const [b, rows] of Object.entries(doc.de ?? {})) for (const [nr, fl, en, ad] of rows) extraParts.set(`${b}/${nr}`, [fl, en, ad]);
   const buildings: Building[] = doc.b.map(([number, eid, floors, flats, business, year, facade, type, structure, el, water, sewage, gas, e, n, g]) => ({
     eid, koId, koName, number, floors, flats, businessUnits: business, yearBuilt: year, facadeRenovated: facade,
     type: name(codes.type, type), structure: name(codes.structure, structure),
@@ -59,9 +77,10 @@ export function decodeKo(doc: KoDoc, codes: Codes): KoDownload {
   const parts: KoDownload["parts"] = [];
   for (const [b, rows] of Object.entries(doc.d)) {
     for (const [number, eid, use, area, usable, elevator, condo, flat, inst, win, common, status, method, mgr, mgrStatus] of rows) {
+      const [floor, entranceFloor, address] = extraParts.get(`${b}/${number}`) ?? [null, null, null];
       const part: BuildingPart = {
-        eid, number, use: name(codes.use, use), area, usableArea: usable, floor: null, elevator: bool(elevator), condominium: bool(condo),
-        address: null, flat, entranceFloor: null, installationsYear: inst, windowsYear: win, commonPart: bool(common),
+        eid, number, use: name(codes.use, use), area, usableArea: usable, floor, elevator: bool(elevator), condominium: bool(condo),
+        address, flat, entranceFloor, installationsYear: inst, windowsYear: win, commonPart: bool(common),
         status: name(codes.status, status), areaMethod: name(codes.areaMethod, method),
         manager: mgr ? { id: mgr, name: doc.managers[String(mgr)] ?? "", status: name(codes.mgrStatus, mgrStatus) } : null,
       };
