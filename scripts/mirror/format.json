@@ -1,0 +1,19 @@
+{
+  "about": "Shared description of the iKataster mirror KO files (format v1). Written by kodata.py + extras.py, checked by check_format.py, decoded by apps/web/src/mirror/data.ts (contract test: mirror/format.test.ts). Types: int, num, str, yn (1 yes / 0 no), geom (polygons > rings > flat delta ints of lon/lat*1e6); '?' = may be null.",
+  "version": 1,
+  "index": {
+    "keys": ["v", "date", "src", "codes", "kos"],
+    "codes": ["use", "type", "structure", "status", "areaMethod", "mgrStatus", "landUse", "intended"],
+    "kos": [["id", "int"], ["name", "str"], ["bbox", "bbox"], ["parcels", "int"], ["buildings", "int"]]
+  },
+  "ko": {
+    "keys": ["v", "ko", "date", "src", "managers", "p", "b", "d", "pe", "de"],
+    "p": [["number", "str"], ["eid", "str"], ["area", "num?"], ["soilQuality", "num?"], ["e", "num"], ["n", "num"], ["geom", "geom"]],
+    "b": [["number", "int"], ["eid", "str"], ["floors", "int?"], ["flats", "int?"], ["businessUnits", "int?"], ["yearBuilt", "int?"], ["facadeRenovated", "int?"],
+          ["type", "int?"], ["structure", "int?"], ["electricity", "yn?"], ["water", "yn?"], ["sewage", "yn?"], ["gas", "yn?"], ["e", "num"], ["n", "num"], ["geom", "geom"]],
+    "d": [["number", "int"], ["eid", "str"], ["use", "int?"], ["area", "num?"], ["usableArea", "num?"], ["elevator", "yn?"], ["condominium", "yn?"], ["flat", "int?"],
+          ["installationsYear", "int?"], ["windowsYear", "int?"], ["commonPart", "yn?"], ["status", "int?"], ["areaMethod", "int?"], ["managerId", "int?"], ["managerStatus", "int?"]],
+    "pe": [["landUse", "list"], ["intendedUse", "list"], ["buildings", "list"]],
+    "de": [["number", "int"], ["floors", "str?"], ["entranceFloor", "int?"], ["address", "str?"]]
+  }
+}

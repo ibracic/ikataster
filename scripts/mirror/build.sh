@@ -79,6 +79,7 @@ KOS=$(ls "$NEW/ko" | wc -l)
 TILES=$(find "$NEW/tiles" -name '*.pbf' | wc -l)
 echo "files $FILES (ko $KOS, tiles $TILES)"
 [ "$KOS" -gt 2500 ] && [ "$TILES" -gt 8000 ] && [ "$FILES" -lt 19500 ] && [ -s "$NEW/mgr/index.json" ] || { echo "sanity check failed"; exit 1; }
+python3 "$HERE/check_format.py" "$NEW" || { echo "format check failed"; exit 1; }
 rm -rf "$SITE.old"; [ -d "$SITE" ] && mv "$SITE" "$SITE.old"; mv "$NEW" "$SITE"; rm -rf "$SITE.old"
 rm -rf gj tc tmp x kodata.sqlite
 echo "== done $DATE $(date -Is)"

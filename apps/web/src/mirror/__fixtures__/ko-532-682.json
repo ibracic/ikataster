@@ -1,0 +1,910 @@
+{
+"codes":{
+"use":{
+"1":"stanovanje v enostanovanjski stavbi",
+"10":"trgovski del stavbe",
+"11":"bencinski servis",
+"12":"del stavbe za opravljanje storitev",
+"13":"del stavbe za izvajanje elektronskih komunikacij",
+"14":"del stavbe za potniški promet",
+"15":"garaža",
+"16":"garažno parkirno mesto",
+"17":"del stavbe za industrijsko rabo",
+"18":"del stavbe za težko industrijo",
+"19":"elektrarna",
+"2":"stanovanje",
+"20":"del stavbe z rezervoarjem, silos",
+"21":"skladišče",
+"22":"del stavbe za kulturo in razvedrilo",
+"23":"muzej in knjižnica",
+"24":"del stavbe za izobraževanje in znanstveno raziskovalno delo",
+"25":"del stavbe za zdravstveno oskrbo",
+"26":"športna dvorana",
+"27":"hlev",
+"28":"pomožni kmetijski del stavbe",
+"29":"del stavbe za spravilo pridelka",
+"3":"oskrbovano stanovanje",
+"30":"del stavbe za opravljanje verskih obredov",
+"31":"del stavbe za pokopališko dejavnost",
+"32":"del stavbe za zaščito, reševanje in zaklonišče",
+"33":"klet",
+"34":"shramba, sušilnica, pralnica",
+"35":"terasa, balkon, loža",
+"36":"tehnični prostor",
+"37":"skupni komunikacijski prostor",
+"38":"skupne sanitarije",
+"39":"ruševina",
+"4":"bivalna enota",
+"40":"nestavba",
+"41":"del stavbe za posebne namene",
+"42":"sejemska dvorana, razstavišče",
+"43":"šola, vrtec",
+"44":"bolnica, zdravstveni dom",
+"45":"rastlinjak",
+"46":"del stavbe za pastoralno dejavnost",
+"47":"stanovanje v dvostanovanjski stavbi",
+"48":"zdravilišče",
+"49":"banka, pošta, zavarovalnica",
+"5":"koča, dom",
+"50":"konferenčna ali kongresna dvorana",
+"51":"arhiv",
+"52":"trgovski del stavbe na bencinskih servisih",
+"53":"igralnica, cirkus, plesna dvorana, diskoteka",
+"54":"hangar, remiza, tovorni terminal",
+"55":"zavetišče in hotel za živali",
+"56":"del stavbe za živali ali rastline v živalskem ali botaničnem vrtu",
+"57":"drvarnica",
+"58":"čebelnjak",
+"59":"kolesarnica, čolnarna",
+"6":"nastanitveni gostinski obrat",
+"60":"zidanica",
+"7":"prehrambni gostinski obrat",
+"8":"poslovni prostor javne uprave",
+"9":"poslovni del stavbe"
+},
+"type":{
+"0":"ni podatka",
+"1":"samostoječa stavba",
+"2":"krajna vrstna stavba",
+"3":"vmesna vrstna stavba"
+},
+"structure":{
+"-1":"Neznano",
+"0":"ni podatka",
+"1":"opeka",
+"2":"beton, železobeton",
+"3":"kamen",
+"4":"les",
+"5":"kombinacija različnih materialov",
+"6":"kovinska konstrukcija",
+"7":"montažna gradnja",
+"8":"drug material"
+},
+"status":{
+"1":"Katastrski vpis po ZEN",
+"2":"Katastrski vpis po ZENDMPE",
+"3":"Vpis po ZPPLPS",
+"4":"Registrski",
+"5":"Katastrski vpis po ZKN",
+"6":"Katastrski vpis po UD vpis stavbe",
+"7":"Katastrski vpis po UD spremembe"
+},
+"areaMethod":{
+"-1":"Neznano",
+"0":"Ni podatka",
+"1":"Izmerjena površina",
+"2":"Ocenjena površina"
+},
+"mgrStatus":{
+"1":"K – katastrski",
+"2":"R – registrski",
+"3":"Z – začasni"
+},
+"landUse":{
+"1":"kmetijska zemljišča brez trajnih nasadov",
+"2":"hmeljišče",
+"3":"trajne rastline na njivskih površinah",
+"4":"vinograd",
+"5":"matičnjak",
+"6":"intenzivni sadovnjak",
+"7":"oljčnik",
+"8":"ostali trajni nasadi",
+"9":"plantaža gozdnega drevja",
+"10":"gozdna zemljišča",
+"11":"poseljena zemljišča",
+"12":"tloris stavbe",
+"13":"javna državna cestna infrastruktura",
+"14":"območje objekta na javni državni cestni infrastrukturi",
+"15":"javna občinska cestna infrastruktura",
+"16":"območje objekta na javni občinski cestni infrastrukturi",
+"17":"javna železniška infrastruktura",
+"18":"območje objekta na javni železniški infrastrukturi",
+"19":"vodna zemljišča",
+"20":"neplodna zemljišča",
+"21":"nedoločena raba"
+},
+"intended":{
+"1":[
+"območja stavbnih zemljišč",
+""
+],
+"2":[
+"območja stanovanj",
+""
+],
+"3":[
+"stanovanjske površine",
+""
+],
+"4":[
+"stanovanjske površine za posebne namene",
+""
+],
+"5":[
+"površine podeželskega naselja",
+""
+],
+"6":[
+"površine počitniških hiš",
+""
+],
+"7":[
+"območja centralnih dejavnosti",
+""
+],
+"8":[
+"osrednja območja centralnih dejavnosti",
+""
+],
+"9":[
+"druga območja centralnih dejavnosti",
+""
+],
+"10":[
+"območja proizvodnih dejavnosti",
+""
+],
+"11":[
+"površine za industrijo",
+""
+],
+"12":[
+"gospodarske cone",
+""
+],
+"13":[
+"površine z objekti za kmetijsko proizvodnjo",
+""
+],
+"14":[
+"posebna območja",
+""
+],
+"15":[
+"površine za turizem",
+""
+],
+"16":[
+"površine drugih območij",
+""
+],
+"17":[
+"športni centri",
+""
+],
+"18":[
+"območja zelenih površin",
+""
+],
+"19":[
+"površine za oddih, rekreacijo in šport",
+""
+],
+"20":[
+"parki",
+""
+],
+"21":[
+"površine za vrtičkarstvo",
+""
+],
+"22":[
+"druge urejene zelene površine",
+""
+],
+"23":[
+"pokopališča",
+""
+],
+"24":[
+"območja prometne infrastrukture",
+""
+],
+"25":[
+"površine cest",
+""
+],
+"26":[
+"površine železnic",
+""
+],
+"27":[
+"letališča",
+""
+],
+"28":[
+"helioporti",
+""
+],
+"29":[
+"pristanišča",
+""
+],
+"30":[
+"ostale prometne površine",
+""
+],
+"31":[
+"območja komunikacijske infrastrukture",
+""
+],
+"32":[
+"območja energetske strukture",
+""
+],
+"33":[
+"območja okoljske infrastrukture",
+""
+],
+"34":[
+"območja za potrebe obrambe v naselju",
+""
+],
+"35":[
+"površine razpršene poselitve",
+""
+],
+"36":[
+"razpršena gradnja",
+""
+],
+"37":[
+"območja kmetijskih zemljišč",
+""
+],
+"38":[
+"najboljša kmetijska zemljišča",
+""
+],
+"39":[
+"druga kmetijska zemljišča",
+""
+],
+"40":[
+"območja gozdnih zemljišč",
+""
+],
+"41":[
+"gozdna zemljišča",
+""
+],
+"42":[
+"območja voda",
+""
+],
+"43":[
+"območja površinskih voda",
+""
+],
+"44":[
+"celinske vode",
+""
+],
+"45":[
+"morje",
+""
+],
+"46":[
+"območje vodne infrastrukture",
+""
+],
+"47":[
+"območja drugih zemljišč",
+""
+],
+"48":[
+"območja mineralnih snovi",
+""
+],
+"49":[
+"površine nadzemnega pridobivalnega prostora",
+""
+],
+"50":[
+"površine podzemnega pridobivalnega prostora s površinskim vplivom, ki onemogoča drugo rabo",
+""
+],
+"51":[
+"območje za potrebe varstva pred naravnimi in drugimi nesrečami",
+""
+],
+"52":[
+"območja za potrebe obrambe zunaj naselij",
+""
+],
+"53":[
+"ostala območja",
+""
+]
+}
+},
+"doc":{
+"v":1,
+"ko":[
+532,
+"LENART V SLOVENSKIH GORICAH"
+],
+"date":"2026-11-13",
+"src":"Geodetska uprava Republike Slovenije, kataster nepremičnin, stanje 2026-11-13",
+"managers":{
+"714":"TVOJ DOM, poslovanje z nepremičninami, posredništvo in storitve d.o.o."
+},
+"p":[
+[
+"411/6",
+"100100001394764166",
+1055,
+null,
+563553.58,
+159900.51,
+[
+[
+[
+15829507,
+46575862,
+-494,
+-71,
+-86,
+-12,
+-101,
+-115,
+166,
+-222,
+221,
+111,
+12,
+9,
+-4,
+3,
+369,
+229,
+-30,
+23,
+-28,
+21,
+-25,
+24
+],
+[
+15829279,
+46575758,
+44,
+-33,
+-22,
+-15,
+-44,
+33,
+22,
+15
+],
+[
+15829408,
+46575841,
+45,
+-33,
+-24,
+-15,
+-24,
+-16,
+-44,
+33,
+24,
+16,
+23,
+15
+],
+[
+15829352,
+46575805,
+45,
+-33,
+-22,
+-14,
+-22,
+-14,
+-22,
+-14,
+-45,
+32,
+22,
+14,
+22,
+15,
+22,
+14
+],
+[
+15829060,
+46575661,
+21,
+-17,
+22,
+-17,
+21,
+-17,
+22,
+-17,
+21,
+-17,
+28,
+-22,
+-55,
+-30,
+-26,
+20,
+-22,
+17,
+-21,
+17,
+-21,
+17,
+-22,
+17,
+-21,
+17,
+-22,
+17,
+29,
+17,
+-48,
+37,
+25,
+14,
+47,
+-36,
+22,
+-17
+],
+[
+15829045,
+46575473,
+-53,
+-26,
+-23,
+29,
+-15,
+20,
+-14,
+20,
+-16,
+20,
+-14,
+20,
+-15,
+20,
+-15,
+20,
+-15,
+20,
+-15,
+20,
+-15,
+20,
+58,
+21,
+15,
+-20,
+15,
+-20,
+15,
+-20,
+15,
+-20,
+15,
+-20,
+15,
+-20,
+15,
+-20,
+14,
+-20,
+15,
+-20,
+18,
+-24
+]
+]
+]
+]
+],
+"b":[
+[
+682,
+"100200000208211744",
+4,
+12,
+0,
+1830,
+2020,
+1,
+1,
+1,
+1,
+1,
+0,
+563557.24,
+159893.19,
+[
+[
+[
+15829134,
+46575810,
+-143,
+-86,
+219,
+-173,
+382,
+242,
+-71,
+54,
+-242,
+-151,
+-145,
+114
+]
+]
+]
+]
+],
+"d":{
+"682":[
+[
+1,
+"100300000287342161",
+2,
+44.0,
+37.5,
+0,
+1,
+1,
+2020,
+2020,
+0,
+1,
+1,
+714,
+2
+],
+[
+2,
+"100300000360487719",
+2,
+48.6,
+44.5,
+0,
+1,
+2,
+2020,
+2020,
+0,
+1,
+1,
+714,
+2
+],
+[
+3,
+"100300000360487727",
+2,
+36.2,
+32.1,
+0,
+1,
+3,
+2020,
+2020,
+0,
+1,
+1,
+714,
+2
+],
+[
+4,
+"100300000360487735",
+2,
+42.7,
+38.1,
+0,
+1,
+4,
+2020,
+2020,
+0,
+1,
+1,
+714,
+2
+],
+[
+5,
+"100300000360487743",
+2,
+46.3,
+42.6,
+0,
+1,
+5,
+2020,
+2020,
+0,
+1,
+1,
+714,
+2
+],
+[
+6,
+"100300000360487750",
+2,
+52.6,
+49.2,
+0,
+1,
+6,
+2020,
+2020,
+0,
+1,
+1,
+714,
+2
+],
+[
+7,
+"100300000360487768",
+2,
+80.0,
+80.0,
+0,
+1,
+7,
+2020,
+2020,
+0,
+1,
+1,
+714,
+2
+],
+[
+8,
+"100300000360487776",
+2,
+75.0,
+71.3,
+0,
+1,
+8,
+2020,
+2020,
+0,
+1,
+1,
+714,
+2
+],
+[
+9,
+"100300000360487784",
+2,
+59.0,
+55.3,
+0,
+1,
+9,
+2020,
+2020,
+0,
+1,
+1,
+714,
+2
+],
+[
+10,
+"100300000360487792",
+2,
+109.2,
+70.5,
+0,
+1,
+10,
+2020,
+2020,
+0,
+1,
+1,
+714,
+2
+],
+[
+11,
+"100300000360487800",
+2,
+47.6,
+33.3,
+0,
+1,
+11,
+2020,
+2020,
+0,
+1,
+1,
+714,
+2
+],
+[
+12,
+"100300000360487818",
+2,
+95.5,
+66.7,
+0,
+1,
+12,
+2020,
+2020,
+0,
+1,
+1,
+714,
+2
+],
+[
+13,
+"100300000360487826",
+37,
+102.1,
+102.1,
+0,
+1,
+null,
+2020,
+2020,
+1,
+1,
+1,
+714,
+2
+]
+]
+},
+"pe":{
+"411/6":[
+[
+[
+[
+11
+],
+46
+],
+[
+[
+11,
+12
+],
+53
+]
+],
+[
+[
+8,
+100
+]
+],
+[
+[
+532,
+682,
+512,
+"100200000208211744"
+]
+]
+]
+},
+"de":{
+"682":[
+[
+1,
+"1,2",
+1,
+"Jurovska cesta 1 a, 2230 Lenart v Slov. goricah, stan. 1"
+],
+[
+2,
+"1,2",
+1,
+"Jurovska cesta 1 a, 2230 Lenart v Slov. goricah, stan. 2"
+],
+[
+3,
+"1,2",
+1,
+"Jurovska cesta 1 a, 2230 Lenart v Slov. goricah, stan. 3"
+],
+[
+4,
+"1,3",
+1,
+"Jurovska cesta 1 a, 2230 Lenart v Slov. goricah, stan. 4"
+],
+[
+5,
+"2,3",
+2,
+"Jurovska cesta 1 a, 2230 Lenart v Slov. goricah, stan. 5"
+],
+[
+6,
+"2,3",
+2,
+"Jurovska cesta 1 a, 2230 Lenart v Slov. goricah, stan. 6"
+],
+[
+7,
+"2",
+2,
+"Jurovska cesta 1 a, 2230 Lenart v Slov. goricah, stan. 7"
+],
+[
+8,
+"2",
+2,
+"Jurovska cesta 1 a, 2230 Lenart v Slov. goricah, stan. 8"
+],
+[
+9,
+"2",
+2,
+"Jurovska cesta 1 a, 2230 Lenart v Slov. goricah, stan. 9"
+],
+[
+10,
+"2,3,4",
+3,
+"Jurovska cesta 1 a, 2230 Lenart v Slov. goricah, stan. 10"
+],
+[
+11,
+"2,3",
+3,
+"Jurovska cesta 1 a, 2230 Lenart v Slov. goricah, stan. 11"
+],
+[
+12,
+"1,3",
+3,
+"Jurovska cesta 1 a, 2230 Lenart v Slov. goricah, stan. 12"
+],
+[
+13,
+"1,2,3",
+1,
+null
+]
+]
+}
+}
+}
