@@ -1,3 +1,4 @@
+import { useMediaQuery } from "@mantine/hooks";
 import { Modal, Text, Tabs, List, ThemeIcon, Title, Accordion } from "@mantine/core";
 import { IconInfoCircle, IconDownload, IconLock, IconQuestionMark } from "@tabler/icons-react";
 import type { ReactNode } from "react";
@@ -56,8 +57,9 @@ const CONTENT: Record<"sl" | "en", Content> = {
 export function HelpModal({ opened, onClose }: { opened: boolean; onClose: () => void }) {
   const { lang } = useI18n();
   const c = CONTENT[lang === "en" ? "en" : "sl"];
+  const mobile = useMediaQuery("(max-width: 640px)") ?? false;
   return (
-    <Modal opened={opened} onClose={onClose} title={<Title order={4}>{c.title}</Title>} size="lg" zIndex={1000}>
+    <Modal opened={opened} onClose={onClose} title={<Title order={4}>{c.title}</Title>} size="lg" zIndex={1000} fullScreen={mobile}>
       <Tabs defaultValue="start">
         <Tabs.List>
           <Tabs.Tab value="start" leftSection={<IconInfoCircle size={14} />}>{c.start}</Tabs.Tab>

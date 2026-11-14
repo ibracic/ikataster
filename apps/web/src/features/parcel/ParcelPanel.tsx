@@ -60,7 +60,7 @@ export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
         </Text>
       </SheetSummary>
       <div className="sheet-body">
-      <ScrollArea.Autosize mah="min(55vh, 520px)" type="auto" offsetScrollbars>
+      <ScrollArea.Autosize mah="min(55dvh, 520px)" type="auto" offsetScrollbars>
         <Table verticalSpacing={6} fz="sm">
           <Table.Tbody>
             {row("value", <><ValueCell state={values} value={pv} href={parcel.id ? valuationUrl("parcel", parcel.id) : undefined} label={t("value")} /><ValueSource state={values} /></>)}

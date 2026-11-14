@@ -86,7 +86,7 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
         </Text>
       </SheetSummary>
       <div className="sheet-body">
-      <ScrollArea.Autosize mah="min(58vh, 560px)" type="auto" scrollbars="y" offsetScrollbars="y">
+      <ScrollArea.Autosize mah="min(58dvh, 560px)" type="auto" scrollbars="y" offsetScrollbars="y">
         <Table verticalSpacing={5} fz="sm">
           <Table.Tbody>
             {row("buildingType", b.type)}

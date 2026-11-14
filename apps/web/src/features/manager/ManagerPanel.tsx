@@ -141,7 +141,7 @@ export function ManagerPanel({ client, managerId, kos, koFilter, onKoFilter, onC
               comboboxProps={{ withinPortal: true }}
             />
             {tooMany && <Alert color="blue" variant="light" p="xs" mb="xs"><Text size="xs">{t("managerPickKo")}</Text></Alert>}
-            <ScrollArea.Autosize mah="min(40vh, 380px)" type="auto" scrollbars="y" offsetScrollbars="y">
+            <ScrollArea.Autosize mah="min(40dvh, 380px)" type="auto" scrollbars="y" offsetScrollbars="y">
               <Stack gap={2} data-testid="manager-buildings">
                 {byKo.filter(([ko]) => !koFilter || ko === koFilter).map(([ko, x]) => (
                   <div key={ko}>
