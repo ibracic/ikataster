@@ -66,7 +66,7 @@ export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
           <Table.Tbody>
             {row("value", <><ValueCell state={values} value={pv} href={parcel.id ? valuationUrl("parcel", parcel.id) : undefined} label={t("value")} /><ValueSource state={values} /></>)}
             {row("area", fmtArea(parcel.area, lang))}
-            {row("soilQuality", parcel.soilQuality ?? t("none"))}
+            {row("soilQuality", parcel.soilQuality != null ? <><Text size="sm">{parcel.soilQuality}</Text><Text size="xs" c="dimmed" data-testid="soil-hint">{t("soilQualityHint")}</Text></> : t("none"))}
             {row("landUse", details?.landUse?.length ? details.landUse.join(", ") : t("none"), "landUse")}
             {row("intendedUse", details?.intendedUse?.length
               ? <Stack gap={2}>{details.intendedUse.map((u) => <Text component="div" size="sm" key={u.code}><Badge size="sm" variant="light" mr={6}>{u.code}</Badge>{u.description}</Text>)}</Stack>
