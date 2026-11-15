@@ -1,7 +1,7 @@
 import { Modal, ScrollArea, Tabs, Text } from "@mantine/core";
 import { IconFileText, IconUsers } from "@tabler/icons-react";
 import { useI18n } from "../i18n";
-import { useCart } from "../cart/useCart";
+import { useDownloadList } from "../queue/useDownloadList";
 import { CartPanel } from "../cart/CartPanel";
 import type { CartItem } from "../cart/store";
 import { useResults } from "./useResults";
@@ -23,7 +23,7 @@ interface Props {
 /** One place for land-registry extracts: what to download (to-do list) and what is already downloaded. */
 export function ExtractsModal({ opened, tab, onTab, onClose, onOpenItem, onImport, onOpenProperty }: Props) {
   const { t } = useI18n();
-  const { items } = useCart();
+  const { pending: items } = useDownloadList();
   const { records } = useResults();
   const mobile = typeof window !== "undefined" && window.innerWidth < 640;
   return (

@@ -36,21 +36,34 @@ it("one click downloads the whole cart with per-item states, retry failed, and o
     <QueueContext.Provider value={{ store, runner, quota }}><QueuePanel /></QueueContext.Provider>
   </ResultsContext.Provider></CartContext.Provider></I18nProvider></MantineProvider>);
   const v = ui();
-  fireEvent.click(await screen.findByRole("button", { name: "Prenesi vse izpiske (3)" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Prenesi nove izpiske (3)" })).toBeEnabled());
+  fireEvent.click(screen.getByRole("button", { name: "Prenesi nove izpiske (3)" }));
   await waitFor(() => expect(screen.getByTestId("queue-summary")).toHaveTextContent("Preneseno 2 od 3 · neuspelih 1 · čaka 0"));
   const rows = within(screen.getByTestId("queue-jobs"));
-  expect(rows.getByText(/napaka · ni v ZK/)).toBeInTheDocument();
+  expect(rows.getByText(/ni samostojnega vpisa v ZK/)).toBeInTheDocument();
   expect(await results.list()).toHaveLength(2);
   expect(screen.getByTestId("ezk-quota")).toHaveTextContent("2 / 400");
 
+  // A second round contains only the new property, not old successes or failures.
+  await cart.add([{ kind: "parcel", koId: 657, koName: "M", number: "8", eid: "8", geometry: null }]);
+  fireEvent.click(await screen.findByRole("button", { name: "Prenesi nove izpiske (1)" }));
+  await waitFor(() => expect(screen.getByTestId("queue-summary")).toHaveTextContent("Preneseno 1 od 1"));
+  expect(await results.list()).toHaveLength(3);
+  expect((await store.get("parcel:657:999"))?.attempts).toBe(1);
+  expect(screen.getByTestId("queue-jobs")).not.toHaveTextContent("999");
+  expect(screen.getByRole("button", { name: "Prenesi nove izpiske (0)" })).toBeDisabled();
+
   fail999 = false;
-  fireEvent.click(await screen.findByRole("button", { name: "Ponovi neuspele (1)" }));
-  await waitFor(() => expect(screen.getByTestId("queue-summary")).toHaveTextContent("Preneseno 3 od 3"));
+  fireEvent.click(screen.getByText(/Prejšnji neuspešni prenosi/));
+  fireEvent.click(await screen.findByRole("button", { name: "Poskusi znova parcel:657:999" }));
+  await waitFor(() => expect(screen.getByTestId("queue-summary")).toHaveTextContent("Preneseno 1 od 1"));
   v.unmount();
 
   // reload mid-run: a job left "queued"/"running" in IndexedDB → the panel offers to resume
   await store.clear();
-  await store.enqueue([{ kind: "parcel", koId: 657, koName: "M", number: "5", eid: "5", geometry: null }]);
+  await cart.clear();
+  await cart.add([{ kind: "parcel", koId: 657, koName: "M", number: "5", eid: "5", geometry: null }]);
+  await store.enqueue(await cart.list());
   await store.set("parcel:657:5", { status: "running" });
   ui();
   expect(await screen.findByTestId("queue-resume")).toHaveTextContent("1 izpiskov še čaka");

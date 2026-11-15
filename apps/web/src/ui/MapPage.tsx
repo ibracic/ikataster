@@ -1,3 +1,4 @@
+import { useDownloadList } from "../queue/useDownloadList";
 import { DataFreshness } from "./DataFreshness";
 import { useMediaQuery } from "@mantine/hooks";
 import { MoreActions } from "./MoreActions";
@@ -61,6 +62,7 @@ export function MapPage() {
   useEffect(() => { void refreshStale(gurs, offline, pinMaxAgeDays()).catch(() => undefined); }, [gurs, offline]);
   const { kos } = useKos(gurs);
   const cart = useCart();
+  const { pending } = useDownloadList();
   const [extractsOpen, setExtractsOpen] = useState(false);
   const [extractsTab, setExtractsTab] = useState<ExtractsTab>("todo");
   const results = useResults();
@@ -235,13 +237,13 @@ export function MapPage() {
           </ActionIcon>
         </Tooltip>}
         <div style={{ position: "relative" }}>
-          <ActionIcon size="lg" variant="default" radius="md" aria-label={`${t("extractsTitle")} (${cart.items.length}/${results.records.length})`}
-            onClick={() => { setExtractsTab(cart.items.length > 0 || results.records.length === 0 ? "todo" : "done"); setExtractsOpen(true); }}>
+          <ActionIcon size="lg" variant="default" radius="md" aria-label={`${t("extractsTitle")} (${pending.length}/${results.records.length})`}
+            onClick={() => { setExtractsTab(pending.length > 0 || results.records.length === 0 ? "todo" : "done"); setExtractsOpen(true); }}>
             <IconFileText size={18} />
           </ActionIcon>
-          {cart.items.length > 0 ? (
+          {pending.length > 0 ? (
             <Badge size="xs" circle color="orange" data-testid="cart-count" style={{ position: "absolute", top: -6, right: -6, pointerEvents: "none" }}>
-              {cart.items.length > 99 ? "99+" : cart.items.length}
+              {pending.length > 99 ? "99+" : pending.length}
             </Badge>
           ) : results.records.length > 0 && (
             <Badge size="xs" circle color="teal" data-testid="results-count" style={{ position: "absolute", top: -6, right: -6, pointerEvents: "none" }}>

@@ -35,6 +35,20 @@ const ok = (r: DownloadRequest) => ({ pdfBase64: b64(JSON.stringify(r)) });
 const statuses = async (q: ReturnType<typeof createQueueStore>) => Object.fromEntries((await q.list()).map((j) => [j.item.number, j.status + (j.code ? ":" + j.code : "")]));
 
 describe("download queue", () => {
+  it("adding a new round never retries a prior NOT_IN_ZK or an unrelated waiting job", async () => {
+    const s = setup(r => { if (r.number === "999") throw new BridgeError("NOT_IN_ZK"); return ok(r); });
+    await s.queue.enqueue([item("1"), item("999")]);
+    await s.runner.run();
+    await s.queue.enqueue([item("1"), item("999"), item("2")]);
+    await s.runner.run(["parcel:657:2"]);
+    expect(s.calls.map(c => c.number)).toEqual(["1", "999", "2"]);
+    expect((await s.queue.get("parcel:657:999"))?.status).toBe("failed");
+    await s.queue.enqueue([item("3"), item("4")]);
+    await s.runner.run(["parcel:657:4"]);
+    expect(s.calls.at(-1)?.number).toBe("4");
+    expect((await s.queue.get("parcel:657:3"))?.status).toBe("queued");
+  });
+
   it("downloads the whole cart sequentially, parses and stores results with PDFs, NOT_IN_ZK fails without retry", async () => {
     const s = setup((r) => { if (r.number === "999") throw new BridgeError("NOT_IN_ZK"); return ok(r); });
     expect(await s.queue.enqueue([item("1"), item("999"), item("2/1")])).toBe(3);

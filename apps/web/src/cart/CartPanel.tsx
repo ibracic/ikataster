@@ -3,7 +3,7 @@ import { ActionIcon, Button, Group, Stack, Text, UnstyledButton } from "@mantine
 import { IconFileImport, IconTrash, IconX } from "@tabler/icons-react";
 import { useI18n } from "../i18n";
 import type { CartItem } from "./store";
-import { useCart } from "./useCart";
+import { useDownloadList } from "../queue/useDownloadList";
 import { ExtensionStatus } from "../bridge/ExtensionStatus";
 import { QueuePanel } from "../queue/QueuePanel";
 import { useGurs } from "../gurs/instance";
@@ -22,7 +22,7 @@ export function cartLabel(i: CartItem, t: (k: "parcel" | "building" | "buildingP
 /** Body of the extract to-do list: extension status, download queue, import, items. */
 export function CartPanel({ onOpenItem, onImport }: Pick<Props, "onOpenItem" | "onImport">) {
   const { t } = useI18n();
-  const { store, items } = useCart();
+  const { store, pending: items } = useDownloadList();
   const { kos } = useKos(useGurs());
   const koName = (i: CartItem) => i.koName || kos.find((k) => k.id === i.koId)?.name || "";
   const [confirm, setConfirm] = useState(false);

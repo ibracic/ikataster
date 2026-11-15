@@ -40,10 +40,11 @@ export function createRunner(d: RunnerDeps) {
   const listeners = new Set<(running: boolean) => void>();
   const emit = () => listeners.forEach((l) => l(!!active));
 
-  async function loop(): Promise<RunReport> {
+  async function loop(keys?: readonly string[]): Promise<RunReport> {
     await d.queue.recover();
     const rep: RunReport = { reason: "done", done: 0, failed: 0, deferred: 0 };
-    const waiting = await d.queue.waiting();
+    const selected = keys ? new Set(keys) : null;
+    const waiting = (await d.queue.waiting()).filter(j => !selected || selected.has(j.key));
     const plan = d.quota.plan(waiting.length);
     // over today's quota: the rest waits for tomorrow
     for (const j of waiting.slice(plan.allowed)) { await d.queue.set(j.key, { status: "deferred" }); rep.deferred++; }
@@ -90,10 +91,10 @@ export function createRunner(d: RunnerDeps) {
   return {
     get running() { return !!active; },
     onChange(fn: (running: boolean) => void) { listeners.add(fn); return () => { listeners.delete(fn); }; },
-    run(): Promise<RunReport> {
+    run(keys?: readonly string[]): Promise<RunReport> {
       if (active) return active;
       pauseRequested = false;
-      active = loop().finally(() => { active = null; emit(); });
+      active = loop(keys).finally(() => { active = null; emit(); });
       emit();
       return active;
     },
