@@ -5,6 +5,9 @@ const dict = {
   sl: {
     searchPlaceholder: "Išči naslov, k.o. in parcelo …",
     searchSoon: "Iskanje prihaja kmalu",
+    sheetFull: "Podrobnosti čez cel zaslon",
+    sheetFullShort: "Cel zaslon",
+    sheetBackMap: "Nazaj na zemljevid",
     more: "Več",
     cancelDrawing: "Prekini risanje",
     layers: "Sloji",
@@ -423,6 +426,9 @@ const dict = {
   en: {
     searchPlaceholder: "Search address, cadastral municipality and parcel …",
     searchSoon: "Search coming soon",
+    sheetFull: "Full-screen details",
+    sheetFullShort: "Full screen",
+    sheetBackMap: "Back to map",
     more: "More",
     cancelDrawing: "Cancel drawing",
     layers: "Layers",

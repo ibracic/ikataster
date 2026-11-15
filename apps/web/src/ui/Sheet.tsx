@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { UnstyledButton } from "@mantine/core";
+import { Button, UnstyledButton } from "@mantine/core";
+import { IconArrowsMaximize, IconMap } from "@tabler/icons-react";
 import { useI18n } from "../i18n";
 
 /**
@@ -10,14 +11,18 @@ import { useI18n } from "../i18n";
  */
 export function useSheet(resetKey: unknown) {
   const [open, setOpen] = useState(false);
-  useEffect(() => setOpen(false), [resetKey]);
-  return { open, setOpen, attr: { "data-sheet": open ? "open" : "peek" } as const };
+  const [full, setFull] = useState(false);
+  useEffect(() => { setOpen(false); setFull(false); }, [resetKey]);
+  const changeOpen = (v: boolean) => { setOpen(v); if (!v) setFull(false); };
+  const changeFull = (v: boolean) => { setFull(v); setOpen(v); };
+  return { open, setOpen: changeOpen, full, setFull: changeFull, attr: { "data-sheet": full ? "full" : open ? "open" : "peek" } as const };
 }
 
-export function SheetHandle({ open, setOpen }: { open: boolean; setOpen: (v: boolean) => void }) {
+export function SheetHandle({ open, setOpen, full, setFull }: { open: boolean; setOpen: (v: boolean) => void; full: boolean; setFull: (v: boolean) => void }) {
   const { t } = useI18n();
   const startY = useRef<number | null>(null);
   return (
+    <div className="sheet-controls">
     <UnstyledButton
       className="sheet-handle" aria-label={open ? t("sheetCollapse") : t("sheetExpand")} aria-expanded={open}
       onClick={() => setOpen(!open)}
@@ -32,6 +37,11 @@ export function SheetHandle({ open, setOpen }: { open: boolean; setOpen: (v: boo
     >
       <span />
     </UnstyledButton>
+    <Button className="sheet-full-btn" variant="subtle" size="compact-sm" leftSection={full ? <IconMap size={16} /> : <IconArrowsMaximize size={16} />}
+      onClick={() => setFull(!full)} aria-label={full ? t("sheetBackMap") : t("sheetFull")} aria-expanded={full}>
+      {full ? t("sheetBackMap") : t("sheetFullShort")}
+    </Button>
+    </div>
   );
 }
 

@@ -36,3 +36,15 @@ it("opens as a compact peek on mobile; handle tap/swipe expands and collapses; r
   rerender(ui({ ...parcel, eid: "e2", number: "1588" } as Parcel));
   expect(screen.getByTestId("parcel-panel")).toHaveAttribute("data-sheet", "peek");
 });
+
+it("expands details to full screen, returns to the map without closing the property, and resets for another property", () => {
+  localStorage.setItem("ikataster.lang", "sl");
+  const { rerender } = render(ui(parcel));
+  fireEvent.click(screen.getByRole("button", { name: "Podrobnosti čez cel zaslon" }));
+  expect(screen.getByTestId("parcel-panel")).toHaveAttribute("data-sheet", "full");
+  fireEvent.click(screen.getByRole("button", { name: "Nazaj na zemljevid" }));
+  expect(screen.getByTestId("parcel-panel")).toHaveAttribute("data-sheet", "peek");
+  fireEvent.click(screen.getByRole("button", { name: "Podrobnosti čez cel zaslon" }));
+  rerender(ui({ ...parcel, eid: "e2" } as Parcel));
+  expect(screen.getByTestId("parcel-panel")).toHaveAttribute("data-sheet", "peek");
+});

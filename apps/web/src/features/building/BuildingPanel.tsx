@@ -68,7 +68,7 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
 
   return (
     <Paper shadow="lg" radius="md" p="md" data-testid="building-panel" className="parcel-panel" {...sheet.attr}>
-      <SheetHandle open={sheet.open} setOpen={sheet.setOpen} />
+      <SheetHandle open={sheet.open} setOpen={sheet.setOpen} full={sheet.full} setFull={sheet.setFull} />
       {onBack && (
         <Button size="compact-xs" variant="subtle" px={4} mb={4} leftSection={<IconArrowLeft size={14} />} onClick={onBack}>{t("backToManager")}</Button>
       )}

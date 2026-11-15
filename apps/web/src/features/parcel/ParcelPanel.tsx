@@ -51,7 +51,7 @@ export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
       shadow="lg" radius="md" p="md" data-testid="parcel-panel"
       className="parcel-panel" {...sheet.attr}
     >
-      <SheetHandle open={sheet.open} setOpen={sheet.setOpen} />
+      <SheetHandle open={sheet.open} setOpen={sheet.setOpen} full={sheet.full} setFull={sheet.setFull} />
       <Group justify="space-between" align="flex-start" wrap="nowrap" mb="xs">
         <div>
           <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t("parcel")}</Text>
