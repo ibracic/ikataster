@@ -74,7 +74,7 @@ echo "== eup $(date -Is)"; mkdir -p "$W/eup"
 python3 "$HERE/eup.py" harvest "$W/eup" || { [ -s "$W/eup/eup.jsonl" ] && echo "EUP harvest failed, reusing previous eup.jsonl"; } || exit 1
 python3 "$HERE/eup.py" apply "$W/eup" "$NEW"
 python3 "$HERE/addresses.py" gj "$NEW" "$DATE"
-python3 "$HERE/managers.py" "$NEW" "$DATE"
+python3 "$HERE/managers.py" "$NEW" "$DATE" gj/KN_SLO_STAVBE_SLO_upravniki_${STAMP}.csv "gj/RN_SLO_NASLOVI_register_naslovov_${STAMP}.csv"
 printf '{"date":"%s","source":"Geodetska uprava Republike Slovenije, kataster nepremičnin in register naslovov, stanje %s"}\n' "$DATE" "$DATE" > "$NEW/index.json"
 
 FILES=$(find "$NEW" -type f | wc -l)

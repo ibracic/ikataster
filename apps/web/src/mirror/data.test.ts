@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { decodeGeometry, createMirror, addressKey } from "./data";
+import { decodeGeometry, createMirror, addressKey, initials } from "./data";
 import type { GursClient } from "../gurs";
 
 const ring = (pts: [number, number][]) => {
@@ -25,7 +25,8 @@ const SHARD = { v: 1, date: "2026-11-13", src: "x", a: [
   ["Trnovska ulica", "3", 1000, "Ljubljana", "Ljubljana", 462000, 100000, null],
 ] };
 
-const MGR_INDEX = { v: 1, date: "2026-11-13", m: [[714, "UPRAVNIK Vzorčni d.o.o.", 3, 2, [999, 998]], [715, "DRUGI UPRAVITELJ", 1, 1, [999]]] };
+const MGR_INDEX = { v: 1, date: "2026-11-13", m: [[714, "UPRAVNIK Vzorčni d.o.o.", 3, 2, [999, 998]], [715, "DRUGI UPRAVITELJ", 1, 1, [999]],
+  [752, "PODJETJE ZA STANOVANJSKE STORITVE, STANOVANJSKE IN POSLOVNE STORITVE d.o.o.", 40, 9, [998], "Vošnjakova ulica 6, 2250 Ptuj"]] };
 const MGR = { v: 1, id: 714, name: "UPRAVNIK Vzorčni d.o.o.", b: [
   [998, 5, "100200000000000009", null, [[1, "100300000000000009", 2]]],
   [999, 682, "100200000000000002", [[ring(SQ)]], [[1, "100300000000000003", 2], [2, "100300000000000004", null]]],
@@ -93,6 +94,21 @@ describe("mirror data", () => {
     const all = await m.searchManagers("upr", 1);
     expect(all.managers).toHaveLength(1);
     expect(all.truncated).toBe(true);
+  });
+
+  it("finds managers by initials, office address or the KO of their buildings, biggest first", async () => {
+    const m = createMirror({ fetch: fakeFetch() as unknown as typeof fetch, base: "https://app.example/mirror" });
+    const ids = async (q: string) => (await m.searchManagers(q)).managers.map((x) => x.id);
+    expect(await ids("PSS")).toEqual([752]);
+    expect(await ids("pss ptuj")).toEqual([752]);
+    expect(await ids("vošnjakova")).toEqual([752]);
+    expect(await ids("vzorčna vas")).toEqual([714, 715]);
+    expect((await m.searchManagers("pss")).managers[0]).toMatchObject({ address: "Vošnjakova ulica 6, 2250 Ptuj", parts: 40 });
+    expect(await ids("pss lenart")).toEqual([]);
+  });
+
+  it("initials skip small words", () => {
+    expect(initials("PODJETJE ZA STANOVANJSKE STORITVE, d.o.o.")).toBe("pss");
   });
 
   it("opens a portfolio from one file, filters by KO and serves its outlines", async () => {

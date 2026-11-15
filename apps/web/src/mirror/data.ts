@@ -28,7 +28,7 @@ interface KoDoc {
   d: Record<string, [number, string, number | null, number | null, number | null, YN, YN, number | null, number | null, number | null, YN, number | null, number | null, number | null, number | null][]>;
 }
 type YN = 0 | 1 | null;
-interface MgrIndexDoc { v: 1; date: string; m: [number, string, number, number, number[]][] }
+interface MgrIndexDoc { v: 1; date: string; m: [number, string, number, number, number[], (string | null)?][] }
 interface MgrDoc { v: 1; id: number; name: string; b: [number, number, string | null, GeomEnc | null, [number, string, number | null][]][] }
 interface AddrDoc { v: 1; a: [string, string, number, string, string, number, number, string | null][] }
 
@@ -52,6 +52,17 @@ const fold = (s: string) => s.toLowerCase().replace(/đ/g, "d").normalize("NFKD"
 export function addressKey(s: string): string {
   const k = fold(s).slice(0, 2);
   return k ? (k + "_").slice(0, 2) : "__";
+}
+
+const SMALL = new Set(["za", "in", "d", "o", "dd", "doo", "sp", "z", "v", "na", "ter", "s", "k"]);
+/** Initials of the significant words of a name: "Podjetje za stanovanjske storitve" -> "pss". */
+export function initials(name: string): string {
+  return name.split(/[^\p{L}\p{N}]+/u).map(fold).filter((w) => w && !SMALL.has(w)).map((w) => w[0]).join("");
+}
+/** Every query word must match the name, the initials, the address or a KO name of the manager's buildings. */
+export function managerMatches(words: string[], name: string, address: string | null, koNames: string[]): boolean {
+  const n = fold(name), a = address ? fold(address) : "", ini = initials(name);
+  return words.every((w) => n.includes(w) || (a && a.includes(w)) || (w.length >= 2 && ini.startsWith(w)) || koNames.some((k) => k.includes(w)));
 }
 
 export function decodeKo(doc: KoDoc, codes: Codes): KoDownload {
@@ -138,17 +149,28 @@ export function createMirror(o: MirrorOptions = {}) {
       return decodeKo(await file, idx.codes);
     },
     /** Managers whose name contains every word of the query (local, instant). */
+    /**
+     * Managers matching every word of the query against the name, its initials ("PSS"), the office address
+     * or the name of a KO where the manager has buildings ("Ptuj"). Biggest managers first.
+     */
     async searchManagers(query: string, limit = 20): Promise<ManagerSearch> {
-      const words = query.split(/\s+/).map(fold).filter(Boolean);
+      const words = query.split(/[\s,]+/).map(fold).filter(Boolean);
       if (!words.length || words.join("").length < 3) return { managers: [], truncated: false };
-      const idx = await (mgrIndex ??= json<MgrIndexDoc>("/mgr/index.json").catch((e) => { mgrIndex = null; throw e; }));
-      const hits = idx.m.filter(([, n]) => { const f = fold(n); return words.every((w) => f.includes(w)); });
-      const managers: Manager[] = hits.slice(0, limit).map(([id, n, parts]) => ({ id, name: n, address: null, parts }));
+      const [idx, ko] = await Promise.all([
+        (mgrIndex ??= json<MgrIndexDoc>("/mgr/index.json").catch((e) => { mgrIndex = null; throw e; })),
+        getIndex(),
+      ]);
+      const koNames = new Map(ko.kos.map(([id, n]) => [id, fold(n)]));
+      const hits = idx.m.filter(([, n, , , kos, address]) => managerMatches(words, n, address ?? null, kos.map((k) => koNames.get(k) ?? "")));
+      hits.sort((a, b) => b[2] - a[2]);
+      const managers: Manager[] = hits.slice(0, limit).map(([id, n, parts, , , address]) => ({ id, name: n, address: address ?? null, parts }));
       return { managers, truncated: hits.length > limit };
     },
     /** Whole portfolio of a manager from one file (optionally one KO). Also primes building outlines. */
     async managerPortfolio(id: number, koId?: number): Promise<ManagerPortfolio | null> {
       const idx = await getIndex();
+      const mi = await (mgrIndex ??= json<MgrIndexDoc>("/mgr/index.json").catch((e) => { mgrIndex = null; throw e; })).catch(() => null);
+      const address = mi?.m.find((m) => m[0] === id)?.[5] ?? null;
       let p = mgrDocs.get(id);
       if (!p) { p = json<MgrDoc>(`/mgr/${id}.json`); mgrDocs.set(id, p); p.catch(() => mgrDocs.delete(id)); }
       const doc = await p;
@@ -162,7 +184,7 @@ export function createMirror(o: MirrorOptions = {}) {
         buildings.push({ koId: ko, number, eid: eid ?? "", parts: bp });
       }
       if (!parts.length) return null;
-      return { manager: { id, name: doc.name, address: null, parts: parts.length }, parts, buildings };
+      return { manager: { id, name: doc.name, address, parts: parts.length }, parts, buildings };
     },
     /** Outlines already loaded with a manager portfolio. */
     knownOutlines(list: { koId: number; number: number }[]): Map<string, Geometry> {
