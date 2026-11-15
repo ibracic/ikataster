@@ -41,7 +41,7 @@
   /* One native scroller on phones: the sheet body. The Mantine ScrollArea inside is flattened,
      because two nested scroll areas on iOS stutter and the inner one traps the swipe back to the top. */
   .parcel-panel[data-sheet="open"] .sheet-body {
-    max-height: 52dvh; overflow-y: auto; overscroll-behavior: contain;
+    max-height: 52dvh; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch; touch-action: pan-y;
   }
   .parcel-panel .sheet-body .mantine-ScrollArea-root,
@@ -49,6 +49,11 @@
   .parcel-panel .sheet-body div:has(> div > .mantine-ScrollArea-root) { max-height: none !important; height: auto !important; overflow: visible !important; }
   .parcel-panel .sheet-body .mantine-ScrollArea-viewport { max-height: none !important; overflow: visible !important; }
   .parcel-panel .sheet-body .mantine-ScrollArea-scrollbar { display: none !important; }
+  /* Mantine's ScrollArea content is display:table, which grows to its widest row and made the
+     sheet scroll sideways (diagonal swipes on iOS). Keep everything at the sheet width and wrap. */
+  .parcel-panel .sheet-body .mantine-ScrollArea-content { display: block !important; min-width: 0 !important; width: 100% !important; }
+  .parcel-panel .sheet-body table { width: 100%; table-layout: fixed; }
+  .parcel-panel .sheet-body td, .parcel-panel .sheet-body th { overflow-wrap: anywhere; }
   .parcel-panel .sheet-title { font-size: 1.25rem; }
   /* The sheet covers the right-hand tool buttons instead of sitting under them. */
   .parcel-panel { z-index: 6; }
