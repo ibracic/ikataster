@@ -50,6 +50,8 @@
   .parcel-panel .sheet-body .mantine-ScrollArea-viewport { max-height: none !important; overflow: visible !important; }
   .parcel-panel .sheet-body .mantine-ScrollArea-scrollbar { display: none !important; }
   .parcel-panel .sheet-title { font-size: 1.25rem; }
+  /* The sheet covers the right-hand tool buttons instead of sitting under them. */
+  .parcel-panel { z-index: 6; }
 }
 .maplibregl-canvas { cursor: crosshair; }
 
