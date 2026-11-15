@@ -121,3 +121,6 @@ html, body, #root {
     overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y;
   }
 }
+
+/* Modals: Mantine ScrollArea content is display:table and grows with wide children (pushes tabs off screen). */
+.mantine-Modal-content .mantine-ScrollArea-content { display: block !important; min-width: 0 !important; }

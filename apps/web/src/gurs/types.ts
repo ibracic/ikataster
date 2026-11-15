@@ -165,6 +165,8 @@ export interface GursClient {
   findBuilding(koId: number, number: number): Promise<Building | null>;
   buildingAt(lon: number, lat: number): Promise<Building | null>;
   buildingParts(koId: number, number: number): Promise<BuildingPart[]>;
+  /** Parcels a building stands on (same KO). */
+  buildingParcels(koId: number, number: number): Promise<Parcel[]>;
   featuresInPolygon(kind: AreaKind, ring: [number, number][], o?: { max?: number }): Promise<AreaResult>;
   searchAddresses(query: string, size?: number): Promise<Address[]>;
   searchManagers(query: string): Promise<ManagerSearch>;

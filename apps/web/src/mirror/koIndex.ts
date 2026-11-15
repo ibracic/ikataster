@@ -9,6 +9,8 @@ export interface KoIndex {
   parcel(number: string): Parcel | null;
   building(number: number): Building | null;
   parts(building: number): BuildingPart[];
+  /** Parcels the building stands on (from the parcels' GURS building links). */
+  parcelsUnder(building: number): Parcel[];
   parcelAt(lon: number, lat: number): Parcel | null;
   buildingAt(lon: number, lat: number): Building | null;
   /** Parcels or buildings whose bounding box overlaps [w, s, e, n]. */
@@ -35,6 +37,7 @@ export function indexKo(d: KoDownload): KoIndex {
     l.push(part);
   }
   for (const l of parts.values()) l.sort((a, b) => a.number - b.number);
+  let under: Map<number, Parcel[]> | null = null;
   let pBoxes: Boxed<Parcel>[] | null = null;
   let bBoxes: Boxed<Building>[] | null = null;
   return {
@@ -42,6 +45,18 @@ export function indexKo(d: KoDownload): KoIndex {
     parcel: (n) => parcels.get(n.trim()) ?? null,
     building: (n) => buildings.get(n) ?? null,
     parts: (b) => parts.get(b) ?? [],
+    parcelsUnder: (b) => {
+      if (!under) {
+        under = new Map();
+        for (const p of d.parcels) for (const x of p.extra?.buildings ?? []) {
+          if (x.koId !== d.ko.id) continue;
+          let l = under.get(x.number);
+          if (!l) under.set(x.number, (l = []));
+          l.push(p);
+        }
+      }
+      return under.get(b) ?? [];
+    },
     parcelAt: (x, y) => hit((pBoxes ??= d.parcels.filter((p) => p.geometry).map((v) => ({ v, b: bboxOf(v.geometry!) }))), x, y),
     buildingAt: (x, y) => hit((bBoxes ??= d.buildings.filter((b) => b.geometry).map((v) => ({ v, b: bboxOf(v.geometry!) }))), x, y),
     within: (kind, [w, s, e, n]) => {

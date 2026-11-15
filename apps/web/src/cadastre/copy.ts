@@ -99,6 +99,8 @@ export function withCopy(client: LiveGurs, mirror: Mirror, store: OfflineStore, 
     buildingAt: (lon: number, lat: number) => lookup(at(lon, lat), (k) => k.buildingAt(lon, lat), () => store.buildingAt(lon, lat), null),
     buildingParts: (koId: number, n: number) => lookup([koId], (k) => k.parts(n), async () => (await store.getBuildingParts(koId, n)) ?? [], []),
 
+    buildingParcels: (koId: number, n: number) => lookup([koId], (k) => k.parcelsUnder(n), async () => [], []),
+
     async parcelDetails(p: Parcel): Promise<ParcelDetails> {
       const x = p.extra ?? { landUse: [], intendedUse: [], buildings: [] };
       const errors: ParcelDetails["errors"] = p.extra ? [] : ["landUse", "intendedUse", "buildings"];

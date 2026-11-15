@@ -6,6 +6,7 @@ import { useI18n } from "../i18n";
 import { ezkErrorMessage, fmt, QuotaBadge } from "../ezk/QuotaBadge";
 import { useQueue } from "./instance";
 import { useDownloadList } from "./useDownloadList";
+import { MissingActions } from "./MissingActions";
 import type { Job } from "./store";
 import type { RunReport } from "./runner";
 
@@ -66,13 +67,16 @@ export function QueuePanel() {
           {j.code === "NOT_IN_ZK" ? t("queueNotInZk") : t(`queue_${j.status}` as never)}
         </Badge>
       </Group>)}</Stack>
+      {!running && current.filter(j => j.code === "NOT_IN_ZK" && j.item.kind === "building").map(j => <div key={j.key}>
+        <Text size="xs" c="dimmed">{label(j, t)}: {t("queueMissingHint")}</Text><MissingActions item={j.item} /></div>)}
     </>}
     {report && report.reason !== "done" && <Alert color="orange" p="xs" data-testid="queue-stop">
       {report.reason === "paused" ? t("queuePaused") : report.reason === "quota" ? t("quotaExhausted") : err(report.code) ?? t("queueStopped")}
     </Alert>}
     {failures.length > 0 && <details data-testid="queue-failures"><summary>{t("queuePastFailures")} ({failures.length})</summary>
       <Stack gap={6} mt={6}>{failures.map(j => <Group key={j.key} justify="space-between" wrap="wrap">
-        <div><Text size="sm">{label(j, t)}</Text><Text size="xs" c="dimmed">{j.code === "NOT_IN_ZK" ? t("queueMissingHint") : err(j.code)}</Text></div>
+        <div><Text size="sm">{label(j, t)}</Text><Text size="xs" c="dimmed">{j.code === "NOT_IN_ZK" ? t("queueMissingHint") : err(j.code)}</Text>
+          {j.code === "NOT_IN_ZK" && <MissingActions item={j.item} />}</div>
         <Button size="compact-xs" variant="light" disabled={running} onClick={() => void retry(j)} aria-label={`${t("queueRetryOne")} ${j.key}`}>{t("queueRetryOne")}</Button>
       </Group>)}</Stack>
     </details>}
