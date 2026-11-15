@@ -1,10 +1,10 @@
 # iKataster
 
-A fast web app for looking up Slovenian real estate: parcels, buildings, building parts and building managers, on a map, straight from the public data of the Surveying and Mapping Authority (GURS). With the companion browser extension it also downloads land-registry extracts (e-ZK) through your own SI-PASS login and turns them into searchable tables.
+**Slovenian real estate on a map, free, in your browser: [ikataster.si](https://ikataster.si)**
 
-**Use it at [ikataster.si](https://ikataster.si).**
+Look up any parcel, building, building part or building manager (*upravnik*) in Slovenia, see its GURS value and past sales and rentals, and, with the companion browser extension, download official land-registry extracts (e-ZK) through your own SI-PASS login and turn them into clear tables of owners, mortgages and easements.
 
-There is no backend and no account: the app is a static site that runs entirely in your browser, and everything you save (lists, extracts, folders) stays on your device. The user interface is in Slovenian, with an English option.
+No account and nothing to install to get started: just open [ikataster.si](https://ikataster.si). Everything you save stays on your device. The interface is in Slovenian, with an English option.
 
 ![Building 682 with its attributes, connections and building parts with GURS values](docs/images/building.jpg)
 
@@ -16,7 +16,33 @@ There is no backend and no account: the app is a static site that runs entirely 
 
 If iKataster is useful to you, a ⭐ on GitHub helps other people find it.
 
-## How downloading land-registry extracts works
+**Contents**
+
+- Part 1, for users: [What you can do](#what-you-can-do) · [How iKataster connects to the land registry](#how-ikataster-connects-to-the-land-registry) · [Privacy](#privacy) · [Data sources](#data-sources)
+- Part 2, for developers and self-hosting: [How it works](#how-it-works) · [Repository layout](#repository-layout) · [Getting started](#getting-started) · [Hosting it yourself](#hosting-it-yourself) · [Building the data](#building-the-data)
+
+---
+
+# Part 1: Using iKataster
+
+## What you can do
+
+- **Search** by address, parcel (cadastral municipality + number), building, or building manager (by name, initials, office address or town). If you search in the wrong tab, iKataster tells you where it found the match.
+- **Parcel details**: area, municipality, land use, intended use, spatial planning unit (EUP, with a link to the municipal plan), soil quality (*boniteta*), buildings on the parcel and GURS value.
+- **Building details**: attributes, connections, and every building part with its use, area, floor, entrance, value and building manager.
+- **Prices**: GURS mass-appraisal value (*posplošena vrednost*), recorded sales and rentals (ETN), and an estimate based on comparable sales in the same area.
+- **Building managers**: see every building a manager looks after on the map.
+- **Map**: street map or aerial photo (GURS orthophoto, including historical years back to 1990), with parcels and building outlines on top.
+- **Area selection and lists**: draw a polygon to collect all the parcels or buildings inside it, or import a CSV/XLSX list.
+- **Land-registry extracts** (on a computer, with the extension):
+  - download many e-ZK extracts in one go;
+  - see owners, shares, mortgages, easements and pending changes;
+  - re-check later to see what changed;
+  - save results in folders and export them to Excel/CSV, or to a ZIP that includes the PDFs.
+- **Works on a phone** and can be added to the home screen. You can share a link to any parcel or building.
+- **Backup**: save and restore all your local data as one file.
+
+## How iKataster connects to the land registry
 
 *Plain-language overview. You don't need any technical knowledge.*
 
@@ -55,22 +81,42 @@ flowchart LR
 | Is there a limit? | Yes. e-Sodstvo allows about 400 extracts per user per day; the app counts them and stops before the limit. |
 | Does it work on a phone? | Searching and the map do. Bulk downloading needs the extension, so use a computer; on a phone you can upload PDFs you already have. |
 
-## Features
-
-- **Map**: street map or aerial photo (GURS orthophoto) with cadastral parcels and building outlines on top.
-- **Search**: by address, parcel (cadastral municipality + number), building, or building manager (*upravnik*).
-- **Details**: parcel area, land use and zoning, GURS mass-appraisal value (*posplošena vrednost*); building attributes, connections, and every building part with its use, area and floor.
-- **Area selection**: draw a polygon to collect all parcels or buildings inside it.
-- **List import**: paste or upload CSV/TSV/TXT/XLSX lists of parcels or building parts, validated against GURS.
-- **Land-registry extracts** (desktop, with the extension): queue many e-ZK extracts, respect the daily limit, and parse owners, shares, mortgages, easements and other rights from the PDFs.
-- **Results and export**: filter results, save them in folders, export to Excel/CSV or a ZIP with the source PDFs.
-- **Offline and fast**: answers from GURS and aerial tiles are cached as you browse; pin a cadastral municipality to use it offline. Installable as a PWA.
-- **Backup**: export and restore all local data as one file.
-
 ## Privacy
 
-- iKataster has no server of its own that sees your searches or extracts. The browser fetches map tiles and data directly from the public services listed under *Data sources* (as any map site would), and the extension talks only to the e-ZK portal in your own logged-in browser session.
-- Local data lives in IndexedDB in your browser. Use *Podatki → Varnostna kopija* to back it up.
+- No iKataster server sees your searches or extracts. The app is a set of static files: your browser downloads the cadastral data files and map tiles, and does everything else locally.
+- Your lists, extracts and folders live only in your browser (IndexedDB). Use *Podatki → Varnostna kopija* to back them up.
+- The extension talks only to iKataster and to the e-ZK portal, inside your own logged-in browser session.
+- iKataster never publishes owner data. You search by property, never by a person's name.
+
+## Data sources
+
+All GURS data is used under the GURS terms of use, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (*Pogoji uporabe* on [e-prostor.gov.si](https://www.e-prostor.gov.si/dostopi/javni-dostop/)). Source attribution as required by GURS: **Geodetska uprava Republike Slovenije**, data type, and the date of the data:
+
+- Cadastre, buildings, building parts, addresses, spatial units and building managers: Geodetska uprava Republike Slovenije, Kataster nepremičnin, Register prostorskih enot, Register naslovov. iKataster keeps a weekly copy of the GURS open-data exports and serves it as static files; the date of the data is in `mirror/index.json`. Ownership files are not used.
+- Current and historical orthophoto: Geodetska uprava Republike Slovenije, Digitalni ortofoto (DOF025, DOF050), from the live GURS WMS.
+- Mass-appraisal values: Geodetska uprava Republike Slovenije, Evidenca vrednotenja (values only, no ownership data). Date: `date` in `index.json` on the [`data` branch](https://github.com/ibracic/ikataster/tree/data), also shown next to every value.
+- Sales and rentals: Geodetska uprava Republike Slovenije, Evidenca trga nepremičnin (ETN). Contains no information on the parties to a deal. Date: `date` in `tx/index.json` on the same branch.
+- Basemap: [OpenFreeMap](https://openfreemap.org/), © OpenStreetMap contributors.
+- Land-registry extracts: [e-ZK on e-Sodstvo](https://esodisce.si/), downloaded by the user through their own SI-PASS session.
+
+iKataster is an independent project and is not affiliated with GURS or the Slovenian judiciary. Data is provided as is; always check official sources for legal purposes.
+
+---
+
+# Part 2: For developers and self-hosting
+
+## How it works
+
+- **No backend.** `apps/web` builds to a plain static site. All state is kept in the browser (IndexedDB via Dexie).
+- **Cadastral copy.** A weekly job converts the GURS national open-data exports into static files under `/mirror`:
+  - vector tiles for parcels and buildings;
+  - one JSON file per cadastral municipality (parcels, buildings, parts, land use, EUP, municipality);
+  - search shards for addresses and building managers.
+
+  The app answers every lookup from these files, which makes it fast and lets it work outside Slovenia. Only the orthophoto tiles come live from GURS. File format: [docs/mirror-format.md](docs/mirror-format.md).
+- **Values and sales** are per-KO JSON files on the `data` branch of this repository, rebuilt weekly.
+- **Extension.** A Manifest V3 extension relays requests between the app tab and the logged-in e-ZK tab. The app parses the returned PDFs with pdf.js. The protocol is in `packages/bridge`.
+- **Offline.** A service worker caches the app and aerial tiles, and a cadastral municipality can be pinned for offline use.
 
 ## Repository layout
 
@@ -79,6 +125,8 @@ flowchart LR
 | `apps/web` | The web app (React, React Router in library mode, Mantine, MapLibre GL, Dexie) |
 | `packages/bridge` | Message protocol between the app and the extension |
 | `packages/extension` | Manifest V3 extension for Chrome, Edge and Firefox |
+| `scripts/mirror` | Weekly cadastral copy (tiles, per-KO files, search shards) |
+| `scripts/valuations`, `scripts/transactions` | Weekly values and ETN files for the `data` branch |
 
 ## Getting started
 
@@ -95,6 +143,8 @@ npm run build -w @ikataster/extension   # extension zips in packages/extension/d
 
 `IKATASTER_ORIGINS` is a comma-separated list of the https origins where you host the app (`http://localhost` and `http://127.0.0.1` are always allowed for development). It is injected at build time into the extension (which pages it may talk to) and the app's bridge allowlist, so no hosting domain is hard-coded in the source.
 
+## Hosting it yourself
+
 ### Run with Docker
 
 ```bash
@@ -103,23 +153,25 @@ docker compose up -d --build
 
 The image runs the tests, builds the app and the extension, and serves everything with nginx on `127.0.0.1:3119`. Put your own reverse proxy with TLS in front of it.
 
-Any static host works too: `apps/web/dist` is a plain static site, and `apps/web/public/_headers` carries the same security headers for hosts that read that file (Cloudflare Pages, Netlify). The public instance at ikataster.si is hosted this way.
+Any static host works too: `apps/web/dist` is a plain static site, and `apps/web/public/_headers` carries the same security headers for hosts that read that file (Cloudflare Pages, Netlify). The public instance at ikataster.si is hosted this way, on Cloudflare Pages.
+
+By default the app reads the cadastral copy from `/mirror` on its own origin, and values and sales from this repository's `data` branch (override with `VITE_IKATASTER_VALUES_URL`). If you host it yourself, build the copy as described below and put it in `dist/mirror`.
 
 ### Installing the extension
 
 The built app serves the extension zips under `/extension/`. In the app open *Seznam za izpise ZK → Navodila za namestitev* for step-by-step instructions (load unpacked in Chrome/Edge, temporary add-on in Firefox). After installing, reload the app tab once.
 
-## Data sources
+## Building the data
 
-All GURS data is used under the GURS terms of use, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (*Pogoji uporabe* on [e-prostor.gov.si](https://www.e-prostor.gov.si/dostopi/javni-dostop/)). Source attribution as required by GURS: **Geodetska uprava Republike Slovenije**, data type, and the date of the data:
+You need Python 3, GDAL (`ogr2ogr`) and [tippecanoe](https://github.com/felt/tippecanoe), plus about 8 GB of RAM and 20 GB of free disk.
 
-- Cadastre, buildings, building parts, addresses, current and historical orthophoto: Geodetska uprava Republike Slovenije, Kataster nepremičnin, Register prostorskih enot, Digitalni ortofoto (DOF025, DOF050). Live public WMS/WFS services, so always the current state at the time of viewing.
-- Basemap: [OpenFreeMap](https://openfreemap.org/), © OpenStreetMap contributors.
-- Mass-appraisal values: Geodetska uprava Republike Slovenije, Evidenca vrednotenja, pre-split per cadastral municipality on the [`data` branch](https://github.com/ibracic/ikataster/tree/data) by `scripts/valuations/build.py` (values only, no ownership data). Date of the data: `date` in `index.json`, shown in the app next to every value.
-- Sales and rentals: Geodetska uprava Republike Slovenije, Evidenca trga nepremičnin (ETN), split per cadastral municipality in `tx/` on the same branch by `scripts/transactions/build.py`. ETN open data contains no information on the parties to a deal. Date of the data: `date` in `tx/index.json`.
-- Land-registry extracts: [e-ZK on e-Sodstvo](https://esodisce.si/), downloaded by the user through their own SI-PASS session.
+```bash
+scripts/mirror/build.sh <work-dir> <site-dir> [--force]   # cadastral copy, a few hours; skips if the GURS data is unchanged
+python3 scripts/valuations/build.py --help                 # mass-appraisal values per KO
+python3 scripts/transactions/build.py --help               # ETN sales and rentals per KO
+```
 
-iKataster is an independent project and is not affiliated with GURS or the Slovenian judiciary. Data is provided as is; always check official sources for legal purposes.
+`build.sh` downloads the GURS national exports (never the ownership files) and converts them. It then writes the tiles and per-KO files and validates them with `check_format.py` against `scripts/mirror/format.json`. The new site is swapped in only if every check passes.
 
 ## License
 
