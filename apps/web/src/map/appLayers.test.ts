@@ -23,3 +23,15 @@ it('installs layers once, updates data and restores missing layers after a style
   installLayer(m as unknown as Map, APP_LAYERS[0],data);
   expect(m.addSource).toHaveBeenCalledTimes(2);
 });
+
+it('gives selections a contrasting casing beneath the stronger outline without obscuring imagery', () => {
+  const selection = APP_LAYERS.find(d => d.source === 'selection')!;
+  const halo = selection.layers.find(l => l.id === 'selection-halo');
+  const line = selection.layers.find(l => l.id === 'selection-line');
+  const fill = selection.layers.find(l => l.id === 'selection-fill');
+  expect(halo).toMatchObject({ type: 'line', paint: { 'line-color': '#ffffff', 'line-width': 7 } });
+  expect(line).toMatchObject({ type: 'line', paint: { 'line-color': '#087f5b', 'line-width': 4 } });
+  expect(selection.layers.indexOf(halo!)).toBeLessThan(selection.layers.indexOf(line!));
+  expect(fill).toMatchObject({ paint: { 'fill-opacity': 0.18 } });
+  expect(isOwnLayer('selection-halo')).toBe(true);
+});

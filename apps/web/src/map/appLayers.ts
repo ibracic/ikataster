@@ -71,8 +71,10 @@ const CART_DEF: LayerDefinition = { source: CART, options: { type: "geojson" }, 
 ] };
 export function addCartLayers(m: MlMap, fc: FeatureCollection | null | undefined) { installLayer(m, CART_DEF, fc ?? EMPTY); }
 const SEL_DEF: LayerDefinition = { source: SEL, options: { type: "geojson" }, layers: [
-{ id: `${SEL}-fill`, type: "fill", source: SEL, paint: { "fill-color": "#12b886", "fill-opacity": 0.22 } },
-{ id: `${SEL}-line`, type: "line", source: SEL, paint: { "line-color": "#087f5b", "line-width": 3 } }
+// White casing + dark teal core stays distinct over dark roofs, pale maps and red cadastral lines.
+{ id: `${SEL}-fill`, type: "fill", source: SEL, paint: { "fill-color": "#12b886", "fill-opacity": 0.18 } },
+{ id: `${SEL}-halo`, type: "line", source: SEL, layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": "#ffffff", "line-width": 7, "line-opacity": 0.95 } },
+{ id: `${SEL}-line`, type: "line", source: SEL, layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": "#087f5b", "line-width": 4 } }
 ] };
 export function addSelectionLayers(m: MlMap, geom: Geometry | null | undefined) { installLayer(m, SEL_DEF, geom ? { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: geom }] } : EMPTY); }
 export const APP_LAYERS = [CART_DEF, SEL_DEF, DRAFT_DEF, RES_AREA_DEF, EZK_DEF, RES_DEF];
