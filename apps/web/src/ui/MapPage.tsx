@@ -1,3 +1,5 @@
+import { useMediaQuery } from "@mantine/hooks";
+import { MoreActions } from "./MoreActions";
 import { OrthoYearBar } from "./OrthoYearBar";
 import { SETTINGS } from "../data/inventory";
 import { useSelection, type Mode } from "../selection/useSelection";
@@ -49,6 +51,7 @@ export const EZK_LAYER_KEY = SETTINGS.ezkLayer;
 
 export function MapPage() {
   const { t, lang, setLang } = useI18n();
+  const mobile = useMediaQuery("(max-width: 640px)");
   const { setColorScheme } = useMantineColorScheme();
   const scheme = useComputedColorScheme("light");
   const gurs = useGurs();
@@ -228,11 +231,11 @@ export function MapPage() {
       <HelpModal opened={helpOpen} onClose={() => setHelpOpen(false)} />
 
       <Stack gap={8} style={{ position: "absolute", top: 12, right: 12, zIndex: 4 }}>
-        <Tooltip label={t("drawArea")} position="left">
+        {!mobile && <Tooltip label={t("drawArea")} position="left">
           <ActionIcon size="lg" variant={draw ? "filled" : "default"} radius="md" aria-label={t("drawArea")} onClick={() => (draw ? setDraw(null) : startDraw())}>
             <IconPolygon size={18} />
           </ActionIcon>
-        </Tooltip>
+        </Tooltip>}
         <div style={{ position: "relative" }}>
           <ActionIcon size="lg" variant="default" radius="md" aria-label={`${t("extractsTitle")} (${cart.items.length}/${results.records.length})`}
             onClick={() => { setExtractsTab(cart.items.length > 0 || results.records.length === 0 ? "todo" : "done"); setExtractsOpen(true); }}>
@@ -276,6 +279,14 @@ export function MapPage() {
             </Stack>
           </Popover.Dropdown>
         </Popover>
+        {mobile ? <MoreActions actions={[
+          { label: t("help"), icon: <IconHelp size={18} />, onClick: () => setHelpOpen(true) },
+          { label: t("data"), icon: <IconDatabase size={18} />, onClick: () => setDataOpen(true) },
+          { label: draw ? t("cancelDrawing") : t("drawArea"), icon: <IconPolygon size={18} />, active: !!draw, onClick: () => draw ? setDraw(null) : startDraw() },
+          { label: t("theme"), icon: scheme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />, onClick: () => setColorScheme(scheme === "dark" ? "light" : "dark") },
+          { label: `${t("language")} · ${lang === "sl" ? "English" : "Slovenščina"}`, icon: <IconLanguage size={18} />, onClick: () => setLang(lang === "sl" ? "en" : "sl") },
+          { label: "GitHub", icon: <IconBrandGithub size={18} />, href: "https://github.com/ibracic/ikataster" },
+        ]} /> : <>
         <Tooltip label={t("help")} position="left">
           <ActionIcon size="lg" variant="default" radius="md" aria-label={t("help")} onClick={() => setHelpOpen(true)}>
             <IconHelp size={18} />
@@ -303,6 +314,7 @@ export function MapPage() {
             <IconBrandGithub size={18} />
           </ActionIcon>
         </Tooltip>
+        </>}
       </Stack>
     </div>
   );
