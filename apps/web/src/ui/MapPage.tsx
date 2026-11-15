@@ -1,3 +1,4 @@
+import { DataFreshness } from "./DataFreshness";
 import { useMediaQuery } from "@mantine/hooks";
 import { MoreActions } from "./MoreActions";
 import { OrthoYearBar } from "./OrthoYearBar";
@@ -273,6 +274,7 @@ export function MapPage() {
               <Switch label={t("buildings")} checked={overlays.buildings} onChange={toggle("buildings")} />
               {overlays.buildings && zoom < 17 && <Text size="xs" c="dimmed">{t("zoomHintBuildings")}</Text>}
               <Switch label={t("ezkLayer")} checked={ezkLayer} onChange={(e) => setEzkLayer(e.currentTarget.checked)} />
+              <DataFreshness />
             </Stack>
           </Popover.Dropdown>
         </Popover>
