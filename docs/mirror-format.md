@@ -17,6 +17,7 @@ Owner files (imetniki, osebe, pravice) are never used.
 1. `check_format.py <site>` validates `index.json` and a spread of KO files against `format.json`. `build.sh` runs it
    before the new site is swapped in, so a broken build never goes live.
 2. `check_format.py <site> --sample 532 682 apps/web/src/mirror/__fixtures__/ko-532-682.json` writes a small real excerpt.
+   `test_site.py <site> apps/web/src/mirror/__fixtures__/site` writes a tiny real copy (central Maribor, one manager) that the screen-flow tests run the production cadastre client on.
 3. `apps/web/src/mirror/format.test.ts` checks that excerpt against `format.json` and decodes it with `decodeKo`.
 
 Changing a field: update the Python writer, `format.json` and `decodeKo` together, bump `version` if old files can't be

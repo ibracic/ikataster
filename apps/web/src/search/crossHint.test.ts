@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { findElsewhere, parsePropertyQuery } from "./crossHint";
 import type { GursClient, Ko } from "../gurs";

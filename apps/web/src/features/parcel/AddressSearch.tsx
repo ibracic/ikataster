@@ -36,7 +36,7 @@ export function AddressSearch({ client, onSelect, debounceMs = 300, onMiss, miss
       setLoading(true);
       setFailed(false);
       try {
-        const res = await client.searchAddresses(q, 8, c.signal);
+        const res = await client.searchAddresses(q, 8);
         if (!c.signal.aborted) { setItems(res); setSearched(true); combobox.openDropdown(); if (!res.length) onMiss?.(q); }
       } catch (e) {
         if (!c.signal.aborted && (e as Error)?.name !== "AbortError") { setFailed(true); setItems([]); setSearched(true); }

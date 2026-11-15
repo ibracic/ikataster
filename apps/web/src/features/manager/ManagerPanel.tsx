@@ -87,7 +87,7 @@ export function ManagerPanel({ client, managerId, kos, koFilter, onKoFilter, onC
       mergePolygons(visible.map((b) => m.get(`${b.koId}:${b.number}`)).filter((g): g is Geometry => !!g)),
       resultPoints(visible, m));
     if (!missing.length) { done(outlines); return; }
-    client.buildingOutlines(missing.map((b) => ({ koId: b.koId, number: b.number })), ctl.signal)
+    client.buildingOutlines(missing.map((b) => ({ koId: b.koId, number: b.number })))
       .then((g) => { if (ctl.signal.aborted) return; const m = new Map([...outlines, ...g]); setOutlines(m); done(m); })
       .catch(() => { /* outlines are cosmetic; list still works */ });
     return () => ctl.abort();

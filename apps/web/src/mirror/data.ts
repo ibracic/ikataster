@@ -1,7 +1,7 @@
 import type { Geometry, Position } from "geojson";
 import { fromD96 } from "../gurs/proj";
 import type { Address, Building, BuildingPart, GursClient, Ko, KoDownload, Parcel } from "../gurs";
-import type { ManagedBuilding, ManagedPart, Manager, ManagerPortfolio, ManagerSearch } from "../gurs/managers";
+import type { ManagedBuilding, ManagedPart, Manager, ManagerPortfolio, ManagerSearch } from "../gurs/types";
 
 /**
  * Static per-KO copy of the GURS cadastre published with the app under /mirror
@@ -108,6 +108,9 @@ export function decodeKo(doc: KoDoc, codes: Codes): KoDownload {
   return { ko: { id: koId, name: koName }, parcels, buildings, parts };
 }
 
+/** The copy has no such file (as opposed to being unreachable). */
+class MirrorMissing extends Error { constructor(path: string) { super(`Mirror ${path}: not found`); } }
+
 export interface MirrorOptions { fetch?: typeof fetch; base?: string }
 
 export function createMirror(o: MirrorOptions = {}) {
@@ -121,6 +124,7 @@ export function createMirror(o: MirrorOptions = {}) {
   const outlines = new Map<string, Geometry>();
   async function json<T>(path: string): Promise<T> {
     const r = await f(`${base}${path}`);
+    if (r.status === 404) throw new MirrorMissing(path);
     if (!r.ok) throw new Error(`Mirror ${path}: HTTP ${r.status}`);
     return r.json() as Promise<T>;
   }
@@ -176,7 +180,8 @@ export function createMirror(o: MirrorOptions = {}) {
       const address = mi?.m.find((m) => m[0] === id)?.[5] ?? null;
       let p = mgrDocs.get(id);
       if (!p) { p = json<MgrDoc>(`/mgr/${id}.json`); mgrDocs.set(id, p); p.catch(() => mgrDocs.delete(id)); }
-      const doc = await p;
+      const doc = await p.catch((e) => { if (e instanceof MirrorMissing) return null; throw e; });
+      if (!doc) return null; // manager no longer manages anything (old link)
       const buildings: ManagedBuilding[] = [];
       const parts: ManagedPart[] = [];
       for (const [ko, number, eid, geom, rows] of doc.b) {

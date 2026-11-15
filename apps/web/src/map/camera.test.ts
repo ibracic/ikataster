@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { northUpHash, keepNorthUp, NORTH_UP_OPTIONS } from "./camera";
 
 it("preserves the location and zoom in old rotated/tilted links", () => {

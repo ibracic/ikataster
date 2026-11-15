@@ -136,3 +136,38 @@ export interface AreaResult {
   tooMany: boolean;
   items: AreaFeature[];
 }
+
+/** Building manager (upravnik) as recorded on building parts. */
+export interface Manager { id: number; name: string; address: string | null; parts: number | null }
+export interface ManagedPart { koId: number; building: number; part: number; eid: string; buildingEid: string; use: string | null }
+export interface ManagedBuilding { koId: number; number: number; eid: string; parts: ManagedPart[] }
+export interface ManagerSearch { managers: Manager[]; /** More managers may match than shown: refine the name. */ truncated: boolean }
+export interface ManagerPortfolio { manager: Manager; parts: ManagedPart[]; buildings: ManagedBuilding[] }
+
+/** Everything needed to look up parcels, buildings and parts of one KO. */
+export interface KoDownload {
+  ko: Ko;
+  parcels: Parcel[];
+  buildings: Building[];
+  parts: { building: number; part: BuildingPart }[];
+}
+
+export interface SpatialPlanUnit { code: string; plan: string }
+
+/** The cadastre as the app sees it (answered from the app's GURS copy, see cadastre/copy.ts). */
+export interface GursClient {
+  listKos(): Promise<Ko[]>;
+  downloadKo(koId: number): Promise<KoDownload>;
+  findParcel(koId: number, number: string): Promise<Parcel | null>;
+  parcelAt(lon: number, lat: number): Promise<Parcel | null>;
+  parcelAtD96(e: number, n: number): Promise<Parcel | null>;
+  parcelDetails(p: Parcel): Promise<ParcelDetails>;
+  findBuilding(koId: number, number: number): Promise<Building | null>;
+  buildingAt(lon: number, lat: number): Promise<Building | null>;
+  buildingParts(koId: number, number: number): Promise<BuildingPart[]>;
+  featuresInPolygon(kind: AreaKind, ring: [number, number][], o?: { max?: number }): Promise<AreaResult>;
+  searchAddresses(query: string, size?: number): Promise<Address[]>;
+  searchManagers(query: string): Promise<ManagerSearch>;
+  managerPortfolio(id: number, o?: { koId?: number; signal?: AbortSignal; onProgress?: (n: number) => void }): Promise<ManagerPortfolio | null>;
+  buildingOutlines(list: { koId: number; number: number }[]): Promise<Map<string, Geometry>>;
+}

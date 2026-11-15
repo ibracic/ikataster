@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { parseRows, splitText } from "./parse";
 import type { Ko } from "../gurs";
 

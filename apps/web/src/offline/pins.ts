@@ -1,5 +1,5 @@
 import { SETTINGS } from "../data/inventory";
-import type { GursClient, KoDownloadPhase } from "../gurs";
+import type { GursClient } from "../gurs";
 import type { OfflineStore, Pin } from "./store";
 
 export const PIN_MAX_AGE_KEY = SETTINGS.pinMaxAge;
@@ -10,8 +10,8 @@ export function pinMaxAgeDays(storage: Storage | null = globalThis.localStorage 
 }
 
 export async function pinKo(client: GursClient, store: OfflineStore, koId: number,
-  o: { signal?: AbortSignal; onProgress?: (phase: KoDownloadPhase, done: number, total: number) => void; now?: number } = {}): Promise<Pin> {
-  const d = await client.downloadKo(koId, o);
+  o: { signal?: AbortSignal; now?: number } = {}): Promise<Pin> {
+  const d = await client.downloadKo(koId);
   if (o.signal?.aborted) throw new DOMException("Aborted", "AbortError");
   return store.savePin(d, o.now);
 }

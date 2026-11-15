@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from "vitest";
 import { MIRROR_LAYER_IDS, mirrorSource, mirrorLayers, cadastreOverride } from "./mirror";
 import { layerVisibility } from "./layers";

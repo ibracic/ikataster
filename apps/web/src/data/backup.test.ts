@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { createCartStore } from "../cart/store";
 import { createResultsStore } from "../ezk/results";

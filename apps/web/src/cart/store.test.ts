@@ -1,3 +1,4 @@
+// @vitest-environment node
 import "fake-indexeddb/auto";
 import type { Geometry } from "geojson";
 import { createCartStore, itemKey, type CartInput } from "./store";

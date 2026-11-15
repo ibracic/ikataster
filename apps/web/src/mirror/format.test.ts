@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Contract test: a real KO file excerpt written by the Python mirror scripts (scripts/mirror/check_format.py
 // --sample 532 682, validated there against scripts/mirror/format.json) must decode in the web app.
 import format from "../../../../scripts/mirror/format.json";

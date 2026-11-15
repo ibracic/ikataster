@@ -36,7 +36,7 @@ export function ManagerSearch({ client, onSelect, debounceMs = 200, onMiss, miss
       ctl.current = c;
       setLoading(true); setState("idle"); combobox.openDropdown();
       try {
-        const r = await client.searchManagers(q, c.signal);
+        const r = await client.searchManagers(q);
         if (!c.signal.aborted) { setItems(r.managers); setTruncated(r.truncated); setState("done"); combobox.openDropdown(); if (!r.managers.length) onMiss?.(q); }
       } catch (e) {
         if (!c.signal.aborted && (e as Error)?.name !== "AbortError") { setItems([]); setState("failed"); }

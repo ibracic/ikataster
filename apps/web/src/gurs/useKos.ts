@@ -1,7 +1,6 @@
 import { SETTINGS } from "../data/inventory";
 import { useEffect, useState } from "react";
-import type { GursClient } from "./client";
-import type { Ko } from "./types";
+import type { GursClient, Ko } from "./types";
 
 const LS_KEY = SETTINGS.kos;
 const TTL_MS = 7 * 24 * 3600 * 1000;

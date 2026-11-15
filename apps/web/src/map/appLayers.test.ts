@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, it, vi } from 'vitest';
 import type { Map } from 'maplibre-gl';
 import { APP_LAYERS, installLayer, layerOwnership, isOwnLayer, type LayerDefinition } from './appLayers';

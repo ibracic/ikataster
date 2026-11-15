@@ -1,3 +1,4 @@
+// @vitest-environment node
 import Dexie from 'dexie';
 import { expect, it, vi } from 'vitest';
 import { createValues } from '../values';

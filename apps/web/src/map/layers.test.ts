@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { basemapLabelLayers, wmsTileUrl, GURS_WMS_KN, OVERLAYS, GURS_LAYERS, layerVisibility, basemapStyleUrl } from "./layers";
 
 describe("wmsTileUrl", () => {

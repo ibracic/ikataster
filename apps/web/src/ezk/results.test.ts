@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { createResultsStore, resultKey, groupResults, type ResultRecord } from "./results";
 import type { EzkExtract, Owner } from "./types";
 

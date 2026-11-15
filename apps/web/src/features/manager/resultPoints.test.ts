@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { resultPoints } from "./ManagerPanel";
 
 it("one marker per building with an outline, at its centre, labelled with the part count", () => {

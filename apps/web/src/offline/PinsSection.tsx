@@ -4,7 +4,6 @@ import { IconPin, IconRefresh, IconTrash, IconX } from "@tabler/icons-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useGurs } from "../gurs/instance";
 import { useKos } from "../gurs/useKos";
-import type { KoDownloadPhase } from "../gurs";
 import { useI18n } from "../i18n";
 import { useOffline } from "./instance";
 import { pinKo } from "./pins";
@@ -19,21 +18,20 @@ export function PinsSection({ onMessage, hideTitle }: { onMessage: (color: strin
   const { kos } = useKos(gurs);
   const pins = useLiveQuery(() => store.listPins(), [store]) ?? [];
   const [ko, setKo] = useState<string | null>(null);
-  const [run, setRun] = useState<{ koId: number; phase: KoDownloadPhase; done: number; total: number } | null>(null);
+  const [run, setRun] = useState<{ koId: number } | null>(null);
   const ctl = useRef<AbortController | null>(null);
 
   const pin = async (koId: number) => {
     const c = new AbortController(); ctl.current = c;
-    setRun({ koId, phase: "parcels", done: 0, total: 0 });
+    setRun({ koId });
     try {
-      const p = await pinKo(gurs, store, koId, { signal: c.signal, onProgress: (phase, done, total) => setRun({ koId, phase, done, total }) });
+      const p = await pinKo(gurs, store, koId, { signal: c.signal });
       onMessage("teal", `${t("pinDone")}: ${p.koId} ${p.name}`);
       setKo(null);
     } catch (e) {
       onMessage(c.signal.aborted ? "gray" : "red", c.signal.aborted ? t("pinCancelled") : `${t("pinFailed")}: ${(e as Error).message}`);
     } finally { setRun(null); ctl.current = null; }
   };
-  const phaseLabel: Record<KoDownloadPhase, string> = { parcels: t("parcels"), buildings: t("buildings"), outlines: t("pinOutlines"), parts: t("pinParts") };
 
   return (
     <Stack gap={6} data-testid="pins">
@@ -50,10 +48,10 @@ export function PinsSection({ onMessage, hideTitle }: { onMessage: (color: strin
       {run && (
         <Stack gap={2} data-testid="pin-progress">
           <Group justify="space-between">
-            <Text size="xs">{run.koId} · {phaseLabel[run.phase]}: {run.done}{run.total ? ` / ${run.total}` : ""}</Text>
+            <Text size="xs">{run.koId} · {t("pinLoading")}</Text>
             <Button size="compact-xs" variant="subtle" color="gray" leftSection={<IconX size={12} />} onClick={() => ctl.current?.abort()}>{t("cancel")}</Button>
           </Group>
-          <Progress size="sm" value={run.total ? (run.done / run.total) * 100 : 5} animated />
+          <Progress size="sm" value={100} animated />
         </Stack>
       )}
       {pins.length > 0 && (

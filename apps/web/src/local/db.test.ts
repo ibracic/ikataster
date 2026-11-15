@@ -1,3 +1,4 @@
+// @vitest-environment node
 import Dexie from "dexie";
 import { createGursStore, migrateLegacyStores } from "./db";
 import type { BuildingPart } from "../gurs";

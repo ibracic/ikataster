@@ -2,47 +2,37 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MantineProvider } from "@mantine/core";
 import { I18nProvider } from "../i18n";
 import { GursContext } from "../gurs/instance";
-import { createGursClient, type KoDownload } from "../gurs";
 import { OfflineContext } from "./instance";
-import { createOfflineStore } from "./store";
 import { PinsSection } from "./PinsSection";
 import { collectBackup } from "../data/backup";
+import { testCadastre } from "../test/cadastre";
 
-const poly = { type: "Polygon" as const, coordinates: [[[15, 46], [15.001, 46], [15.001, 46.001], [15, 46]]] };
-const dl = (name: string): KoDownload => ({
-  ko: { id: 2, name },
-  parcels: [{ eid: "P1", koId: 2, koName: name, number: "1", area: 10, soilQuality: null, centroid: [15, 46], centroidD96: [0, 0], geometry: poly }],
-  buildings: [], parts: [],
-});
-
-it("lists pinned KOs with size, refreshes with progress, removes, and is part of the backup", async () => {
-  localStorage.setItem("ikataster.kos.v1", JSON.stringify({ at: Date.now(), kos: [{ id: 2, name: "SUHI VRH" }] }));
-  const store = createOfflineStore(`pins-ui-${Date.now()}`);
-  await store.savePin(dl("SUHI VRH"), 1000);
-  let release!: () => void;
-  const client = { ...createGursClient({ fetch: async () => new Response("{}") }),
-    downloadKo: async (_ko: number, o: { onProgress?: (p: "parcels", d: number, t: number) => void } = {}) => {
-      o.onProgress?.("parcels", 150, 300);
-      await new Promise<void>((r) => { release = r; });
-      return dl("SUHI VRH");
-    } };
+it("saves a KO from the copy for offline use, refreshes it, removes it, and it is part of the backup", async () => {
+  localStorage.clear();
+  const { client, store } = testCadastre();
   const msg = vi.fn();
-  render(<MantineProvider><I18nProvider><GursContext.Provider value={client as never}><OfflineContext.Provider value={store}>
+  render(<MantineProvider><I18nProvider><GursContext.Provider value={client}><OfflineContext.Provider value={store}>
     <PinsSection onMessage={msg} />
   </OfflineContext.Provider></GursContext.Provider></I18nProvider></MantineProvider>);
-  expect(await screen.findByTestId("pin-list")).toHaveTextContent(/2 SUHI VRH.*1 parcele · 0 stavbe · 0 deli stavb · 0,0 MB/);
 
-  fireEvent.click(screen.getByRole("button", { name: "Osveži 2" }));
-  expect(await screen.findByTestId("pin-progress")).toHaveTextContent("2 · Parcele: 150 / 300");
-  release();
-  await waitFor(() => expect(msg).toHaveBeenCalledWith("teal", "Shranjeno za uporabo brez povezave: 2 SUHI VRH"));
-  expect((await store.getPin(2))!.pinnedAt).toBeGreaterThan(1000);
+  // pick KO 683 (real KO list from the copy) and save it
+  fireEvent.click(screen.getByRole("textbox", { name: "Shrani k.o." }));
+  fireEvent.change(screen.getByRole("textbox", { name: "Shrani k.o." }), { target: { value: "683" } });
+  fireEvent.click(await screen.findByRole("option", { name: /^683 /, hidden: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Shrani k.o." }));
+  await waitFor(() => expect(msg).toHaveBeenCalledWith("teal", expect.stringMatching(/^Shranjeno za uporabo brez povezave: 683 /)));
+  expect(await screen.findByTestId("pin-list")).toHaveTextContent(/683 .*1 stavbe · 1 deli stavb/);
+  const first = (await store.getPin(683))!.pinnedAt;
+
+  await new Promise((r) => setTimeout(r, 5));
+  fireEvent.click(screen.getByRole("button", { name: "Osveži 683" }));
+  await waitFor(async () => expect((await store.getPin(683))!.pinnedAt).toBeGreaterThan(first));
 
   const b = await collectBackup({ gurs: store.db });
   expect(b.dbs.gurs.pins).toHaveLength(1);
-  expect(b.dbs.gurs.parcels).toHaveLength(1);
+  expect(b.dbs.gurs.buildings).toHaveLength(1);
 
-  fireEvent.click(screen.getByRole("button", { name: "Odstrani 2" }));
+  fireEvent.click(screen.getByRole("button", { name: "Odstrani 683" }));
   await waitFor(() => expect(screen.queryByTestId("pin-list")).not.toBeInTheDocument());
-  expect(await store.db.parcels.count()).toBe(0);
+  expect(await store.db.buildings.count()).toBe(0);
 });

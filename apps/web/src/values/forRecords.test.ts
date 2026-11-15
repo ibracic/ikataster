@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { valuesForRecords } from "./forRecords";
 import type { ResultRecord } from "../ezk/results";

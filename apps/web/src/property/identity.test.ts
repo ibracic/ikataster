@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { belongsTo, mapIdentity, propertyKey } from './identity';
 import { itemKey } from '../cart/store';

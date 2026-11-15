@@ -1,5 +1,5 @@
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
-import { GursError, type AreaFeature, type AreaKind, type AreaResult, type GursClient, type Parcel, type ParcelDetails } from "../gurs";
+import { GursError, type AreaFeature, type AreaKind, type AreaResult, type GursClient, type LiveGurs, type Parcel, type ParcelDetails } from "../gurs";
 import { fromD96 } from "../gurs/proj";
 import { noteCached } from "../sw/cacheStatus";
 import type { Mirror } from "../mirror/data";
@@ -28,7 +28,7 @@ const empty = (r: unknown) => r == null || (Array.isArray(r) && r.length === 0);
  * GURS is only asked for what the copy does not have: the spatial plan unit (EUP) of a parcel.
  * Ortho photos are map tiles and don't pass through here.
  */
-export function withCopy(client: GursClient, mirror: Mirror, store: OfflineStore, o: { pinDelayMs?: number } = {}): GursClient {
+export function withCopy(client: LiveGurs, mirror: Mirror, store: OfflineStore, o: { pinDelayMs?: number } = {}): GursClient {
   const pinDelay = o.pinDelayMs ?? 8000;
   const memory = new Map<number, Promise<KoIndex | null>>();
 
@@ -74,7 +74,6 @@ export function withCopy(client: GursClient, mirror: Mirror, store: OfflineStore
   const at = (lon: number, lat: number) => mirror.kosAt(lon, lat);
 
   return {
-    ...client,
     async listKos() {
       try {
         const k = await mirror.listKos();
@@ -131,5 +130,5 @@ export function withCopy(client: GursClient, mirror: Mirror, store: OfflineStore
       }
       return { total: items.length, tooMany: false, items };
     },
-  } as GursClient;
+  } satisfies GursClient;
 }

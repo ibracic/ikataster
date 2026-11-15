@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from "vitest";
 import { decodeGeometry, createMirror, addressKey, initials } from "./data";
 import type { GursClient } from "../gurs";

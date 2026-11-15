@@ -1,5 +1,6 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from "vitest";
-import { GursError, type GursClient, type KoDownload } from "../gurs";
+import { GursError, type LiveGurs, type KoDownload } from "../gurs";
 import { createOfflineStore } from "../offline/store";
 import type { Mirror } from "../mirror/data";
 import { withCopy } from "./copy";
@@ -18,9 +19,9 @@ const KO: KoDownload = {
 };
 
 /** Every GURS method throws: the copy must never need it (except spatialPlanUnit, set per test). */
-function gurs(): GursClient {
+function gurs(): LiveGurs {
   const no = () => { throw new Error("GURS must not be asked"); };
-  return new Proxy({}, { get: (_t, k) => (k === "then" ? undefined : vi.fn(no)) }) as unknown as GursClient;
+  return new Proxy({}, { get: (_t, k) => (k === "then" ? undefined : vi.fn(no)) }) as unknown as LiveGurs;
 }
 function mirror(o: { down?: boolean } = {}): Mirror {
   return {
@@ -74,7 +75,7 @@ describe("cadastre copy client", () => {
 
   it("parcel details come from the copy; GURS only for the spatial plan unit (EUP)", async () => {
     const spatialPlanUnit = vi.fn(async () => ({ code: "LE 12", plan: "OPN Lenart" }));
-    const g = { ...({} as GursClient), spatialPlanUnit } as unknown as GursClient;
+    const g = { spatialPlanUnit } as unknown as LiveGurs;
     const c = withCopy(g, mirror(), store(), { pinDelayMs: 0 });
     const d = await c.parcelDetails(KO.parcels[0]);
     expect(d).toMatchObject({ landUse: ["gozdna zemljišča"], spatialPlanUnit: { code: "LE 12" }, errors: [] });
@@ -84,7 +85,7 @@ describe("cadastre copy client", () => {
 
   it("uses the EUP from the copy when the KO file has it (no GURS request)", async () => {
     const spatialPlanUnit = vi.fn();
-    const g = { ...({} as GursClient), spatialPlanUnit } as unknown as GursClient;
+    const g = { spatialPlanUnit } as unknown as LiveGurs;
     const c = withCopy(g, mirror(), store(), { pinDelayMs: 0 });
     const base = KO.parcels[0];
     const withEup = { ...base, extra: { ...base.extra!, spatialPlanUnit: { code: "LE 5", plan: "OPN Lenart" } } };

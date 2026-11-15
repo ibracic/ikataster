@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { diffExtracts } from "./diff";
 import type { EzkExtract, Owner, Right } from "./types";

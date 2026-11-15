@@ -1,3 +1,4 @@
+// @vitest-environment node
 import type { GursClient, Ko } from "../gurs";
 import { parseRows } from "./parse";
 import { resolveImport } from "./resolve";

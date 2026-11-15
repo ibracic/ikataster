@@ -3,7 +3,7 @@ import { MantineProvider } from "@mantine/core";
 import { I18nProvider } from "../i18n";
 import { MemoryRouter } from "react-router";
 import { GursContext } from "../gurs/instance";
-import { createGursClient } from "../gurs";
+import { testCadastre } from "../test/cadastre";
 
 vi.mock("../map/MapView", () => ({
   MapView: (p: { basemap: string; overlays: Record<string, boolean> }) => (
@@ -17,7 +17,7 @@ const setup = () => {
   globalThis.ResizeObserver ||= class { observe() {} unobserve() {} disconnect() {} } as never;
   localStorage.clear();
   return render(
-    <MemoryRouter><MantineProvider><I18nProvider><GursContext.Provider value={createGursClient({ fetch: (async () => new Response(JSON.stringify({ type: "FeatureCollection", features: [], numberMatched: 0 }))) as unknown as typeof fetch })}><MapPage /></GursContext.Provider></I18nProvider></MantineProvider></MemoryRouter>,
+    <MemoryRouter><MantineProvider><I18nProvider><GursContext.Provider value={testCadastre().client}><MapPage /></GursContext.Provider></I18nProvider></MantineProvider></MemoryRouter>,
   );
 };
 
