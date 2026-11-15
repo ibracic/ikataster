@@ -5,10 +5,10 @@
 `npm run test:browser` builds and serves the app locally, then runs Chromium scenarios:
 
 1. Address search → property → extract list → reload retains the item.
-2. Upload a real 03-001 PDF through the file input; real pdf.js parses it and IndexedDB retains the result.
+2. Upload a synthetic 03-001-shaped PDF through the file input; real pdf.js parses it and IndexedDB retains the result.
 3. Download a backup, restore into a clean browser context, and verify both list and extract after the app reloads.
 
-Requirements: Node 22+, `playwright-core` and its Chromium browser installed locally. Set `PLAYWRIGHT_CORE` to an absolute module path if not resolvable normally. Set `EZK_TEST_PDF` to an absolute path to a local test extract. PDFs are never copied to the built app or committed. Missing fixtures fail explicitly, never silently skip. Use synthetic/anonymised extracts, and keep local reports private.
+Requirements: Node 22+. From a fresh checkout run `npm ci`, then `npx playwright-core install chromium` (Linux may also require browser system libraries). `playwright-core` is a pinned root dev dependency. The default PDF is generated entirely from invented text by `synthetic-pdf.mjs`, in memory, and never served by the app. It verifies Unicode extraction and the property section, not realistic multi-page ownership/rights layout. Local private parser fixtures retain that deeper coverage. Optionally set `EZK_TEST_PDF` to an absolute local extract path; a missing override fails explicitly. Keep local reports private. `PLAYWRIGHT_CORE` is an optional module-path override.
 
 Example on the Pi (run browser jobs outside the mom cgroup with a 1500M memory limit):
 

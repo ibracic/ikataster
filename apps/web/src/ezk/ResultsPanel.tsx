@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  ActionIcon, Alert, Badge, Button, FileButton, Group, Loader, Modal, Paper, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton,
+  ActionIcon, Alert, Badge, Button, FileButton, Group, Loader, Paper, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton,
 } from "@mantine/core";
 import { IconDownload, IconFileSpreadsheet, IconFileTypePdf, IconSearch, IconX } from "@tabler/icons-react";
 import { useI18n, type MsgKey } from "../i18n";
@@ -14,8 +14,6 @@ import { addPdfFiles, type AddFilesResult } from "./addFiles";
 import type { EzkExtract } from "./types";
 
 interface Props {
-  opened: boolean;
-  onClose: () => void;
   onOpenProperty?: (r: ResultRecord) => void;
   /** Injected in tests (pdf.js does not run in jsdom). */
   parse?: (bytes: Uint8Array) => Promise<EzkExtract>;
@@ -36,21 +34,7 @@ const REASON: Record<string, MsgKey> = {
 };
 
 
-export function ResultsModal({ opened, onClose, ...rest }: Props) {
-  const { t } = useI18n();
-  const { records } = useResults();
-  const mobile = typeof window !== "undefined" && window.innerWidth < 640;
-  return (
-    <Modal opened={opened} onClose={onClose} fullScreen={mobile} size="min(1100px, 96vw)"
-      title={<Text fw={700}>{t("resultsTitle")} ({records.length})</Text>} scrollAreaComponent={ScrollArea.Autosize}
-      styles={{ body: { overflowX: "hidden" } }}>
-      <ResultsPanel {...rest} />
-    </Modal>
-  );
-}
-
-/** Body of the downloaded-extracts view: add PDFs, folders, filter, export, result cards. */
-export function ResultsPanel({ onOpenProperty, parse, download = browserDownload }: Omit<Props, "opened" | "onClose">) {
+export function ResultsPanel({ onOpenProperty, parse, download = browserDownload }: Props) {
   const { t } = useI18n();
   const { store, records } = useResults();
   const [filter, setFilter] = useState("");

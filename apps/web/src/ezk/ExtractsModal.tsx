@@ -2,10 +2,10 @@ import { Modal, ScrollArea, Tabs, Text } from "@mantine/core";
 import { IconFileText, IconUsers } from "@tabler/icons-react";
 import { useI18n } from "../i18n";
 import { useCart } from "../cart/useCart";
-import { CartPanel } from "../cart/CartDrawer";
+import { CartPanel } from "../cart/CartPanel";
 import type { CartItem } from "../cart/store";
 import { useResults } from "./useResults";
-import { ResultsPanel } from "./ResultsModal";
+import { ResultsPanel } from "./ResultsPanel";
 import type { ResultRecord } from "./results";
 
 export type ExtractsTab = "todo" | "done";

@@ -12,5 +12,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test:runner": "node scripts/tests/workspace-exit.mjs",
     "test:browser": "npm run build && node scripts/tests/browser.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.58.2"
   }
 }

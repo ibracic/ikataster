@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ActionIcon, Button, Drawer, Group, ScrollArea, Stack, Text, UnstyledButton } from "@mantine/core";
+import { ActionIcon, Button, Group, Stack, Text, UnstyledButton } from "@mantine/core";
 import { IconFileImport, IconTrash, IconX } from "@tabler/icons-react";
 import { useI18n } from "../i18n";
 import type { CartItem } from "./store";
@@ -10,8 +10,6 @@ import { useGurs } from "../gurs/instance";
 import { useKos } from "../gurs/useKos";
 
 interface Props {
-  opened: boolean;
-  onClose: () => void;
   onOpenItem?: (item: CartItem) => void;
   onImport?: () => void;
 }
@@ -19,22 +17,6 @@ interface Props {
 export function cartLabel(i: CartItem, t: (k: "parcel" | "building" | "buildingPart") => string) {
   if (i.kind === "part") return `${t("buildingPart")} ${i.number}/${i.part}`;
   return `${t(i.kind)} ${i.number}`;
-}
-
-export function CartDrawer({ opened, onClose, onOpenItem, onImport }: Props) {
-  const { t } = useI18n();
-  const { items } = useCart();
-  const mobile = typeof window !== "undefined" && window.innerWidth < 640;
-  return (
-    <Drawer
-      opened={opened} onClose={onClose}
-      position={mobile ? "bottom" : "right"} size={mobile ? "70%" : 380}
-      title={<Text fw={700}>{t("cart")} ({items.length})</Text>}
-      scrollAreaComponent={ScrollArea.Autosize}
-    >
-      <CartPanel onOpenItem={onOpenItem} onImport={onImport} />
-    </Drawer>
-  );
 }
 
 /** Body of the extract to-do list: extension status, download queue, import, items. */

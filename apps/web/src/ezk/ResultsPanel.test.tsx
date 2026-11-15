@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { MantineProvider } from "@mantine/core";
 import { I18nProvider } from "../i18n";
-import { ResultsModal } from "./ResultsModal";
+import { ResultsPanel } from "./ResultsPanel";
 import { ResultsContext } from "./useResults";
 import { createResultsStore } from "./results";
 import { EzkParseError, type EzkExtract } from "./types";
@@ -42,7 +42,7 @@ it("uploads PDFs, reports failures, groups owners by property and filters them",
   const download = vi.fn();
   render(
     <MantineProvider><I18nProvider><ResultsContext.Provider value={createResultsStore(`rm-${Date.now()}`)}>
-      <ResultsModal opened onClose={() => {}} parse={parse} onOpenProperty={onOpen} download={download} />
+      <ResultsPanel parse={parse} onOpenProperty={onOpen} download={download} />
     </ResultsContext.Provider></I18nProvider></MantineProvider>,
   );
   expect(await screen.findByText(/Ni še izpisov/)).toBeInTheDocument();

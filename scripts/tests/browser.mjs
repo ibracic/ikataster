@@ -1,4 +1,5 @@
 /** Built-app smoke tests. Real UI, IndexedDB, pdf.js and downloads. Only network boundaries are substituted. */
+import { syntheticPdf } from './synthetic-pdf.mjs';
 import { createRequire } from 'node:module';
 import { readFile, access } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
@@ -8,8 +9,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_CORE || 'playwright-core');
 const root = resolve(import.meta.dirname, '../..');
 const pdf = process.env.EZK_TEST_PDF;
-if (!pdf) throw new Error('Set EZK_TEST_PDF to a local 03-001 test PDF (never committed or served).');
-await access(pdf);
+if (pdf) await access(pdf);
 try { await fetch('http://127.0.0.1:4178'); throw new Error('Port 4178 is already occupied'); } catch (e) { if (e.message === 'Port 4178 is already occupied') throw e; }
 const server = spawn('npm', ['run', 'preview', '-w', '@ikataster/web', '--', '--host', '127.0.0.1', '--port', '4178', '--strictPort'], { cwd: root, stdio: 'ignore', detached: true });
 const url = 'http://127.0.0.1:4178';
@@ -49,7 +49,7 @@ try {
 
   await p.getByRole('button', { name: /^Izpisi iz zemljiške knjige/ }).click();
   await p.getByTestId('tab-done').click();
-  await p.locator('input[type=file][accept*="pdf"]').setInputFiles(pdf);
+  await p.locator('input[type=file][accept*="pdf"]').setInputFiles(pdf || { name: 'synthetic-extract.pdf', mimeType: 'application/pdf', buffer: syntheticPdf() });
   await p.getByTestId('results-panel').getByText(/Dodanih izpisov: 1/).waitFor({ timeout: 20000 });
   assert.equal(await p.locator('[data-testid="results-panel"] [data-testid="result-group"]').count(), 1);
   console.log('PASS: PDF upload parsed by real pdf.js and shown in results');

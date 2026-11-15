@@ -9,7 +9,7 @@ import type { EzkExtract } from "./types";
 import { QueueContext } from "../queue/instance";
 import { createQueueStore } from "../queue/store";
 import { createRunner, type DownloadRequest } from "../queue/runner";
-import { ResultsModal } from "./ResultsModal";
+import { ResultsPanel } from "./ResultsPanel";
 
 const extract = (number: string, owner: string, createdAt: string): EzkExtract => ({
   kind: "current", createdAt, pending: false, rights: [], benefits: [],
@@ -33,7 +33,7 @@ it("re-downloads all listed extracts and shows what changed in the land register
   };
   const runner = createRunner({ queue: store, bridge, results, quota, parse, pacingMs: 0 });
   render(<MantineProvider><I18nProvider><ResultsContext.Provider value={results}>
-    <QueueContext.Provider value={{ store, runner, quota }}><ResultsModal opened onClose={() => {}} /></QueueContext.Provider>
+    <QueueContext.Provider value={{ store, runner, quota }}><ResultsPanel /></QueueContext.Provider>
   </ResultsContext.Provider></I18nProvider></MantineProvider>);
 
   fireEvent.click(await screen.findByRole("button", { name: /Preveri spremembe \(2\)/ }));
