@@ -1,5 +1,5 @@
 import { SETTINGS } from "../../data/inventory";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Combobox, Group, Loader, ScrollArea, Text, TextInput, useCombobox } from "@mantine/core";
 import { IconBuildingCommunity } from "@tabler/icons-react";
 import type { GursClient, Manager } from "../../gurs";
@@ -7,10 +7,10 @@ import { useI18n } from "../../i18n";
 
 export const LAST_KEY = SETTINGS.lastManager;
 
-interface Props { client: GursClient; onSelect: (m: Manager) => void; debounceMs?: number }
+interface Props { client: GursClient; onSelect: (m: Manager) => void; debounceMs?: number; onMiss?: (query: string) => void; missExtra?: ReactNode }
 
 /** Building-manager (upravnik) search over all managers in the app's GURS copy (3+ letters, instant). */
-export function ManagerSearch({ client, onSelect, debounceMs = 200 }: Props) {
+export function ManagerSearch({ client, onSelect, debounceMs = 200, onMiss, missExtra }: Props) {
   const { t, lang } = useI18n();
   const nf = new Intl.NumberFormat(lang === "sl" ? "sl-SI" : "en-GB");
   const combobox = useCombobox({ onDropdownClose: () => combobox.resetSelectedOption() });
@@ -28,6 +28,7 @@ export function ManagerSearch({ client, onSelect, debounceMs = 200 }: Props) {
     const q = value.trim();
     if (picked.current !== null && value === picked.current) return;
     picked.current = null;
+    onMiss?.("");
     if (q.length < 3) { ctl.current?.abort(); setItems([]); setState("idle"); setLoading(false); return; }
     const timer = setTimeout(async () => {
       ctl.current?.abort();
@@ -36,7 +37,7 @@ export function ManagerSearch({ client, onSelect, debounceMs = 200 }: Props) {
       setLoading(true); setState("idle"); combobox.openDropdown();
       try {
         const r = await client.searchManagers(q, c.signal);
-        if (!c.signal.aborted) { setItems(r.managers); setTruncated(r.truncated); setState("done"); combobox.openDropdown(); }
+        if (!c.signal.aborted) { setItems(r.managers); setTruncated(r.truncated); setState("done"); combobox.openDropdown(); if (!r.managers.length) onMiss?.(q); }
       } catch (e) {
         if (!c.signal.aborted && (e as Error)?.name !== "AbortError") { setItems([]); setState("failed"); }
       } finally {
@@ -88,7 +89,7 @@ export function ManagerSearch({ client, onSelect, debounceMs = 200 }: Props) {
             {loading ? <Combobox.Empty>{t("managerSearching")}</Combobox.Empty>
               : items.length ? <>{items.map(option)}{truncated && <Combobox.Empty>{t("managerTruncated")}</Combobox.Empty>}</>
               : state === "failed" ? <Combobox.Empty>{t("errService")}</Combobox.Empty>
-              : state === "done" ? <Combobox.Empty>{t("managerNoResults")}</Combobox.Empty>
+              : state === "done" ? <Combobox.Empty>{t("managerNoResults")}{missExtra}</Combobox.Empty>
               : <Combobox.Empty>…</Combobox.Empty>}
           </ScrollArea.Autosize>
         </Combobox.Options>

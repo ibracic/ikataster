@@ -1,7 +1,8 @@
 import { OrthoYearBar } from "./OrthoYearBar";
 import { SETTINGS } from "../data/inventory";
 import { useSelection, type Mode } from "../selection/useSelection";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { findElsewhere, type CrossHint, type SearchTab } from "../search/crossHint";
 import {
   ActionIcon, Alert, Badge, Button, Group, Paper, Popover, SegmentedControl, Stack, Switch, Text, Title, Tooltip,
   useComputedColorScheme, useMantineColorScheme,
@@ -88,6 +89,41 @@ export function MapPage() {
     showBuilding, backToManager, doSearch, onAddress, onMapClick, close } = useSelection(gurs, zoom, overlays.buildings);
   const [areaFc, setAreaFc] = useState<FeatureCollection | null>(null);
 
+  // "Found in another tab" hint: when a search finds nothing, look for the same text as another kind.
+  const lastProp = useRef(initialKo && (initialParcel ?? initialBuilding) ? `${initialKo} ${initialParcel ?? initialBuilding}` : "");
+  const [missed, setMissed] = useState<{ tab: SearchTab; text: string } | null>(null);
+  const [hint, setHint] = useState<CrossHint | null>(null);
+  useEffect(() => {
+    if (sel.error === "notFound" && mode === "parcel") setMissed({ tab: "parcel", text: lastProp.current });
+    else if (bld.error === "buildingNotFound" && mode === "building") setMissed({ tab: "building", text: lastProp.current });
+  }, [sel.error, bld.error, mode]);
+  useEffect(() => { setMissed(null); }, [mode]);
+  useEffect(() => {
+    setHint(null);
+    if (!missed) return;
+    const c = new AbortController();
+    void findElsewhere(missed.tab, missed.text, gurs, kos, c.signal).then((h) => { if (!c.signal.aborted) setHint(h); });
+    return () => c.abort();
+  }, [missed, gurs, kos]);
+  const hintLabel = (h: CrossHint) =>
+    h.kind === "parcel" ? `${t("parcel").toLowerCase()} ${t("ko")} ${h.koId} ${h.koName} ${h.number}`
+      : h.kind === "building" ? `${t("building").toLowerCase()} ${t("ko")} ${h.koId} ${h.koName} ${h.number}`
+        : h.kind === "address" ? `${t("modeAddress").toLowerCase()} ${h.address.label}, ${h.address.place}`
+          : `${t("modeManager").toLowerCase()} ${h.manager.name}`;
+  const hintBox = hint && (
+    <Group gap={8} justify="space-between" wrap="nowrap" mt={6} data-testid="cross-hint" style={{ textAlign: "left" }}>
+      <Text size="sm" c="var(--mantine-color-text)" style={{ minWidth: 0, flex: 1 }}>{t("foundAs")} <b>{hintLabel(hint)}</b></Text>
+      <Button size="compact-sm" style={{ flexShrink: 0 }} onMouseDown={(e) => e.preventDefault()} onClick={() => openHint(hint)}>{t("open")}</Button>
+    </Group>
+  );
+  const openHint = (h: CrossHint) => {
+    setMissed(null);
+    if (h.kind === "parcel") { sel.dismissError(); setMode("parcel"); doSearch(h.koId, h.number); }
+    else if (h.kind === "building") { bld.dismissError(); setMode("building"); void showBuilding(h.koId, h.number); }
+    else if (h.kind === "address") { setMode("address"); onAddress(h.address); }
+    else { setMode("manager"); openManager(h.manager.id); }
+  };
+
   const openCartItem = (i: CartItem) => {
     setCartOpen(false);
     void openProperty(i.kind, i.koId, i.number);
@@ -126,15 +162,18 @@ export function MapPage() {
       <Paper shadow="md" radius="md" p={6} style={{ position: "absolute", top: 12, left: 12, right: 60, maxWidth: 640, zIndex: 4 }}>
         <Group gap={8} wrap="nowrap">
           <Title order={1} size="h5" c="teal.8" visibleFrom="sm" style={{ whiteSpace: "nowrap", paddingLeft: 6 }}>iKataster</Title>
-          {mode === "parcel" && <ParcelSearch kos={kos} loading={sel.loading} initialKo={initialKo} initialParcel={initialParcel} onSearch={doSearch} />}
-          {mode === "building" && <ParcelSearch kind="building" kos={kos} loading={bld.loading} initialKo={initialKo} initialParcel={initialBuilding} onSearch={(ko, st) => { const n = Number(st); if (Number.isInteger(n) && n > 0) void showBuilding(ko, n); }} />}
-          {mode === "address" && <AddressSearch client={gurs} onSelect={onAddress} />}
-          {mode === "manager" && <ManagerSearch client={gurs} onSelect={(m) => openManager(m.id)} />}
+          {mode === "parcel" && <ParcelSearch kos={kos} loading={sel.loading} initialKo={initialKo} initialParcel={initialParcel} onSearch={(ko, p) => { lastProp.current = `${ko} ${p}`; doSearch(ko, p); }} />}
+          {mode === "building" && <ParcelSearch kind="building" kos={kos} loading={bld.loading} initialKo={initialKo} initialParcel={initialBuilding} onSearch={(ko, st) => { lastProp.current = `${ko} ${st}`; const n = Number(st); if (Number.isInteger(n) && n > 0) void showBuilding(ko, n); }} />}
+          {mode === "address" && <AddressSearch client={gurs} onSelect={onAddress} onMiss={(q) => setMissed(q ? { tab: "address", text: q } : null)} missExtra={hint && hintBox} />}
+          {mode === "manager" && <ManagerSearch client={gurs} onSelect={(m) => openManager(m.id)} onMiss={(q) => setMissed(q ? { tab: "manager", text: q } : null)} missExtra={hint && hintBox} />}
         </Group>
         <SegmentedControl
           size="xs" mt={6} value={mode} onChange={(v) => setMode(v as Mode)}
           data={[{ value: "address", label: t("modeAddress") }, { value: "parcel", label: t("modeParcel") }, { value: "building", label: t("modeBuilding") }, { value: "manager", label: t("modeManager") }]}
         />
+        {hint && (mode === "parcel" || mode === "building") && (
+          <Alert mt={6} color="blue" variant="light" p="xs" withCloseButton onClose={() => setMissed(null)}>{hintBox}</Alert>
+        )}
         {bld.error && (
           <Alert mt={6} color="red" variant="light" withCloseButton onClose={bld.dismissError} p="xs" role="alert">
             {t(bld.error)}

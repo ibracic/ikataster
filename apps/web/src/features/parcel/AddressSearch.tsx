@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Combobox, Loader, ScrollArea, Text, TextInput, useCombobox } from "@mantine/core";
 import { IconMapPin } from "@tabler/icons-react";
 import type { Address, GursClient } from "../../gurs";
@@ -8,10 +8,14 @@ interface Props {
   client: GursClient;
   onSelect: (a: Address) => void;
   debounceMs?: number;
+  /** Called with the query when a finished search found nothing ("" when the text changes again). */
+  onMiss?: (query: string) => void;
+  /** Shown under "no results" (e.g. "found as parcel" hint). */
+  missExtra?: ReactNode;
 }
 
 /** Debounced GURS address autocomplete. */
-export function AddressSearch({ client, onSelect, debounceMs = 300 }: Props) {
+export function AddressSearch({ client, onSelect, debounceMs = 300, onMiss, missExtra }: Props) {
   const { t } = useI18n();
   const combobox = useCombobox({ onDropdownClose: () => combobox.resetSelectedOption() });
   const [value, setValue] = useState("");
@@ -23,6 +27,7 @@ export function AddressSearch({ client, onSelect, debounceMs = 300 }: Props) {
 
   useEffect(() => {
     const q = value.trim();
+    onMiss?.("");
     if (q.length < 3) { setItems([]); setSearched(false); return; }
     const timer = setTimeout(async () => {
       ctl.current?.abort();
@@ -32,7 +37,7 @@ export function AddressSearch({ client, onSelect, debounceMs = 300 }: Props) {
       setFailed(false);
       try {
         const res = await client.searchAddresses(q, 8, c.signal);
-        if (!c.signal.aborted) { setItems(res); setSearched(true); combobox.openDropdown(); }
+        if (!c.signal.aborted) { setItems(res); setSearched(true); combobox.openDropdown(); if (!res.length) onMiss?.(q); }
       } catch (e) {
         if (!c.signal.aborted && (e as Error)?.name !== "AbortError") { setFailed(true); setItems([]); setSearched(true); }
       } finally {
@@ -82,7 +87,7 @@ export function AddressSearch({ client, onSelect, debounceMs = 300 }: Props) {
                 <Text size="xs" c="dimmed">{a.place}</Text>
               </Combobox.Option>
             ))
-            : searched ? <Combobox.Empty>{failed ? t("errService") : t("addressNoResults")}</Combobox.Empty>
+            : searched ? <Combobox.Empty>{failed ? t("errService") : t("addressNoResults")}{!failed && missExtra}</Combobox.Empty>
             : <Combobox.Empty>…</Combobox.Empty>}
           </ScrollArea.Autosize>
         </Combobox.Options>
