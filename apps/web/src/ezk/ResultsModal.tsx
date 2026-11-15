@@ -36,13 +36,26 @@ const REASON: Record<string, MsgKey> = {
 };
 
 
-export function ResultsModal({ opened, onClose, onOpenProperty, parse, download = browserDownload }: Props) {
+export function ResultsModal({ opened, onClose, ...rest }: Props) {
+  const { t } = useI18n();
+  const { records } = useResults();
+  const mobile = typeof window !== "undefined" && window.innerWidth < 640;
+  return (
+    <Modal opened={opened} onClose={onClose} fullScreen={mobile} size="min(1100px, 96vw)"
+      title={<Text fw={700}>{t("resultsTitle")} ({records.length})</Text>} scrollAreaComponent={ScrollArea.Autosize}
+      styles={{ body: { overflowX: "hidden" } }}>
+      <ResultsPanel {...rest} />
+    </Modal>
+  );
+}
+
+/** Body of the downloaded-extracts view: add PDFs, folders, filter, export, result cards. */
+export function ResultsPanel({ onOpenProperty, parse, download = browserDownload }: Omit<Props, "opened" | "onClose">) {
   const { t } = useI18n();
   const { store, records } = useResults();
   const [filter, setFilter] = useState("");
   const [busy, setBusy] = useState(false);
   const [last, setLast] = useState<AddFilesResult | null>(null);
-  const mobile = typeof window !== "undefined" && window.innerWidth < 640;
   const groups = groupResults(records, filter);
   const cart = useCart();
   const [exporting, setExporting] = useState(false);
@@ -88,10 +101,7 @@ export function ResultsModal({ opened, onClose, onOpenProperty, parse, download 
   };
 
   return (
-    <Modal opened={opened} onClose={onClose} fullScreen={mobile} size="min(1100px, 96vw)"
-      title={<Text fw={700}>{t("resultsTitle")} ({records.length})</Text>} scrollAreaComponent={ScrollArea.Autosize}
-      styles={{ body: { overflowX: "hidden" } }}>
-      <Stack gap="sm">
+      <Stack gap="sm" data-testid="results-panel">
         <Text size="sm" c="dimmed">{t("resultsHelp")}</Text>
         <FoldersPanel store={store} currentCount={records.length} />
         <Group gap="sm" wrap="wrap">
@@ -150,6 +160,5 @@ export function ResultsModal({ opened, onClose, onOpenProperty, parse, download 
           </Stack>
         )}
       </Stack>
-    </Modal>
   );
 }

@@ -16,7 +16,7 @@ export function ExtensionStatus({ platform = currentPlatform() }: { platform?: P
 
   return (
     <div data-testid="extension-status" data-state={state.status}>
-      {state.status === "checking" && <Text size="xs" c="dimmed">{t("extChecking")}</Text>}
+      {state.status === "checking" && !isMobile(platform) && <Text size="xs" c="dimmed">{t("extChecking")}</Text>}
       {state.status === "detected" && (
         <Alert color="teal" variant="light" p="xs" icon={<IconPlugConnected size={16} />}>
           <Group gap={6} wrap="wrap">
@@ -30,7 +30,7 @@ export function ExtensionStatus({ platform = currentPlatform() }: { platform?: P
           {state.ezkTab === true && <Text size="xs" mt={4}>{t("extEzkTab")}</Text>}
         </Alert>
       )}
-      {state.status === "missing" && isMobile(platform) && (
+      {state.status !== "detected" && isMobile(platform) && (
         <Alert color="blue" variant="light" p="xs" icon={<IconDeviceMobile size={16} />} data-testid="ext-mobile">
           <Text size="sm" fw={600}>{t("extMobile")}</Text>
           <Text size="xs">{t("extMobileWhy")}</Text>

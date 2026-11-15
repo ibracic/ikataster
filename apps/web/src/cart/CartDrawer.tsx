@@ -23,19 +23,30 @@ export function cartLabel(i: CartItem, t: (k: "parcel" | "building" | "buildingP
 
 export function CartDrawer({ opened, onClose, onOpenItem, onImport }: Props) {
   const { t } = useI18n();
-  const { store, items } = useCart();
-  const { kos } = useKos(useGurs());
-  const koName = (i: CartItem) => i.koName || kos.find((k) => k.id === i.koId)?.name || "";
-  const [confirm, setConfirm] = useState(false);
+  const { items } = useCart();
   const mobile = typeof window !== "undefined" && window.innerWidth < 640;
-
   return (
     <Drawer
-      opened={opened} onClose={() => { setConfirm(false); onClose(); }}
+      opened={opened} onClose={onClose}
       position={mobile ? "bottom" : "right"} size={mobile ? "70%" : 380}
       title={<Text fw={700}>{t("cart")} ({items.length})</Text>}
       scrollAreaComponent={ScrollArea.Autosize}
     >
+      <CartPanel onOpenItem={onOpenItem} onImport={onImport} />
+    </Drawer>
+  );
+}
+
+/** Body of the extract to-do list: extension status, download queue, import, items. */
+export function CartPanel({ onOpenItem, onImport }: Pick<Props, "onOpenItem" | "onImport">) {
+  const { t } = useI18n();
+  const { store, items } = useCart();
+  const { kos } = useKos(useGurs());
+  const koName = (i: CartItem) => i.koName || kos.find((k) => k.id === i.koId)?.name || "";
+  const [confirm, setConfirm] = useState(false);
+
+  return (
+    <div data-testid="cart-panel">
       <div style={{ marginBottom: 12 }}><ExtensionStatus /></div>
       <div style={{ marginBottom: 12 }}><QueuePanel /></div>
       {onImport && (
@@ -66,6 +77,6 @@ export function CartDrawer({ opened, onClose, onOpenItem, onImport }: Props) {
           </Group>
         </Stack>
       )}
-    </Drawer>
+    </div>
   );
 }

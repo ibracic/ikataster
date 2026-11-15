@@ -201,7 +201,7 @@ describe("cart flow", () => {
     expect(await screen.findByTestId("cart-count")).toHaveTextContent("3");
     expect(await within(panel).findByRole("checkbox", { name: "Na seznamu za izpis ZK 2" })).toBeDisabled();
 
-    fireEvent.click(screen.getByRole("button", { name: "Seznam za izpise ZK (3)" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Izpisi iz zemljiške knjige \(3\// }));
     const list = await screen.findByTestId("cart-list");
     expect(within(list).getByText("Stavba 130")).toBeInTheDocument();
     expect(within(list).getByText("Del stavbe 130/2")).toBeInTheDocument();
@@ -272,7 +272,7 @@ describe("list import flow", () => {
       findBuilding: (async (_k: number, n: number) => (n === 130 ? { eid: "B130", geometry: sq } : null)) as never,
       buildingParts: (async (_k: number, n: number) => (n === 130 ? [{ number: 2, eid: "D2", use: "stanovanje" }] : [])) as never,
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Seznam za izpise ZK/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Izpisi iz zemljiške knjige/ }));
     fireEvent.click(await screen.findByRole("button", { name: "Uvozi seznam" }));
     const box = await screen.findByRole("textbox", { name: "Seznam" });
     fireEvent.change(box, { target: { value: "KO;Parcela\n657;1587\n657;999999\n657 st:130\n657 del:130/2\nfoo\n" } });

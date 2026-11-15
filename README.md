@@ -64,9 +64,9 @@ flowchart LR
 
 ### Step by step
 
-1. **Install the extension once** (Chrome, Edge or Firefox on a computer). The app shows the steps under *Seznam za izpise ZK → Navodila za namestitev*.
+1. **Install the extension once** (Chrome, Edge or Firefox on a computer). The app shows the steps under *Izpisi iz zemljiške knjige → Za prenos → Navodila za namestitev*.
 2. **Open the land registry** ([e-Sodstvo, e-ZK](https://esodisce.si/)) in another tab and **log in with your SI-PASS** as usual. Keep that tab open.
-3. **In iKataster, add properties to the list** *Seznam za izpise ZK* (one by one, by drawing an area, or by importing a spreadsheet).
+3. **In iKataster, add properties to the download list** (tab *Za prenos* under the extracts button) (one by one, by drawing an area, or by importing a spreadsheet).
 4. **Click download.** For each property the extension asks the land-registry tab for the official extract, the same way you would by hand, and gives the PDF back to iKataster.
 5. **iKataster reads the PDFs** and shows owners, shares, mortgages and easements in clear tables that you can filter and export.
 
@@ -159,7 +159,7 @@ By default the app reads the cadastral copy from `/mirror` on its own origin, an
 
 ### Installing the extension
 
-The built app serves the extension zips under `/extension/`. In the app open *Seznam za izpise ZK → Navodila za namestitev* for step-by-step instructions (load unpacked in Chrome/Edge, temporary add-on in Firefox). After installing, reload the app tab once.
+The built app serves the extension zips under `/extension/`. In the app open *Izpisi iz zemljiške knjige → Za prenos → Navodila za namestitev* for step-by-step instructions (load unpacked in Chrome/Edge, temporary add-on in Firefox). After installing, reload the app tab once.
 
 ## Building the data
 

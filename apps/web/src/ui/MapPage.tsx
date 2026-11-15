@@ -7,8 +7,8 @@ import {
   ActionIcon, Alert, Badge, Button, Group, Paper, Popover, SegmentedControl, Stack, Switch, Text, Title, Tooltip,
   useComputedColorScheme, useMantineColorScheme,
 } from "@mantine/core";
-import { IconDatabase, IconLanguage, IconMoon, IconPolygon, IconFileText, IconStack2, IconSun, IconUsers, IconBrandGithub, IconHelp } from "@tabler/icons-react";
-import { ResultsModal } from "../ezk/ResultsModal";
+import { IconDatabase, IconLanguage, IconMoon, IconPolygon, IconFileText, IconStack2, IconSun, IconBrandGithub, IconHelp } from "@tabler/icons-react";
+import { ExtractsModal, type ExtractsTab } from "../ezk/ExtractsModal";
 import { useResults } from "../ezk/useResults";
 import { useResultPoints } from "../ezk/points";
 import type { ResultRecord } from "../ezk/results";
@@ -23,7 +23,6 @@ import { ParcelSearch } from "../features/parcel/ParcelSearch";
 import { AddressSearch } from "../features/parcel/AddressSearch";
 import { ParcelPanel } from "../features/parcel/ParcelPanel";
 import { BuildingPanel } from "../features/building/BuildingPanel";
-import { CartDrawer } from "../cart/CartDrawer";
 import { useCart } from "../cart/useCart";
 import type { CartItem } from "../cart/store";
 import type { FeatureCollection } from "geojson";
@@ -58,8 +57,8 @@ export function MapPage() {
   useEffect(() => { void refreshStale(gurs, offline, pinMaxAgeDays()).catch(() => undefined); }, [gurs, offline]);
   const { kos } = useKos(gurs);
   const cart = useCart();
-  const [cartOpen, setCartOpen] = useState(false);
-  const [resultsOpen, setResultsOpen] = useState(false);
+  const [extractsOpen, setExtractsOpen] = useState(false);
+  const [extractsTab, setExtractsTab] = useState<ExtractsTab>("todo");
   const results = useResults();
   const [importOpen, setImportOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
@@ -125,7 +124,7 @@ export function MapPage() {
   };
 
   const openCartItem = (i: CartItem) => {
-    setCartOpen(false);
+    setExtractsOpen(false);
     void openProperty(i.kind, i.koId, i.number);
   };
 
@@ -139,7 +138,7 @@ export function MapPage() {
   const openResult = (r: ResultRecord) => {
     const p = r.extract.property;
     if (!p.koId || !p.number) return;
-    setResultsOpen(false);
+    setExtractsOpen(false);
     if (p.type !== "other") void openProperty(p.type, p.koId, p.number);
   };
 
@@ -220,8 +219,8 @@ export function MapPage() {
             : !manager && sel.parcel && <ParcelPanel parcel={sel.parcel} details={sel.details} onClose={close} onBuilding={(n) => void showBuilding(sel.parcel!.koId, n)} />}
         </>}
 
-      <CartDrawer opened={cartOpen} onClose={() => setCartOpen(false)} onOpenItem={openCartItem} onImport={() => { setCartOpen(false); setImportOpen(true); }} />
-      <ResultsModal opened={resultsOpen} onClose={() => setResultsOpen(false)} onOpenProperty={openResult} />
+      <ExtractsModal opened={extractsOpen} tab={extractsTab} onTab={setExtractsTab} onClose={() => setExtractsOpen(false)}
+        onOpenItem={openCartItem} onImport={() => { setExtractsOpen(false); setImportOpen(true); }} onOpenProperty={openResult} />
       <InstallHint />
       <UpdateToast />
       <DataModal opened={dataOpen} onClose={() => setDataOpen(false)} />
@@ -235,22 +234,17 @@ export function MapPage() {
           </ActionIcon>
         </Tooltip>
         <div style={{ position: "relative" }}>
-          <ActionIcon size="lg" variant="default" radius="md" aria-label={`${t("results")} (${results.records.length})`} onClick={() => setResultsOpen(true)}>
-            <IconUsers size={18} />
-          </ActionIcon>
-          {results.records.length > 0 && (
-            <Badge size="xs" circle color="teal" style={{ position: "absolute", top: -6, right: -6, pointerEvents: "none" }}>
-              {results.records.length > 99 ? "99+" : results.records.length}
-            </Badge>
-          )}
-        </div>
-        <div style={{ position: "relative" }}>
-          <ActionIcon size="lg" variant="default" radius="md" aria-label={`${t("cart")} (${cart.items.length})`} onClick={() => setCartOpen(true)}>
+          <ActionIcon size="lg" variant="default" radius="md" aria-label={`${t("extractsTitle")} (${cart.items.length}/${results.records.length})`}
+            onClick={() => { setExtractsTab(cart.items.length > 0 || results.records.length === 0 ? "todo" : "done"); setExtractsOpen(true); }}>
             <IconFileText size={18} />
           </ActionIcon>
-          {cart.items.length > 0 && (
+          {cart.items.length > 0 ? (
             <Badge size="xs" circle color="orange" data-testid="cart-count" style={{ position: "absolute", top: -6, right: -6, pointerEvents: "none" }}>
               {cart.items.length > 99 ? "99+" : cart.items.length}
+            </Badge>
+          ) : results.records.length > 0 && (
+            <Badge size="xs" circle color="teal" data-testid="results-count" style={{ position: "absolute", top: -6, right: -6, pointerEvents: "none" }}>
+              {results.records.length > 99 ? "99+" : results.records.length}
             </Badge>
           )}
         </div>

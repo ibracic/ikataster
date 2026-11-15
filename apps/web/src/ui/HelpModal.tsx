@@ -17,7 +17,7 @@ const CONTENT: Record<"sl" | "en", Content> = {
     intro: "iKataster prikazuje lastništvo in bremena nepremičnin. Za prenos izpiskov iz zemljiške knjige potrebuje dostop do portala e-ZK. Ker spletne strani zaradi varnosti ne morejo brati drugih zavihkov, potrebujete majhno razširitev za brskalnik.",
     stepsTitle: "Koraki za prenos izpiskov",
     steps: [
-      <><b>Namestite razširitev</b> iKataster (Chrome, Edge ali Firefox na računalniku). Navodila so v <i>Seznam za izpise ZK → Navodila za namestitev</i>.</>,
+      <><b>Namestite razširitev</b> iKataster (Chrome, Edge ali Firefox na računalniku). Navodila so v <i>Izpisi iz zemljiške knjige → Za prenos → Navodila za namestitev</i>.</>,
       <>V drugem zavihku se <b>prijavite v e-Sodstvo (e-ZK)</b> s SI-PASS in zavihek pustite odprt.</>,
       <>Na zemljevidu (klik, izris območja ali uvoz seznama) <b>dodajte parcele ali dele stavb na seznam</b>.</>,
       <>Na seznamu kliknite <b>prenos</b>. Razširitev prek vaše seje e-ZK prenese uradne PDF-je.</>,
@@ -38,7 +38,7 @@ const CONTENT: Record<"sl" | "en", Content> = {
     intro: "iKataster shows property owners and charges. To download land-registry extracts it needs the e-ZK portal. For security, a website can't read other tabs, so you need a small browser extension.",
     stepsTitle: "How to download extracts",
     steps: [
-      <><b>Install the iKataster extension</b> (Chrome, Edge or Firefox on a computer). Steps are under <i>Land-registry extract list → Installation instructions</i>.</>,
+      <><b>Install the iKataster extension</b> (Chrome, Edge or Firefox on a computer). Steps are under <i>Land-registry extracts → To download → Installation instructions</i>.</>,
       <>In another tab, <b>log in to e-Sodstvo (e-ZK)</b> with SI-PASS and keep that tab open.</>,
       <>On the map (click, draw an area or import a list) <b>add parcels or building parts to the list</b>.</>,
       <>In the list, click <b>download</b>. The extension fetches the official PDFs through your e-ZK session.</>,
