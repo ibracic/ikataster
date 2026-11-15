@@ -186,9 +186,6 @@ export function MapPage() {
             {t(sel.error)}
           </Alert>
         )}
-        {!sel.parcel && !bld.building && !manager && !sel.error && zoom >= CLICK_MIN_ZOOM && (
-          <Text size="xs" c="dimmed" mt={4} ml={6}>{t("clickHint")}</Text>
-        )}
       </Paper>
 
       {draw && !draw.done && (
