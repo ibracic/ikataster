@@ -23,6 +23,9 @@ interface KoDoc {
   /** plan names + parcel -> [EUP code, plan index] (added by eup.py) */
   plans?: string[];
   eu?: Record<string, [string, number]>;
+  /** Municipalities (most parcels first) and per-parcel index for parcels not in ob[0]. */
+  ob?: string[];
+  po?: Record<string, number>;
   /** building -> [part, floors "1,2", entrance floor, address] */
   de?: Record<string, [number, string | null, number | null, string | null][]>;
   d: Record<string, [number, string, number | null, number | null, number | null, YN, YN, number | null, number | null, number | null, YN, number | null, number | null, number | null, number | null][]>;
@@ -69,7 +72,7 @@ export function decodeKo(doc: KoDoc, codes: Codes): KoDownload {
   const [koId, koName] = doc.ko;
   const share = (s: number | null) => (s !== null && s < 100 ? ` (${s} %)` : "");
   const parcels: Parcel[] = doc.p.map(([number, eid, area, soil, e, n, g]) => {
-    const p: Parcel = { eid, koId, koName, number, area: area ?? 0, soilQuality: soil, centroidD96: [e, n], centroid: fromD96(e, n), geometry: decodeGeometry(g) };
+    const p: Parcel = { eid, koId, koName, number, area: area ?? 0, soilQuality: soil, municipality: doc.ob?.[doc.po?.[number] ?? 0], centroidD96: [e, n], centroid: fromD96(e, n), geometry: decodeGeometry(g) };
     const x = doc.pe?.[number];
     if (doc.pe) {
       p.extra = {

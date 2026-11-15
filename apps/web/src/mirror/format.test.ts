@@ -49,4 +49,14 @@ describe("mirror KO file contract", () => {
     expect(k.parcels[0].extra?.spatialPlanUnit).toEqual({ code: "LE 5", plan: "OPN Test" });
     for (const r of format.ko.eu) expect(r).toHaveLength(2);
   });
+  it("decodes the municipality: ob[0] by default, po for parcels in another one", () => {
+    expect(decodeKo(doc, codes).parcels[0].municipality).toBe("Lenart");
+    const a = doc.p[0];
+    const b = [a[0] + "x", ...a.slice(1)] as typeof a;
+    const split = { ...doc, p: [a, b], ob: ["Koper", "Ankaran"], po: { [b[0]]: 1 } } as Arg<0>;
+    const k = decodeKo(split, codes);
+    expect(k.parcels.find((p) => p.number === a[0])?.municipality).toBe("Koper");
+    expect(k.parcels.find((p) => p.number === b[0])?.municipality).toBe("Ankaran");
+    expect(decodeKo({ ...doc, ob: undefined, po: undefined } as Arg<0>, codes).parcels[0].municipality).toBeUndefined();
+  });
 });

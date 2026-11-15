@@ -49,6 +49,10 @@ def check_ko(doc, where):
     for p, r in doc.get("eu", {}).items():
         rows(f"{where}.eu[{p}]", [r], f["eu"])
         if isinstance(r[1], int) and not 0 <= r[1] < len(plans): errors.append(f"{where}.eu[{p}]: plan {r[1]} out of range")
+    ob = doc.get("ob", [])
+    if not all(isinstance(x, str) for x in ob): errors.append(f"{where}.ob: not all str")
+    for p, i in doc.get("po", {}).items():
+        if not (isinstance(i, int) and 0 < i < len(ob)): errors.append(f"{where}.po[{p}]: {i} out of range")
 
 def main():
     site = sys.argv[1]
@@ -71,6 +75,8 @@ def main():
         used = sorted({v[1] for v in eu.values()})
         sample["plans"] = [doc["plans"][i] for i in used]
         sample["eu"] = {k: [v[0], used.index(v[1])] for k, v in eu.items()}
+        sample["ob"] = doc.get("ob", [])
+        sample["po"] = {r[0]: doc["po"][r[0]] for r in p if r[0] in doc.get("po", {})}
         sample["managers"] = {k: v for k, v in doc["managers"].items() if any(str(r[13]) == k for r in doc["d"][bld])}
         keep = {"landUse", "intended"} | set(FMT["index"]["codes"])
         codes = {k: v for k, v in idx["codes"].items() if k in keep}

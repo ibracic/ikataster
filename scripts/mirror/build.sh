@@ -32,7 +32,7 @@ if [ "$DATE" = "$OLD" ] && [ "$FORCE" != "--force" ]; then exit 3; fi
 echo "== unpack $(date -Is)"
 rm -rf shp gj tc tmp x; mkdir -p shp gj tc tmp
 unzip -o -q parcele.zip "KN_SLO_PARCELE_SLO_parcele_${STAMP}.zip" "KN_SLO_PARCELE_SLO_stavbe_parcele_${STAMP}.zip"
-mkdir -p x; unzip -o -q -d x parcele.zip 'KN_SLO_PARCELE_SLO_parcele_x_*_rabe_*.csv' 'sifranti/VRSTE_DEJANSKE_RABE.CSV' 'sifranti/VRSTE_NAMENSKE_RABE.CSV'
+mkdir -p x; unzip -o -q -d x parcele.zip 'KN_SLO_PARCELE_SLO_parcele_x_*_rabe_*.csv' 'KN_SLO_PARCELE_SLO_parcele_x_rpe_obcine_*.csv' 'sifranti/VRSTE_DEJANSKE_RABE.CSV' 'sifranti/VRSTE_NAMENSKE_RABE.CSV'
 unzip -o -q -d x stavbe.zip 'KN_SLO_STAVBE_SLO_etaze_2*.zip' 'KN_SLO_STAVBE_SLO_etaze_x_deli_stavb_*.zip'
 for z in x/*.zip KN_SLO_PARCELE_SLO_stavbe_parcele_*.zip; do unzip -o -q "$z" '*.dbf' -x '*tocka*' -d x && rm -f "$z"; done
 unzip -o -q stavbe.zip "KN_SLO_STAVBE_SLO_tloris_*.zip" "KN_SLO_STAVBE_SLO_nadzemni_tloris_*.zip" "KN_SLO_STAVBE_SLO_stavbe_*.zip" \
@@ -73,6 +73,7 @@ python3 "$HERE/extras.py" x "$NEW"
 echo "== eup $(date -Is)"; mkdir -p "$W/eup"
 python3 "$HERE/eup.py" harvest "$W/eup" || { [ -s "$W/eup/eup.jsonl" ] && echo "EUP harvest failed, reusing previous eup.jsonl"; } || exit 1
 python3 "$HERE/eup.py" apply "$W/eup" "$NEW"
+python3 "$HERE/municipalities.py" x/KN_SLO_PARCELE_SLO_parcele_x_rpe_obcine_${STAMP}.csv "gj/RN_SLO_NASLOVI_register_naslovov_${STAMP}.csv" "$NEW"
 python3 "$HERE/addresses.py" gj "$NEW" "$DATE"
 python3 "$HERE/managers.py" "$NEW" "$DATE" gj/KN_SLO_STAVBE_SLO_upravniki_${STAMP}.csv "gj/RN_SLO_NASLOVI_register_naslovov_${STAMP}.csv"
 printf '{"date":"%s","source":"Geodetska uprava Republike Slovenije, kataster nepremičnin in register naslovov, stanje %s"}\n' "$DATE" "$DATE" > "$NEW/index.json"

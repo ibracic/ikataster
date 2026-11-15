@@ -18,6 +18,8 @@ export interface Parcel {
   area: number;
   /** Soil quality (boniteta), null when not recorded. */
   soilQuality: number | null;
+  /** Municipality (občina) from the copy; undefined when unknown. */
+  municipality?: string;
   /** Detail sections that came with the parcel from the mirror (no GURS query needed). */
   extra?: ParcelExtra;
   /** [lon, lat] */

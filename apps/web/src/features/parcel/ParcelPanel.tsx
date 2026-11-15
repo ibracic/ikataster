@@ -23,9 +23,9 @@ interface Props {
 const fmtArea = (m2: number, lang: string) => `${m2.toLocaleString(lang === "sl" ? "sl-SI" : "en-GB")} m²`;
 
 /** Web search for the OPN provisions of a spatial planning unit (PIS has no stable deep links). */
-export function eupRulesUrl(code: string, plan: string): string {
+export function eupRulesUrl(code: string, plan: string, municipality?: string): string {
   const m = plan.match(/(Mestne občine|Občine)\s+(.+)$/);
-  const where = m ? `${m[1]} ${m[2]}` : plan;
+  const where = municipality ? `občina ${municipality}` : m ? `${m[1]} ${m[2]}` : plan;
   return `https://www.google.com/search?q=${encodeURIComponent(`${code} ${where} odlok OPN`)}`;
 }
 
@@ -56,7 +56,7 @@ export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
         <div>
           <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t("parcel")}</Text>
           <Title order={2} size="h3" className="sheet-title">{parcel.number}</Title>
-          <Text size="sm" c="dimmed">{t("ko")} {parcel.koId} {parcel.koName}</Text>
+          <Text size="sm" c="dimmed">{t("ko")} {parcel.koId} {parcel.koName}{parcel.municipality ? ` · ${t("municipality")} ${parcel.municipality}` : ""}</Text>
           <CachedBadge />
         </div>
         <Group gap={2} wrap="nowrap"><ShareButton title={document.title} /><PanelWideToggle /><CloseButton aria-label={t("close")} onClick={onClose} /></Group>
@@ -79,7 +79,7 @@ export function ParcelPanel({ parcel, details, onClose, onBuilding }: Props) {
               ? <Stack gap={2}>{details.intendedUse.map((u) => <Text component="div" size="sm" key={u.code}><Badge size="sm" variant="light" mr={6}>{u.code}</Badge>{u.description}</Text>)}</Stack>
               : t("none"), "intendedUse")}
             {row("spatialPlanUnit", details?.spatialPlanUnit
-              ? <><Text size="sm" fw={600}>{details.spatialPlanUnit.code}</Text><Text size="xs" c="dimmed">{details.spatialPlanUnit.plan}</Text><Anchor size="xs" href={eupRulesUrl(details.spatialPlanUnit.code, details.spatialPlanUnit.plan)} target="_blank" rel="noopener noreferrer" data-testid="eup-link">{t("eupRules")} <IconExternalLink size={11} /></Anchor></>
+              ? <><Text size="sm" fw={600}>{details.spatialPlanUnit.code}</Text><Text size="xs" c="dimmed">{details.spatialPlanUnit.plan}</Text><Anchor size="xs" href={eupRulesUrl(details.spatialPlanUnit.code, details.spatialPlanUnit.plan, parcel.municipality)} target="_blank" rel="noopener noreferrer" data-testid="eup-link">{t("eupRules")} <IconExternalLink size={11} /></Anchor></>
               : t("none"), "spatialPlanUnit")}
             {row("buildingsOnParcel", details?.buildings?.length
               ? <Group gap={4}>{details.buildings.map((b) => <Badge key={b.eid} component="button" type="button" onClick={() => onBuilding?.(b.number)} variant="outline" color="teal" style={{ cursor: "pointer" }} title={`${b.areaOnParcel} m²`}>{t("building")} {b.number}</Badge>)}</Group>
