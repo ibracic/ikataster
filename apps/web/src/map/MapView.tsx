@@ -1,3 +1,4 @@
+import { NORTH_UP_OPTIONS, keepNorthUp, northUpHash } from "./camera";
 import { SEL, CART, DRAFT, RES, EZK, RES_AREA, addResultLayers, addEzkLayers, addAreaResultLayers, addDraftLayers, addCartLayers, addSelectionLayers, bindLayerInteractions, isOwnLayer } from './appLayers';
 export { draftData, isOwnLayer } from './appLayers';
 import { useEffect, useRef } from "react";
@@ -159,7 +160,10 @@ export function MapView({ basemap, overlays, labels = true, orthoYear = null, ca
 
   useEffect(() => {
     if (!el.current) return;
+    const flatHash = northUpHash(window.location.hash);
+    if (flatHash !== window.location.hash) window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}${flatHash}`);
     const m = new maplibregl.Map({
+      ...NORTH_UP_OPTIONS,
       container: el.current,
       style: basemapStyleUrl(dark),
       center: INITIAL_VIEW.center,
@@ -171,7 +175,8 @@ export function MapView({ basemap, overlays, labels = true, orthoYear = null, ca
       attributionControl: { compact: true },
       hash: true,
     });
-    m.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "bottom-right");
+    keepNorthUp(m);
+    m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
     m.addControl(new maplibregl.GeolocateControl({ trackUserLocation: false }), "bottom-right");
     m.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
     m.on("style.load", () => { addGursLayers(m, vis.current, labelsRef.current); setOrthoYear(m, yearRef.current); addCartLayers(m, cartRef.current); addSelectionLayers(m, sel.current); addDraftLayers(m, draftRef.current); addAreaResultLayers(m, areaRef.current); addEzkLayers(m, ezkRef.current); addResultLayers(m, resultsRef.current); });
