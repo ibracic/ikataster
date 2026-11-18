@@ -71,7 +71,9 @@ export function MapPage() {
   const [helpOpen, setHelpOpen] = useState(false);
   const cartFc = useMemo<FeatureCollection>(() => ({
     type: "FeatureCollection",
-    features: cart.items.filter((i) => i.geometry).map((i) => ({ type: "Feature", properties: { key: i.key }, geometry: i.geometry! })),
+    // Parts share their building's outline: draw each outline once (a big manager adds thousands of parts).
+    features: [...new Map(cart.items.filter((i) => i.geometry).map((i) => [i.kind === "parcel" ? i.key : `b:${i.koId}:${i.number}`, i])).values()]
+      .map((i) => ({ type: "Feature", properties: { key: i.key }, geometry: i.geometry! })),
   }), [cart.items]);
   const [basemap, setBasemapState] = useState<BasemapId>(() => (localStorage.getItem(BASEMAP_KEY) === "ortho" ? "ortho" : "street"));
   const setBasemap = (b: BasemapId) => { setBasemapState(b); try { localStorage.setItem(BASEMAP_KEY, b); } catch { /* private mode */ } };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ActionIcon, Button, Group, Stack, Text, UnstyledButton } from "@mantine/core";
 import { IconFileImport, IconTrash, IconX } from "@tabler/icons-react";
 import { useI18n } from "../i18n";
@@ -14,6 +14,8 @@ interface Props {
   onImport?: () => void;
 }
 
+export const CART_PAGE = 200;
+
 export function cartLabel(i: CartItem, t: (k: "parcel" | "building" | "buildingPart") => string) {
   if (i.kind === "part") return `${t("buildingPart")} ${i.number}/${i.part}`;
   return `${t(i.kind)} ${i.number}`;
@@ -24,8 +26,11 @@ export function CartPanel({ onOpenItem, onImport }: Pick<Props, "onOpenItem" | "
   const { t } = useI18n();
   const { store, pending: items } = useDownloadList();
   const { kos } = useKos(useGurs());
-  const koName = (i: CartItem) => i.koName || kos.find((k) => k.id === i.koId)?.name || "";
+  const names = useMemo(() => new Map(kos.map((k) => [k.id, k.name])), [kos]);
+  const koName = (i: CartItem) => i.koName || names.get(i.koId) || "";
   const [confirm, setConfirm] = useState(false);
+  // A manager's portfolio can put tens of thousands of items on the list: draw a page at a time.
+  const [shown, setShown] = useState(CART_PAGE);
 
   return (
     <div data-testid="cart-panel">
@@ -38,7 +43,7 @@ export function CartPanel({ onOpenItem, onImport }: Pick<Props, "onOpenItem" | "
         <Text c="dimmed" size="sm">{t("cartEmpty")}</Text>
       ) : (
         <Stack gap={4} data-testid="cart-list">
-          {items.map((i) => (
+          {items.slice(0, shown).map((i) => (
             <Group key={i.key} justify="space-between" wrap="nowrap" gap={6} py={4} style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }}>
               <UnstyledButton onClick={() => onOpenItem?.(i)} style={{ minWidth: 0, flex: 1 }}>
                 <Text size="sm" fw={600} truncate>{cartLabel(i, t)}</Text>
@@ -49,6 +54,11 @@ export function CartPanel({ onOpenItem, onImport }: Pick<Props, "onOpenItem" | "
               </ActionIcon>
             </Group>
           ))}
+          {items.length > shown && (
+            <Button size="xs" variant="subtle" onClick={() => setShown((n) => n + CART_PAGE * 5)} data-testid="cart-more">
+              {t("cartShowMore").replace("{n}", String(items.length - shown))}
+            </Button>
+          )}
           <Group justify="flex-end" mt="md">
             <Button
               size="xs" color="red" variant={confirm ? "filled" : "light"} leftSection={<IconTrash size={14} />}

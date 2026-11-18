@@ -96,12 +96,19 @@ export function ManagerPanel({ client, managerId, kos, koFilter, onKoFilter, onC
   useEffect(() => () => onHighlight(null), [onHighlight]);
 
   const name = (ko: number) => koName.get(ko) ?? "";
-  const buildingItems: CartInput[] = visible.map((b) => ({ kind: "building", koId: b.koId, koName: name(b.koId), number: String(b.number), eid: b.eid, geometry: outlines.get(`${b.koId}:${b.number}`) ?? null }));
-  const partItems: CartInput[] = visible.flatMap((b) => b.parts.map((p) => ({
-    kind: "part" as const, koId: b.koId, koName: name(b.koId), number: String(b.number), part: p.part, eid: p.eid,
-    geometry: outlines.get(`${b.koId}:${b.number}`) ?? null, note: p.use ?? undefined,
-  })));
-  const fresh = (xs: CartInput[]) => xs.filter((i) => !keys.has(itemKey(i))).length;
+  // Large managers have tens of thousands of parts: build the add lists once, not on every render.
+  const { buildingItems, partItems } = useMemo(() => {
+    const nm = (ko: number) => koName.get(ko) ?? "";
+    const geom = (b: { koId: number; number: number }) => outlines.get(`${b.koId}:${b.number}`) ?? null;
+    return {
+      buildingItems: visible.map((b): CartInput => ({ kind: "building", koId: b.koId, koName: nm(b.koId), number: String(b.number), eid: b.eid, geometry: geom(b) })),
+      partItems: visible.flatMap((b) => b.parts.map((p): CartInput => ({
+        kind: "part", koId: b.koId, koName: nm(b.koId), number: String(b.number), part: p.part, eid: p.eid, geometry: geom(b), note: p.use ?? undefined,
+      }))),
+    };
+  }, [visible, outlines, koName]);
+  const freshBuildings = useMemo(() => buildingItems.filter((i) => !keys.has(itemKey(i))).length, [buildingItems, keys]);
+  const freshParts = useMemo(() => partItems.filter((i) => !keys.has(itemKey(i))).length, [partItems, keys]);
   const add = async (xs: CartInput[]) => setAdded(await store.add(xs));
   const partsVisible = partItems.length;
 
@@ -164,11 +171,11 @@ export function ManagerPanel({ client, managerId, kos, koFilter, onKoFilter, onC
             <Alert color="teal" variant="light" p="xs" mt="xs" icon={<IconCheck size={14} />}>{t("areaAdded")}: {added}</Alert>
           )}
           <Group justify="flex-end" mt="sm" gap={6}>
-            <Button size="xs" variant="light" leftSection={<IconFilePlus size={14} />} disabled={!fresh(buildingItems)} onClick={() => void add(buildingItems)}>
-              {t("managerAddBuildings")} ({fresh(buildingItems)})
+            <Button size="xs" variant="light" leftSection={<IconFilePlus size={14} />} disabled={!freshBuildings} onClick={() => void add(buildingItems)}>
+              {t("managerAddBuildings")} ({freshBuildings})
             </Button>
-            <Button size="xs" leftSection={<IconFilePlus size={14} />} disabled={!fresh(partItems)} onClick={() => void add(partItems)}>
-              {t("managerAddParts")} ({fresh(partItems)}{fresh(partItems) !== partsVisible ? ` / ${partsVisible}` : ""})
+            <Button size="xs" leftSection={<IconFilePlus size={14} />} disabled={!freshParts} onClick={() => void add(partItems)}>
+              {t("managerAddParts")} ({freshParts}{freshParts !== partsVisible ? ` / ${partsVisible}` : ""})
             </Button>
           </Group>
         </>
