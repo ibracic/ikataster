@@ -60,6 +60,12 @@ describe("manager (upravnik) view", () => {
     fireEvent.click(await screen.findByText(NAME));
     await screen.findByTestId("manager-totals");
     expect(loads()).toBe(1);
+    // One tap clears the picked name to search for another manager.
+    const input = screen.getByLabelText("Upravnik stavbe") as HTMLInputElement;
+    expect(input.value).toBe(NAME);
+    fireEvent.click(screen.getByRole("button", { name: "Počisti iskanje" }));
+    expect(input.value).toBe("");
+    expect(document.activeElement).toBe(input);
   });
 
   it("opening a building keeps the manager search and list; back returns without reloading", async () => {

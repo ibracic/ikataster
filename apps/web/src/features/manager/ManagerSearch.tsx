@@ -1,6 +1,6 @@
 import { SETTINGS } from "../../data/inventory";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Combobox, Group, Loader, ScrollArea, Text, TextInput, useCombobox } from "@mantine/core";
+import { CloseButton, Combobox, Group, Loader, ScrollArea, Text, TextInput, useCombobox } from "@mantine/core";
 import { IconBuildingCommunity } from "@tabler/icons-react";
 import type { GursClient, Manager } from "../../gurs";
 import { useI18n } from "../../i18n";
@@ -21,6 +21,7 @@ export function ManagerSearch({ client, onSelect, debounceMs = 200, onMiss, miss
   const [loading, setLoading] = useState(false);
   const [state, setState] = useState<"idle" | "done" | "failed">("idle");
   const ctl = useRef<AbortController | null>(null);
+  const input = useRef<HTMLInputElement>(null);
   /** Name written into the input on pick; must not trigger another (slow) search. */
   const picked = useRef<string | null>(value || null);
 
@@ -79,7 +80,11 @@ export function ManagerSearch({ client, onSelect, debounceMs = 200, onMiss, miss
           onChange={(e) => { setValue(e.currentTarget.value); combobox.openDropdown(); }}
           onFocus={() => combobox.openDropdown()}
           onClick={() => combobox.openDropdown()}
-          leftSection={<IconBuildingCommunity size={16} />} rightSection={loading ? <Loader size={14} /> : null}
+          leftSection={<IconBuildingCommunity size={16} />} rightSection={loading ? <Loader size={14} /> : value ? (
+            <CloseButton size="sm" aria-label={t("clearSearch")} onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { setValue(""); try { localStorage.removeItem(LAST_KEY); } catch { /* private mode */ } input.current?.focus(); }} />
+          ) : null}
+          ref={input} rightSectionPointerEvents="all"
           style={{ flex: 1, minWidth: 0 }}
         />
       </Combobox.Target>

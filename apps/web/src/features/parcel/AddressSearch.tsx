@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Combobox, Loader, ScrollArea, Text, TextInput, useCombobox } from "@mantine/core";
+import { CloseButton, Combobox, Loader, ScrollArea, Text, TextInput, useCombobox } from "@mantine/core";
 import { IconMapPin } from "@tabler/icons-react";
 import type { Address, GursClient } from "../../gurs";
 import { useI18n } from "../../i18n";
@@ -19,6 +19,7 @@ export function AddressSearch({ client, onSelect, debounceMs = 300, onMiss, miss
   const { t } = useI18n();
   const combobox = useCombobox({ onDropdownClose: () => combobox.resetSelectedOption() });
   const [value, setValue] = useState("");
+  const input = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<Address[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -68,7 +69,11 @@ export function AddressSearch({ client, onSelect, debounceMs = 300, onMiss, miss
           // No close-on-blur: on iOS touching/scrolling the list blurs the input (keyboard hides).
           // Mantine closes on outside click, Escape and option select.
           leftSection={<IconMapPin size={16} />}
-          rightSection={loading ? <Loader size={14} /> : null}
+          rightSection={loading ? <Loader size={14} /> : value ? (
+            <CloseButton size="sm" aria-label={t("clearSearch")} onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { setValue(""); input.current?.focus(); }} />
+          ) : null}
+          ref={input} rightSectionPointerEvents="all"
           style={{ flex: 1, minWidth: 0 }}
         />
       </Combobox.Target>
