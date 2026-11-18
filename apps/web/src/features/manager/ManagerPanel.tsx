@@ -14,7 +14,8 @@ import { errorMessageKey } from "../parcel/errorMessage";
 import { SheetHandle, SheetSummary, useSheet } from "../../ui/Sheet";
 
 /** Buildings drawn/outlined at once; above this pick a KO first. */
-export const OUTLINE_MAX = 300;
+// Outlines come with the manager file from the copy (no extra requests); the largest manager has ~1,500 buildings.
+export const OUTLINE_MAX = 3000;
 
 interface Props {
   client: GursClient;
