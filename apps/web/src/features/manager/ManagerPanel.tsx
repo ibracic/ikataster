@@ -155,7 +155,7 @@ export function ManagerPanel({ client, managerId, kos, koFilter, onKoFilter, onC
                 {byKo.filter(([ko]) => !koFilter || ko === koFilter).map(([ko, x]) => (
                   <div key={ko}>
                     <Text size="xs" fw={700} c="dimmed" mt={6}>{ko} {name(ko)} · {x.buildings} {t("managerBuildings")} · {x.parts} {t("managerParts")}</Text>
-                    {visible.filter((b) => b.koId === ko).slice(0, 200).map((b) => (
+                    {visible.filter((b) => b.koId === ko).map((b) => (
                       <UnstyledButton key={b.eid} onClick={() => onOpenBuilding(b.koId, b.number)} style={{ display: "block", width: "100%", padding: "3px 0" }}>
                         <Group justify="space-between" wrap="nowrap">
                           <Text size="sm">{t("building")} {b.number}</Text>

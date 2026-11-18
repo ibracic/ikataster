@@ -10,7 +10,8 @@ import { useCart } from "../../cart/useCart";
 import { errorMessageKey } from "../parcel/errorMessage";
 
 /** GURS WFS returns at most 300 features per request; that is our area limit. */
-export const AREA_MAX = 300;
+// Answered from the local copy (no GURS paging limits); the extract list pages long lists.
+export const AREA_MAX = 5000;
 
 interface Props {
   client: GursClient;
@@ -60,7 +61,7 @@ export function AreaPanel({ client, ring, kos, onRedraw, onClose, onHighlight }:
         data={[{ value: "parcel", label: t("parcels") }, { value: "building", label: t("buildings") }]} />
       <div style={{ minHeight: 56, marginTop: 12 }}>
         {err ? <Alert color="red" variant="light" p="xs" role="alert">{t(err)}</Alert>
-          : !res ? <Group gap={8}><Loader size="sm" /><Text size="sm" c="dimmed">GURS…</Text></Group>
+          : !res ? <Group gap={8}><Loader size="sm" /><Text size="sm" c="dimmed">…</Text></Group>
           : res.tooMany ? (
             <Alert color="orange" variant="light" p="xs" icon={<IconAlertTriangle size={16} />} role="alert">
               {t("areaTooMany").replace("{total}", String(res.total)).replace("{max}", String(AREA_MAX))}

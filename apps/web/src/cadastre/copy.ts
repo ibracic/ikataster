@@ -111,7 +111,7 @@ export function withCopy(client: LiveGurs, mirror: Mirror, store: OfflineStore, 
     },
 
     async featuresInPolygon(kind: AreaKind, ring: [number, number][], o2: { max?: number } = {}): Promise<AreaResult> {
-      const max = o2.max ?? 300;
+      const max = o2.max ?? 5000;
       const pts = ring.filter((q, i) => i === 0 || q[0] !== ring[i - 1][0] || q[1] !== ring[i - 1][1]);
       const closed = pts.length > 1 && pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1] ? pts : [...pts, pts[0]];
       if (closed.length < 4) throw new GursError("invalid-input", "A polygon needs at least 3 points");
