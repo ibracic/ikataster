@@ -10,7 +10,7 @@ const item = (number: string, koId = 657): CartInput => ({ kind: "parcel", koId,
 const b64 = (s: string) => btoa(s);
 /** Fake parse: the "PDF" is just JSON of the request, like a real extract of that property. */
 const parse = async (bytes: Uint8Array): Promise<EzkExtract> => {
-  const r = JSON.parse(new TextDecoder().decode(bytes)) as DownloadRequest;
+  const r = JSON.parse(new TextDecoder().decode(bytes).replace(/^%PDF-/, "")) as DownloadRequest;
   return { kind: "current", createdAt: "2026-09-29T10:00:00", pending: false, owners: [], rights: [], benefits: [],
     property: { type: "parcel", koId: r.koId, koName: "MARIBOR GRAD", number: r.number, label: `${r.koId} ${r.number}` } };
 };
@@ -28,13 +28,28 @@ function setup(behaviour: (r: DownloadRequest, call: number) => Promise<unknown>
   const bridge = createBridgeClient(mockTransport({
     download: async (p) => { calls.push(p as DownloadRequest); return behaviour(p as DownloadRequest, call++); },
   }));
-  const runner = createRunner({ queue, bridge, results, quota, parse, pacingMs: 0 });
+  const runner = createRunner({ queue, bridge, results, quota, parse, pacingMs: 0, sleep: async () => undefined });
   return { queue, results, quota, runner, calls };
 }
 const ok = (r: DownloadRequest) => ({ pdfBase64: b64(JSON.stringify(r)) });
 const statuses = async (q: ReturnType<typeof createQueueStore>) => Object.fromEntries((await q.list()).map((j) => [j.item.number, j.status + (j.code ? ":" + j.code : "")]));
 
 describe("download queue", () => {
+  it("interprets raw e-ZK replies from extension 0.5+: PDF stored, NOT_IN_ZK failed, system error retried, limit stops", async () => {
+    const raw = (body: string, contentType = "text/html") => ({ raw: { status: 200, contentType, url: "https://esodisce.si/x", bodyBase64: b64(body) }, fileName: "x.pdf" });
+    const s = setup((r, call) => {
+      if (r.number === "1") return raw("%PDF-" + JSON.stringify(r), "application/pdf");
+      if (r.number === "999") return raw('<div class="errors">EZK.1400 ni vpisana</div>');
+      if (r.number === "5") return call === 2 ? raw('<div class="errors">EZK.1812</div>') : raw("%PDF-" + JSON.stringify(r), "application/pdf");
+      return raw("Dosegli ste 400 ZK izpiskov. Mejo ste dosegli");
+    });
+    await s.queue.enqueue([item("1"), item("999"), item("5"), item("7")]);
+    const rep = await s.runner.run();
+    expect(rep).toMatchObject({ reason: "limit", done: 2, failed: 1 });
+    expect(await statuses(s.queue)).toEqual({ "1": "done", "999": "failed:NOT_IN_ZK", "5": "done", "7": "deferred:LIMIT" });
+    expect(s.calls.map((c) => c.number)).toEqual(["1", "999", "5", "5", "7"]);
+  });
+
   it("adding a new round never retries a prior NOT_IN_ZK or an unrelated waiting job", async () => {
     const s = setup(r => { if (r.number === "999") throw new BridgeError("NOT_IN_ZK"); return ok(r); });
     await s.queue.enqueue([item("1"), item("999")]);

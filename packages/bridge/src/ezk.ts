@@ -1,4 +1,7 @@
-import type { BridgeErrorCode } from "@ikataster/bridge";
+import { BridgeError, type BridgeErrorCode } from "./protocol";
+
+// Interpreting e-ZK replies lives in the APP (not the extension), so wording changes on
+// e-Sodstvo are fixed with a web deploy instead of a store update.
 
 export const MAX_PDF_BYTES = 25 * 1024 * 1024;
 
@@ -38,4 +41,34 @@ export async function downloadWithRetry(
     if (r.ok || r.code !== "EZK_SYSERR" || attempts > RETRY_DELAYS_MS.length) return { ...r, attempts };
     await sleep(RETRY_DELAYS_MS[attempts - 1]);
   }
+}
+
+/** What the extension (>= 0.5) returns: the e-ZK reply exactly as received. */
+export interface RawEzkReply { raw: { status: number; contentType: string; url?: string; bodyBase64: string }; fileName?: string }
+/** What extensions <= 0.4 returned (they classified in the extension). */
+interface LegacyReply { pdfBase64: string; fileName?: string }
+export interface EzkRequestPayload { kind: "parcel" | "building" | "part"; koId: number; number: string; part?: number }
+
+const fromB64 = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+const toB64 = (b: Uint8Array) => { let s = ""; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000)); return btoa(s); };
+
+/** Ask the extension for one extract, classify the reply and retry e-ZK system errors. Throws BridgeError. */
+export async function fetchExtract(
+  bridge: { request<T>(type: "download", payload: unknown): Promise<T> },
+  req: EzkRequestPayload,
+  sleep?: (ms: number) => Promise<void>,
+): Promise<{ pdfBase64: string; fileName?: string }> {
+  let legacy: LegacyReply | null = null;
+  let fileName: string | undefined;
+  const r = await downloadWithRetry(async () => {
+    const res = await bridge.request<RawEzkReply | LegacyReply>("download", req);
+    if ("pdfBase64" in res) { legacy = res; return { ok: true, pdf: new Uint8Array() }; }
+    fileName = res.fileName;
+    const out = classifyEzkResponse(fromB64(res.raw.bodyBase64), res.raw.contentType);
+    if (!out.ok && out.code === "INVALID_PDF") out.detail = `HTTP ${res.raw.status} ${res.raw.url ?? ""} | ${out.detail ?? ""}`;
+    return out;
+  }, sleep);
+  if (legacy) return legacy;
+  if (!r.ok) throw new BridgeError(r.code, r.detail);
+  return { pdfBase64: toB64(r.pdf), fileName };
 }

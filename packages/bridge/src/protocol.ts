@@ -37,7 +37,7 @@ const REQUEST_TYPES: readonly RequestType[] = ["hello", "status", "download"];
 export type BridgeErrorCode =
   | "TIMEOUT" | "NO_EXTENSION" | "NO_EZK_TAB" | "FORBIDDEN_ORIGIN" | "BAD_REQUEST"
   | "NOT_IMPLEMENTED" | "EXT_RELOAD" | "EXT_ERR"
-  // eZK download outcomes (classified in the extension, see ezk-classify)
+  // eZK download outcomes (classified in the app, see ezk.ts)
   | "LIMIT" | "NOT_IN_ZK" | "EZK_SYSERR" | "CAPTCHA" | "SESSION_EXPIRED" | "INVALID_PDF" | "TOO_LARGE";
 
 /** Daily eZK cap per SI-PASS user (e-Sodstvo notice 13.05.2020; error text "400 ZK izpiskov. Mejo ste ..."). */

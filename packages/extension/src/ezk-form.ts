@@ -43,9 +43,3 @@ export async function ezkPostInPage(url: string, body: string): Promise<{ status
   for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + 0x8000)));
   return { status: res.status, contentType: res.headers.get("content-type") ?? "", base64: btoa(s), url: res.url };
 }
-
-export function fromBase64(b64: string): Uint8Array {
-  const s = atob(b64); const b = new Uint8Array(s.length);
-  for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
-  return b;
-}

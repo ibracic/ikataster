@@ -1,4 +1,4 @@
-import { BridgeError, type BridgeClient, type BridgeErrorCode } from "@ikataster/bridge";
+import { BridgeError, fetchExtract, type BridgeClient, type BridgeErrorCode } from "@ikataster/bridge";
 import type { CartInput } from "../cart/store";
 import type { Quota } from "../ezk/quota";
 import type { ResultsStore } from "../ezk/results";
@@ -57,7 +57,7 @@ export function createRunner(d: RunnerDeps) {
       if (!cur || (cur.status !== "queued" && cur.status !== "deferred")) continue; // cancelled meanwhile
       await d.queue.set(job.key, { status: "running", attempts: cur.attempts + 1 });
       try {
-        const res = await d.bridge.request<DownloadResult>("download", request(job.item));
+        const res: DownloadResult = await fetchExtract(d.bridge, request(job.item), sleep);
         const bytes = b64ToBytes(res.pdfBase64);
         let x: EzkExtract;
         try { x = await parse(bytes.slice()); } catch (e) {
@@ -75,7 +75,7 @@ export function createRunner(d: RunnerDeps) {
           return { ...rep, reason: "limit", code };
         }
         if (ITEM_FAIL.includes(code)) {
-          // NOT_IN_ZK etc. are final for this item; eZK system errors were already retried 3x by the extension
+          // NOT_IN_ZK etc. are final for this item; eZK system errors were already retried 3x (fetchExtract)
           await d.queue.set(job.key, { status: "failed", code, error: (e as Error)?.message });
           rep.failed++;
         } else {

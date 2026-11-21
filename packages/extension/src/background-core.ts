@@ -1,7 +1,6 @@
 import { errorResponse, isAllowedOrigin, isAppMessage, okResponse, type ExtMessage } from "@ikataster/bridge";
 import { EZK_MATCH } from "./popup-core";
-import { classifyEzkResponse, downloadWithRetry } from "./ezk-classify";
-import { EZK_FORM_URL, ezkFileName, ezkFormBody, fromBase64, isEzkRequest } from "./ezk-form";
+import { EZK_FORM_URL, ezkFileName, ezkFormBody, isEzkRequest } from "./ezk-form";
 
 export interface SenderLike { id?: string; origin?: string; url?: string }
 export interface BackgroundApi {
@@ -10,7 +9,6 @@ export interface BackgroundApi {
   queryTabs(q: { url: string }): Promise<{ id?: number; windowId?: number }[]>;
   /** POST the e-ZK form from inside the given e-ZK tab (same-origin, session cookie included). */
   postInTab?(tabId: number, url: string, body: string): Promise<{ status: number; contentType: string; base64: string; url?: string }>;
-  sleep?(ms: number): Promise<void>;
 }
 
 function senderOrigin(s: SenderLike): string | null {
@@ -36,15 +34,9 @@ export async function handleBackgroundMessage(msg: unknown, sender: SenderLike, 
       const tab = (await api.queryTabs({ url: EZK_MATCH })).find((t) => t.id !== undefined);
       if (!tab || !api.postInTab) return errorResponse(msg.id, "NO_EZK_TAB");
       try {
-        const r = await downloadWithRetry(async () => {
-          const res = await api.postInTab!(tab.id!, EZK_FORM_URL, ezkFormBody(req));
-          const out = classifyEzkResponse(fromBase64(res.base64), res.contentType);
-          if (!out.ok && out.code === "INVALID_PDF") out.detail = `HTTP ${res.status} ${res.url ?? ""} | ${out.detail ?? ""}`;
-          return out;
-        }, api.sleep);
-        if (!r.ok) return errorResponse(msg.id, r.code, r.detail);
-        let bin = ""; for (let i = 0; i < r.pdf.length; i += 0x8000) bin += String.fromCharCode(...r.pdf.subarray(i, i + 0x8000));
-        return okResponse(msg.id, { pdfBase64: btoa(bin), fileName: ezkFileName(req) });
+        // Pass the reply through unchanged; the app classifies it (see @ikataster/bridge ezk.ts).
+        const res = await api.postInTab(tab.id!, EZK_FORM_URL, ezkFormBody(req));
+        return okResponse(msg.id, { raw: { status: res.status, contentType: res.contentType, url: res.url, bodyBase64: res.base64 }, fileName: ezkFileName(req) });
       } catch (e) {
         return errorResponse(msg.id, "EXT_ERR", String((e as Error)?.message ?? e));
       }
