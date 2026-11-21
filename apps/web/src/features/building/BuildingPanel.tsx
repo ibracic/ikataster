@@ -6,6 +6,7 @@ import { Button, Checkbox } from "@mantine/core";
 import { AddToCartButton } from "../../cart/AddToCartButton";
 import { itemKey, type CartInput } from "../../cart/store";
 import { useCart } from "../../cart/useCart";
+import { propertyKey } from "../../property/identity";
 import { Alert, Anchor, Badge, CloseButton, Group, Paper, ScrollArea, Skeleton, Stack, Table, Text, Title } from "@mantine/core";
 import { IconArrowLeft, IconExternalLink } from "@tabler/icons-react";
 import { gursPublicViewUrl, valuationUrl, type Building, type BuildingPart } from "../../gurs";
@@ -59,6 +60,9 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
     await store.add((parts ?? []).filter((p) => picked.has(p.number)).map(partInput));
     setPicked(new Set());
   };
+  // parts not yet on the extract list ("add all" skips the ones already there)
+  const freshParts = (parts ?? []).filter((p) => !keys.has(propertyKey(partInput(p))));
+  const addAll = () => void store.add(freshParts.map(partInput));
   const sheet = useSheet(b.eid);
   const { records } = useResults();
   const ezkByPart = new Map(resultsFor(records, "building", b.koId, b.number).filter((r) => r.extract.property.type === "part").map((r) => [Number(r.extract.property.part), r]));
@@ -147,6 +151,11 @@ export function BuildingPanel({ building: b, parts, partsError, onClose, onManag
         </Anchor>
         <Group gap={6}>
           {picked.size > 0 && <Button size="xs" color="teal" onClick={() => void addPicked()}>{t("addParts")} ({picked.size})</Button>}
+          {picked.size === 0 && (parts?.length ?? 0) > 1 && (
+            <Button size="xs" variant="light" color="teal" disabled={freshParts.length === 0} onClick={addAll}>
+              {freshParts.length ? `${t("addAllParts")} (${freshParts.length})` : t("allPartsInCart")}
+            </Button>
+          )}
           <AddToCartButton item={{ kind: "building", koId: b.koId, koName: b.koName, number: String(b.number), eid: b.eid, geometry: b.geometry }} />
         </Group>
       </Group>

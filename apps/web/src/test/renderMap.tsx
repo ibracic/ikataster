@@ -19,7 +19,7 @@ const fakeValues = () => createValues({
 
 let cartN = 0;
 /** The badge may already show an older count; wait until it shows the expected one. */
-export const cartCount = (n: string) => vi.waitFor(() => expect(screen.getByTestId("cart-count")).toHaveTextContent(n));
+export const cartCount = (n: string, timeout = 1000) => vi.waitFor(() => expect(screen.getByTestId("cart-count")).toHaveTextContent(n), { timeout });
 
 /** Renders the app on the real cadastre composition (copy of central Maribor, KO 657). */
 export function renderAt(url: string, cadastre: TestCadastre = testCadastre(), cart = createCartStore(`flow-cart-${++cartN}`)) {

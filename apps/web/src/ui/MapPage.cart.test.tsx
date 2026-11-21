@@ -24,6 +24,18 @@ describe("cart flow", () => {
     await cartCount("1");
   });
 
+  it("adds all remaining parts of a building in one click", async () => {
+    renderAt("/?ko=657&st=130", undefined, createCartStore(`flow-cart-all-${Date.now()}`));
+    const panel = await screen.findByTestId("building-panel");
+    await within(panel).findByTestId("parts-table");
+    fireEvent.click(within(panel).getByLabelText("Del stavbe 2"));
+    fireEvent.click(within(panel).getByText("Dodaj izbrane dele (1)"));
+    await cartCount("1", 5000);
+    fireEvent.click(await within(panel).findByRole("button", { name: "Vse dele za izpis ZK (60)" }));
+    await cartCount("61", 5000);
+    expect(await within(panel).findByRole("button", { name: "Vsi deli na seznamu za izpis ZK" })).toBeDisabled();
+  });
+
   it("adds a building and selected parts, then removes and clears in the drawer", async () => {
     renderAt("/?ko=657&st=130");
     const panel = await screen.findByTestId("building-panel");
