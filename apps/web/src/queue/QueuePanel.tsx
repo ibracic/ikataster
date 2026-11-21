@@ -15,16 +15,16 @@ const label = (j: Job, t: (key: "buildingPart" | "building" | "parcel") => strin
 /** New downloads, current-round progress, and explicitly retried past failures are distinct. */
 export function QueuePanel() {
   const { t } = useI18n();
-  const { pending, jobs, ready } = useDownloadList();
+  const { pending, jobs, ready, ...cart } = useDownloadList();
   const { store, runner, quota } = useQueue();
-  const [running, setRunning] = useState(runner.running);
-  const [report, setReport] = useState<RunReport | null>(null);
-  const [round, setRound] = useState<string[] | null>(null);
-  useEffect(() => runner.onChange(setRunning), [runner]);
+  // Round + report live in the runner, so closing the dialog or switching tabs keeps the progress view.
+  const [, tick] = useState(0);
+  useEffect(() => runner.onChange(() => tick(n => n + 1)), [runner]);
+  const running = runner.running, round = runner.round, report: RunReport | null = runner.report;
   // A new addition begins a fresh view; do not keep yesterday's progress above it.
   useEffect(() => {
-    if (!running && round && pending.some(i => !round.includes(i.key))) { setRound(null); setReport(null); }
-  }, [pending, running, round]);
+    if (!running && round && pending.some(i => !round.includes(i.key))) runner.clearRound();
+  }, [pending, running, round, runner]);
   const pendingKeys = new Set(pending.map(i => i.key));
   const current = jobs.filter(j => round ? round.includes(j.key) : pendingKeys.has(j.key));
   const done = current.filter(j => j.status === "done").length;
@@ -34,15 +34,16 @@ export function QueuePanel() {
   const start = async () => {
     const keys = pending.map(i => i.key);
     if (!keys.length) return;
-    setReport(null); setRound(keys);
     await store.enqueue(pending);
-    setReport(await runner.run(keys));
+    await runner.run(keys);
   };
-  const retry = async (j: Job) => {
-    setReport(null); setRound([j.key]);
-    await store.enqueue([j.item], { again: true });
-    setReport(await runner.run([j.key]));
+  const retry = async (list: Job[]) => {
+    await store.enqueue(list.map(j => j.item), { again: true });
+    await runner.run(list.map(j => j.key));
   };
+  const reasonOf = (j: Job) => j.code === "NOT_IN_ZK" ? t("queueMissingHint") : err(j.code) ?? t("queue_failed");
+  const groups = [...failures.reduce((m, j) => { const r = reasonOf(j); m.set(r, [...(m.get(r) ?? []), j]); return m; }, new Map<string, Job[]>())];
+  const remove = async (list: Job[]) => { const keys = list.map(j => j.key); await store.remove(keys); await cart.store.remove(keys); };
   const err = (c?: string) => c ? ezkErrorMessage(c as BridgeErrorCode, t as never) ?? c : null;
   return <Stack gap={6} data-testid="queue" data-running={running ? "yes" : "no"}>
     <QuotaBadge quota={quota} pending={pending.length} version={jobs.filter(j => j.status === "done").length} />
@@ -75,12 +76,23 @@ export function QueuePanel() {
     {report && report.reason !== "done" && <Alert color="orange" p="xs" data-testid="queue-stop">
       {report.reason === "paused" ? t("queuePaused") : report.reason === "quota" ? t("quotaExhausted") : err(report.code) ?? t("queueStopped")}
     </Alert>}
-    {failures.length > 0 && <details data-testid="queue-failures"><summary>{t("queuePastFailures")} ({failures.length})</summary>
-      <Stack gap={6} mt={6}>{failures.map(j => <Group key={j.key} justify="space-between" wrap="wrap">
-        <div><Text size="sm">{label(j, t)}</Text><Text size="xs" c="dimmed">{j.code === "NOT_IN_ZK" ? t("queueMissingHint") : err(j.code)}</Text>
-          {j.code === "NOT_IN_ZK" && <MissingActions item={j.item} />}</div>
-        <Button size="compact-xs" variant="light" disabled={running} onClick={() => void retry(j)} aria-label={`${t("queueRetryOne")} ${j.key}`}>{t("queueRetryOne")}</Button>
-      </Group>)}</Stack>
+    {failures.length > 0 && <details data-testid="queue-failures" open={!running && !round ? true : undefined}>
+      <summary><Text span size="sm" fw={600} c="orange.8">{t("queuePastFailures")} ({failures.length})</Text></summary>
+      <Stack gap={8} mt={6}>{groups.map(([reason, list]) => <Alert key={reason} color={list[0].code === "NOT_IN_ZK" ? "yellow" : "orange"} p="xs" data-testid="failure-group">
+        <Group justify="space-between" wrap="wrap" gap={6}>
+          <Text size="sm" fw={600} style={{ flex: "1 1 240px" }}>{reason} ({list.length})</Text>
+          <Group gap={4}>
+            {list[0].code !== "NOT_IN_ZK" && <Button size="compact-xs" disabled={running} onClick={() => void retry(list)}>{fmt(t("queueRetryAll"), { n: list.length })}</Button>}
+            <Button size="compact-xs" variant="subtle" color="gray" disabled={running} onClick={() => void remove(list)}>{t("queueRemoveAll")}</Button>
+          </Group>
+        </Group>
+        <Stack gap={4} mt={6}>{list.map(j => <Group key={j.key} justify="space-between" wrap="wrap" gap={4}>
+          <div><Text size="sm">{label(j, t)}</Text>
+            {j.error && j.error !== j.code && <Text size="xs" c="dimmed">{j.error.slice(0, 160)}</Text>}
+            {j.code === "NOT_IN_ZK" && <MissingActions item={j.item} />}</div>
+          <Button size="compact-xs" variant="light" disabled={running} onClick={() => void retry([j])} aria-label={`${t("queueRetryOne")} ${j.key}`}>{t("queueRetryOne")}</Button>
+        </Group>)}</Stack>
+      </Alert>)}</Stack>
     </details>}
   </Stack>;
 }

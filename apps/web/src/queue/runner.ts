@@ -37,6 +37,9 @@ export function createRunner(d: RunnerDeps) {
   const pacing = d.pacingMs ?? 1500;
   let active: Promise<RunReport> | null = null;
   let pauseRequested = false;
+  // The visible round outlives the panel (modal/tab close, tab switch): it belongs to the runner.
+  let round: readonly string[] | null = null;
+  let report: RunReport | null = null;
   const listeners = new Set<(running: boolean) => void>();
   const emit = () => listeners.forEach((l) => l(!!active));
 
@@ -90,11 +93,18 @@ export function createRunner(d: RunnerDeps) {
 
   return {
     get running() { return !!active; },
+    /** Keys of the last started round (null if none or run without keys). */
+    get round() { return round; },
+    /** Outcome of the last finished round. */
+    get report() { return report; },
+    /** Forget the last round (e.g. when new items were added). */
+    clearRound() { if (!active) { round = null; report = null; emit(); } },
     onChange(fn: (running: boolean) => void) { listeners.add(fn); return () => { listeners.delete(fn); }; },
     run(keys?: readonly string[]): Promise<RunReport> {
       if (active) return active;
       pauseRequested = false;
-      active = loop(keys).finally(() => { active = null; emit(); });
+      round = keys ? [...keys] : null; report = null;
+      active = loop(keys).then((r) => { report = r; return r; }).finally(() => { active = null; emit(); });
       emit();
       return active;
     },

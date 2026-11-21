@@ -68,6 +68,7 @@ export function createQueueStore(name: string = DATABASES.queue.name, now = () =
     retryFailed: () => db.jobs.where("status").equals("failed").modify({ status: "queued", code: undefined, error: undefined }),
     /** Drop everything that has not been downloaded yet. */
     cancelPending: () => db.jobs.where("status").anyOf("queued", "deferred", "running").delete(),
+    remove: (keys: string[]) => db.jobs.bulkDelete(keys),
     clear: () => db.jobs.clear(),
 
     /**

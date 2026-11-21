@@ -35,7 +35,7 @@ it("one click downloads the whole cart with per-item states, retry failed, and o
   const ui = () => render(<MantineProvider><I18nProvider><CartContext.Provider value={cart}><ResultsContext.Provider value={results}>
     <QueueContext.Provider value={{ store, runner, quota }}><QueuePanel /></QueueContext.Provider>
   </ResultsContext.Provider></CartContext.Provider></I18nProvider></MantineProvider>);
-  const v = ui();
+  let v = ui();
   await waitFor(() => expect(screen.getByRole("button", { name: "Prenesi nove izpiske (3)" })).toBeEnabled());
   fireEvent.click(screen.getByRole("button", { name: "Prenesi nove izpiske (3)" }));
   await waitFor(() => expect(screen.getByTestId("queue-summary")).toHaveTextContent("Preneseno 2 od 3 · neuspelih 1 · čaka 0"));
@@ -43,6 +43,10 @@ it("one click downloads the whole cart with per-item states, retry failed, and o
   expect(rows.getByText(/ni samostojnega vpisa v ZK/)).toBeInTheDocument();
   expect(await results.list()).toHaveLength(2);
   expect(screen.getByTestId("ezk-quota")).toHaveTextContent("2 / 400");
+  // Closing the dialog / switching tabs remounts the panel: the round's progress must still be there.
+  v.unmount(); v = ui();
+  expect(await screen.findByTestId("queue-summary")).toHaveTextContent("Preneseno 2 od 3 · neuspelih 1");
+  expect(within(screen.getByTestId("queue-failures")).getByTestId("failure-group")).toHaveTextContent("(1)");
 
   // A second round contains only the new property, not old successes or failures.
   await cart.add([{ kind: "parcel", koId: 657, koName: "M", number: "8", eid: "8", geometry: null }]);
@@ -54,7 +58,7 @@ it("one click downloads the whole cart with per-item states, retry failed, and o
   expect(screen.getByRole("button", { name: "Prenesi nove izpiske (0)" })).toBeDisabled();
 
   fail999 = false;
-  fireEvent.click(screen.getByText(/Prejšnji neuspešni prenosi/));
+  fireEvent.click(screen.getByText(/Neuspešni prenosi/));
   fireEvent.click(await screen.findByRole("button", { name: "Poskusi znova parcel:657:999" }));
   await waitFor(() => expect(screen.getByTestId("queue-summary")).toHaveTextContent("Preneseno 1 od 1"));
   v.unmount();
