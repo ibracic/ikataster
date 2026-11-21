@@ -13,6 +13,10 @@ describe("origins", () => {
       expect(isAllowedOrigin(o)).toBe(false);
     }
   });
+  it("store builds reject local dev origins", () => {
+    expect(isAllowedOrigin("http://localhost:5173", false)).toBe(false);
+    expect(isAllowedOrigin("https://app.example", false)).toBe(true);
+  });
 });
 
 describe("build-time origins", () => {

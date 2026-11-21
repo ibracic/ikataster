@@ -110,8 +110,11 @@ describe("manifest", () => {
       expect(m.permissions).toEqual(["tabs", "scripting"]);
       expect(m.host_permissions).toEqual(["https://esodisce.si/*"]);
       const relay = (m.content_scripts as { matches: string[]; js: string[] }[]).find((s) => s.js.includes("relay.js"))!;
-      expect(relay.matches).toEqual(["https://app.example/*", "http://localhost/*", "http://127.0.0.1/*"]);
+      expect(relay.matches).toEqual(["https://app.example/*"]);
     }
+    const dev = manifest("chrome", "0.1.0", ["https://app.example"], { dev: true });
+    expect((dev.content_scripts as { matches: string[] }[])[0].matches)
+      .toEqual(["https://app.example/*", "http://localhost/*", "http://127.0.0.1/*"]);
     expect(c.background).toEqual({ service_worker: "background.js", type: "module" });
     expect(c).not.toHaveProperty("browser_specific_settings");
     expect(f.background).toEqual({ scripts: ["background.js"], type: "module" });

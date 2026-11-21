@@ -1,5 +1,6 @@
 // Builds dist/chrome and dist/firefox (unpacked) plus zips for distribution.
-// Usage: node build.mjs [--out <dir to also copy zips into>]
+// Usage: node build.mjs [--dev] [--out <dir to also copy zips into>]
+// Default is the store build (only the app origins). --dev also accepts http://localhost and 127.0.0.1.
 import { build } from "esbuild";
 import { zipSync } from "fflate";
 import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -27,6 +28,7 @@ if (!origins.length) { console.error("IKATASTER_ORIGINS is not set (e.g. https:/
 
 const outArg = process.argv.indexOf("--out");
 const extraOut = outArg > 0 ? process.argv[outArg + 1] : null;
+const dev = process.argv.includes("--dev");
 const dist = join(root, "dist");
 rmSync(dist, { recursive: true, force: true });
 
@@ -38,11 +40,11 @@ for (const target of ["chrome", "firefox"]) {
   await build({
     entryPoints: { background: join(root, "src/background.ts"), relay: join(root, "src/relay.ts"), popup: join(root, "src/popup.ts") },
     outdir: out, bundle: true, format: "iife", target: ["chrome110", "firefox140"], minify: false, legalComments: "none",
-    define: { __IKATASTER_ORIGINS__: JSON.stringify(origins.join(",")) },
+    define: { __IKATASTER_ORIGINS__: JSON.stringify(origins.join(",")), __IKATASTER_DEV__: JSON.stringify(dev) },
   });
   // background declared as module in the manifest: iife output is valid module code too
   cpSync(join(root, "static"), out, { recursive: true });
-  writeFileSync(join(out, "manifest.json"), JSON.stringify(manifest(target, pkg.version, origins), null, 2));
+  writeFileSync(join(out, "manifest.json"), JSON.stringify(manifest(target, pkg.version, origins, { dev }), null, 2));
   const files = Object.fromEntries(walk(out).map((p) => [relative(out, p), readFileSync(p)]));
   const zip = join(dist, `ikataster-${target}-${pkg.version}.zip`);
   writeFileSync(zip, zipSync(files, { level: 9 }));

@@ -10,6 +10,7 @@ export const BRIDGE_TIMEOUT_MS = 90_000;
 
 /** Injected at build time from IKATASTER_ORIGINS (see .env.example); never committed. */
 declare const __IKATASTER_ORIGINS__: string | undefined;
+declare const __IKATASTER_DEV__: boolean | undefined;
 
 /** Parses a comma/space separated list of https origins; drops anything that isn't a bare https origin. */
 export function parseOrigins(raw: string | undefined | null): string[] {
@@ -22,10 +23,12 @@ export function parseOrigins(raw: string | undefined | null): string[] {
 export const ALLOWED_ORIGINS: readonly string[] =
   parseOrigins(typeof __IKATASTER_ORIGINS__ === "string" ? __IKATASTER_ORIGINS__ : "");
 const DEV_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1):\d{2,5}$/;
+/** Local dev origins are accepted unless the build says otherwise (store extension builds set __IKATASTER_DEV__ = false). */
+const ALLOW_DEV: boolean = typeof __IKATASTER_DEV__ === "boolean" ? __IKATASTER_DEV__ : true;
 
-export function isAllowedOrigin(origin: string | undefined | null): boolean {
+export function isAllowedOrigin(origin: string | undefined | null, allowDev: boolean = ALLOW_DEV): boolean {
   if (!origin) return false;
-  return ALLOWED_ORIGINS.includes(origin) || DEV_ORIGIN.test(origin);
+  return ALLOWED_ORIGINS.includes(origin) || (allowDev && DEV_ORIGIN.test(origin));
 }
 
 export type RequestType = "hello" | "status" | "download";

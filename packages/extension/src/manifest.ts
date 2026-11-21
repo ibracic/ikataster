@@ -1,7 +1,7 @@
 export type Target = "chrome" | "firefox";
 
 /** MV3 manifest per browser. Chrome/Edge: background service worker. Firefox: background scripts + gecko id. */
-export function manifest(target: Target, version: string, origins: readonly string[]): Record<string, unknown> {
+export function manifest(target: Target, version: string, origins: readonly string[], opts: { dev?: boolean } = {}): Record<string, unknown> {
   const icons = { 16: "icons/icon16.png", 48: "icons/icon48.png", 128: "icons/icon128.png" };
   return {
     manifest_version: 3,
@@ -15,7 +15,7 @@ export function manifest(target: Target, version: string, origins: readonly stri
     action: { default_title: "iKataster", default_popup: "popup.html", default_icon: icons },
     content_scripts: [
       {
-        matches: [...origins.map((o) => `${o}/*`), "http://localhost/*", "http://127.0.0.1/*"],
+        matches: [...origins.map((o) => `${o}/*`), ...(opts.dev ? ["http://localhost/*", "http://127.0.0.1/*"] : [])],
         js: ["relay.js"],
         run_at: "document_start",
       },
