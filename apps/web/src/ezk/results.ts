@@ -141,3 +141,30 @@ export function groupResults(records: ResultRecord[], filter: string): ResultGro
     .map((record) => ({ record, owners: record.extract.owners.filter((o) => words.every((w) => ownerText(o).includes(w))) }))
     .filter((g) => !words.length || g.owners.length);
 }
+
+/** Export/list scope beyond the owner text filter: cadastral municipality, building or parcel number, download day. */
+export interface RecordScope { ko?: number | null; number?: string; day?: string | null }
+
+/** Local (Ljubljana) calendar day of a timestamp, YYYY-MM-DD. */
+export const localDay = (ms: number) => new Date(ms).toLocaleDateString("sv-SE", { timeZone: "Europe/Ljubljana" });
+
+export function filterRecords<T extends Pick<ResultRecord, "key" | "addedAt">>(records: T[], s: RecordScope): T[] {
+  const num = (s.number ?? "").trim().replace(/\s+/g, "");
+  return records.filter((r) => {
+    const [kind, ko, number, part] = r.key.split(":");
+    if (s.ko != null && Number(ko) !== s.ko) return false;
+    if (s.day && localDay(r.addedAt) !== s.day) return false;
+    if (num) {
+      const full = kind === "part" ? `${number}/${part}` : number;
+      if (full !== num && !(kind !== "parcel" && number === num)) return false;
+    }
+    return true;
+  });
+}
+
+/** Download days (newest first) with record counts, for the day picker. */
+export function resultDays(records: Pick<ResultRecord, "addedAt">[]): [string, number][] {
+  const m = new Map<string, number>();
+  for (const r of records) { const d = localDay(r.addedAt); m.set(d, (m.get(d) ?? 0) + 1); }
+  return [...m].sort((a, b) => b[0].localeCompare(a[0]));
+}

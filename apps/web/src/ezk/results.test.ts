@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { createResultsStore, resultKey, groupResults, type ResultRecord } from "./results";
+import { createResultsStore, resultKey, groupResults, filterRecords, resultDays, type ResultRecord } from "./results";
 import type { EzkExtract, Owner } from "./types";
 
 const owner = (name: string, extra: Partial<Owner> = {}): Owner => ({
@@ -116,5 +116,24 @@ describe("saved folders", () => {
     expect(await s2.db.folderItems.count()).toBe(0);
     expect(await s2.db.folderPdfs.count()).toBe(0);
     await expect(s2.openFolder(id)).rejects.toThrow("Folder not found");
+  });
+});
+
+describe("filterRecords (export scope)", () => {
+  const at = (d: string) => new Date(`${d}T12:00:00+01:00`).getTime();
+  const r = (key: string, day: string) => ({ key, fileName: "x.pdf", addedAt: at(day), extract: extract("999 X 1", "1", []) }) as ResultRecord;
+  const recs = [r("part:392:572:4", "2026-11-21"), r("part:392:572:5", "2026-11-21"), r("building:392:573", "2026-11-18"),
+    r("parcel:392:572/4", "2026-11-18"), r("parcel:532:572", "2026-11-21")];
+  const keys = (f: Parameters<typeof filterRecords>[1]) => filterRecords(recs, f).map((x) => x.key);
+  it("narrows by KO, building/parcel number and download day", () => {
+    expect(keys({})).toHaveLength(5);
+    expect(keys({ ko: 392 })).toEqual(["part:392:572:4", "part:392:572:5", "building:392:573", "parcel:392:572/4"]);
+    expect(keys({ ko: 392, number: "572" })).toEqual(["part:392:572:4", "part:392:572:5"]);
+    expect(keys({ number: "572/4" })).toEqual(["part:392:572:4", "parcel:392:572/4"]);
+    expect(keys({ day: "2026-11-18" })).toEqual(["building:392:573", "parcel:392:572/4"]);
+    expect(keys({ number: " 572 ", day: "2026-11-21" })).toEqual(["part:392:572:4", "part:392:572:5", "parcel:532:572"]);
+  });
+  it("lists download days newest first with counts", () => {
+    expect(resultDays(recs)).toEqual([["2026-11-21", 3], ["2026-11-18", 2]]);
   });
 });

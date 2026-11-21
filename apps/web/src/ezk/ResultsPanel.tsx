@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  ActionIcon, Alert, Badge, Button, FileButton, Group, Loader, Paper, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton,
+  ActionIcon, Alert, Badge, Button, Select, FileButton, Group, Loader, Paper, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton,
 } from "@mantine/core";
 import { IconDownload, IconFileSpreadsheet, IconFileTypePdf, IconSearch, IconX } from "@tabler/icons-react";
 import { useI18n, type MsgKey } from "../i18n";
 import { useResults } from "./useResults";
 import { FoldersPanel } from "./FoldersPanel";
 import { useCart } from "../cart/useCart";
-import { groupResults, type ResultRecord } from "./results";
+import { filterRecords, groupResults, resultDays, type RecordScope, type ResultRecord } from "./results";
 import { ResultCard } from "./ResultCard";
 import { RecheckButton } from "./RecheckButton";
 import { addPdfFiles, type AddFilesResult } from "./addFiles";
@@ -40,7 +40,15 @@ export function ResultsPanel({ onOpenProperty, parse, download = browserDownload
   const [filter, setFilter] = useState("");
   const [busy, setBusy] = useState(false);
   const [last, setLast] = useState<AddFilesResult | null>(null);
-  const groups = groupResults(records, filter);
+  const [scope, setScope] = useState<RecordScope>({});
+  const kos = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const r of records) { const ko = Number(r.key.split(":")[1]); if (!m.has(ko)) m.set(ko, r.extract.property.koName ?? ""); }
+    return [...m].sort((a, b) => a[0] - b[0]).map(([ko, name]) => ({ value: String(ko), label: `${ko} ${name}`.trim() }));
+  }, [records]);
+  const days = useMemo(() => resultDays(records), [records]);
+  const scoped = !!(scope.ko != null || scope.number?.trim() || scope.day);
+  const groups = groupResults(filterRecords(records, scope), filter);
   const cart = useCart();
   const [exporting, setExporting] = useState(false);
   const [exported, setExported] = useState<{ missing: string[] } | null>(null);
@@ -98,11 +106,23 @@ export function ResultsPanel({ onOpenProperty, parse, download = browserDownload
           )}
         </Group>
         {records.length > 0 && (
+          <Group gap="xs" wrap="wrap" align="flex-end" data-testid="results-scope">
+            <Select size="xs" w={200} label={t("scopeKo")} placeholder={t("scopeAll")} data={kos} searchable clearable
+              value={scope.ko != null ? String(scope.ko) : null} onChange={(v) => setScope((x) => ({ ...x, ko: v ? Number(v) : null }))} />
+            <TextInput size="xs" w={170} label={t("scopeNumber")} placeholder="572 / 572/4" value={scope.number ?? ""}
+              onChange={(e) => { const v = e.currentTarget.value; setScope((x) => ({ ...x, number: v })); }} />
+            <Select size="xs" w={170} label={t("scopeDay")} placeholder={t("scopeAll")} clearable
+              data={days.map(([d, n]) => ({ value: d, label: `${d.split("-").reverse().join(". ")} (${n})` }))}
+              value={scope.day ?? null} onChange={(v) => setScope((x) => ({ ...x, day: v }))} />
+            {scoped && <Button size="xs" variant="subtle" color="gray" onClick={() => setScope({})}>{t("scopeClear")}</Button>}
+          </Group>
+        )}
+        {records.length > 0 && (
           <Group gap="xs">
             <Button size="xs" variant="light" leftSection={exporting ? <Loader size={12} /> : <IconDownload size={14} />} disabled={exporting || !groups.length}
-              onClick={() => void doExport("zip")}>{exporting ? t("exporting") : t("exportZip")}</Button>
+              onClick={() => void doExport("zip")}>{exporting ? t("exporting") : t("exportZip")}{scoped || filter.trim() ? ` · ${groups.length}` : ""}</Button>
             <Button size="xs" variant="subtle" leftSection={<IconFileSpreadsheet size={14} />} disabled={exporting || !groups.length}
-              onClick={() => void doExport("xlsx")}>{t("exportXlsx")}</Button>
+              onClick={() => void doExport("xlsx")}>{t("exportXlsx")}{scoped || filter.trim() ? ` · ${groups.length}` : ""}</Button>
             <RecheckButton records={records} />
           </Group>
         )}

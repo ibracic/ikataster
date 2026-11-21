@@ -92,6 +92,15 @@ it("uploads PDFs, reports failures, groups owners by property and filters them",
   expect(Object.keys(unzipSync(bytes))).toEqual(expect.arrayContaining(["podatki.xlsx", "lastniki.csv", "bremena.csv", "pdf/999_100-1_2026-09-28.pdf", "pdf/998_50-21_2026-09-28.pdf"]));
   expect(await screen.findByTestId("export-report")).toHaveTextContent("Izvoz pripravljen");
 
+  // scope: only building 50 (part 50/21) is exported
+  fireEvent.change(screen.getByLabelText("Št. stavbe ali parcele"), { target: { value: "50" } });
+  await waitFor(() => expect(screen.getAllByTestId("result-group")).toHaveLength(1));
+  fireEvent.click(screen.getByRole("button", { name: /Izvozi ZIP.*· 1/ }));
+  await waitFor(() => expect(download).toHaveBeenCalledTimes(2));
+  expect(Object.keys(unzipSync(download.mock.calls[1][1])).filter((f) => f.startsWith("pdf/"))).toEqual(["pdf/998_50-21_2026-09-28.pdf"]);
+  fireEvent.click(screen.getByRole("button", { name: "Počisti filtre" }));
+  await waitFor(() => expect(screen.getAllByTestId("result-group")).toHaveLength(2));
+
   fireEvent.change(screen.getByLabelText(/Filtriraj lastnike/), { target: { value: "kranjc" } });
   await waitFor(() => expect(screen.getAllByTestId("owner-row")).toHaveLength(1));
   expect(screen.getAllByTestId("result-group")).toHaveLength(1);
