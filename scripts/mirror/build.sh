@@ -76,7 +76,7 @@ python3 "$HERE/eup.py" harvest "$W/eup" || { [ -s "$W/eup/eup.jsonl" ] && echo "
 python3 "$HERE/eup.py" apply "$W/eup" "$NEW"
 python3 "$HERE/municipalities.py" x/KN_SLO_PARCELE_SLO_parcele_x_rpe_obcine_${STAMP}.csv "$RN" "$NEW"
 python3 "$HERE/addresses.py" gj "$NEW" "$DATE"
-python3 "$HERE/managers.py" "$NEW" "$DATE" gj/KN_SLO_STAVBE_SLO_upravniki_${STAMP}.csv "$RN"
+python3 "$HERE/managers.py" "$NEW" "$DATE" "$(ls gj/KN_SLO_STAVBE_SLO_upravniki_*.csv | sort | tail -1)" "$RN"
 printf '{"date":"%s","source":"Geodetska uprava Republike Slovenije, kataster nepremičnin in register naslovov, stanje %s"}\n' "$DATE" "$DATE" > "$NEW/index.json"
 
 FILES=$(find "$NEW" -type f | wc -l)
