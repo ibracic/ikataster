@@ -23,6 +23,8 @@ interface PdfRecord { key: string; bytes: Uint8Array }
 export interface Folder { id: string; name: string; createdAt: number; updatedAt: number; count: number }
 interface FolderItem { folderId: string; key: string; record: ResultRecord }
 interface FolderPdf { folderId: string; key: string; bytes: Uint8Array }
+/** A named selection of downloaded extracts (references by key; the extracts themselves stay in `results`). */
+export interface SavedList { id: string; name: string; keys: string[]; createdAt: number; updatedAt: number }
 
 export function resultKey(x: EzkExtract): string {
   const p = x.property;
@@ -36,6 +38,7 @@ class ResultsDb extends Dexie {
   folders!: Table<Folder, string>;
   folderItems!: Table<FolderItem, [string, string]>;
   folderPdfs!: Table<FolderPdf, [string, string]>;
+  lists!: Table<SavedList, string>;
   constructor(name: string) {
     super(name);
     // v1: parsed eZK extracts, one per property (newest wins)
@@ -47,8 +50,35 @@ class ResultsDb extends Dexie {
       results: "key, addedAt", pdfs: "key",
       folders: "id, updatedAt", folderItems: "[folderId+key], folderId", folderPdfs: "[folderId+key], folderId",
     });
+    // v4: folders (full copies) become saved lists (key references). Copies of extracts that are no longer
+    // in `results` are moved back there first, so nothing is lost; the copies are then dropped.
+    this.version(4).stores({
+      results: "key, addedAt", pdfs: "key",
+      folders: "id, updatedAt", folderItems: "[folderId+key], folderId", folderPdfs: "[folderId+key], folderId",
+      lists: "id, updatedAt",
+    }).upgrade((tx) => foldersToLists((n) => tx.table(n)));
+    // Old backups restored into this version still carry folders: convert them on open as well.
+    this.on("ready", async () => {
+      if (await this.folders.count()) await this.transaction("rw", [this.results, this.pdfs, this.folders, this.folderItems, this.folderPdfs, this.lists], () => foldersToLists((n) => this.table(n)));
+    });
   }
 }
+
+async function foldersToLists(table: (name: string) => Table) {
+  const folders = (await table("folders").toArray()) as Folder[];
+  for (const f of folders) {
+    const items = (await table("folderItems").where("folderId").equals(f.id).toArray()) as FolderItem[];
+    for (const i of items) {
+      if (await table("results").get(i.key)) continue;
+      await table("results").put(i.record);
+      const pdf = (await table("folderPdfs").get([f.id, i.key])) as FolderPdf | undefined;
+      if (pdf) await table("pdfs").put({ key: i.key, bytes: pdf.bytes });
+    }
+    await table("lists").put({ id: f.id, name: f.name, keys: items.map((i) => i.key), createdAt: f.createdAt, updatedAt: f.updatedAt });
+  }
+  await table("folderItems").clear(); await table("folderPdfs").clear(); await table("folders").clear();
+}
+
 
 export function createResultsStore(name: string = DATABASES.results.name) {
   const db = new ResultsDb(name);
@@ -83,44 +113,36 @@ export function createResultsStore(name: string = DATABASES.results.name) {
     }),
     clear: () => db.transaction("rw", db.results, db.pdfs, async () => { await db.results.clear(); await db.pdfs.clear(); }),
 
-    listFolders: () => db.folders.orderBy("updatedAt").reverse().toArray(),
-    /** Save the current results as a new folder, or overwrite folder `id`. Returns the folder id. */
-    saveFolder: (name: string, id?: string) => db.transaction("rw", [db.results, db.pdfs, db.folders, db.folderItems, db.folderPdfs], async () => {
+    savedLists: () => db.lists.orderBy("updatedAt").reverse().toArray(),
+    /** New saved list with the given extracts. Returns its id. */
+    createList: async (name: string, keys: string[]) => {
       const clean = name.trim().slice(0, 120);
-      if (!clean) throw new Error("Folder name required");
-      const folderId = id ?? (globalThis.crypto?.randomUUID?.() ?? `f${Date.now()}${Math.random().toString(36).slice(2)}`);
-      const prev = id ? await db.folders.get(id) : undefined;
-      if (id && !prev) throw new Error("Folder not found");
-      const records = await db.results.toArray();
-      const pdfs = await db.pdfs.toArray();
-      await db.folderItems.where("folderId").equals(folderId).delete();
-      await db.folderPdfs.where("folderId").equals(folderId).delete();
-      await db.folderItems.bulkPut(records.map((record) => ({ folderId, key: record.key, record })));
-      await db.folderPdfs.bulkPut(pdfs.map((p) => ({ folderId, key: p.key, bytes: p.bytes })));
+      if (!clean) throw new Error("List name required");
+      const id = globalThis.crypto?.randomUUID?.() ?? `l${Date.now()}${Math.random().toString(36).slice(2)}`;
       const t = now();
-      await db.folders.put({ id: folderId, name: clean, createdAt: prev?.createdAt ?? t, updatedAt: t, count: records.length });
-      return folderId;
-    }),
-    renameFolder: async (id: string, name: string) => {
-      const clean = name.trim().slice(0, 120);
-      if (!clean) throw new Error("Folder name required");
-      if (!(await db.folders.update(id, { name: clean }))) throw new Error("Folder not found");
+      await db.lists.put({ id, name: clean, keys: [...new Set(keys)], createdAt: t, updatedAt: t });
+      return id;
     },
-    deleteFolder: (id: string) => db.transaction("rw", db.folders, db.folderItems, db.folderPdfs, async () => {
-      await db.folders.delete(id);
-      await db.folderItems.where("folderId").equals(id).delete();
-      await db.folderPdfs.where("folderId").equals(id).delete();
+    addToList: (id: string, keys: string[]) => db.transaction("rw", db.lists, async () => {
+      const l = await db.lists.get(id);
+      if (!l) throw new Error("List not found");
+      const next = [...new Set([...l.keys, ...keys])];
+      await db.lists.update(id, { keys: next, updatedAt: now() });
+      return next.length - l.keys.length;
     }),
-    /** Replace the current results with the folder's contents (exact copy, PDFs included). */
-    openFolder: (id: string) => db.transaction("rw", [db.results, db.pdfs, db.folders, db.folderItems, db.folderPdfs], async () => {
-      if (!(await db.folders.get(id))) throw new Error("Folder not found");
-      const items = await db.folderItems.where("folderId").equals(id).toArray();
-      const pdfs = await db.folderPdfs.where("folderId").equals(id).toArray();
-      await db.results.clear(); await db.pdfs.clear();
-      await db.results.bulkPut(items.map((i) => i.record));
-      await db.pdfs.bulkPut(pdfs.map((p) => ({ key: p.key, bytes: p.bytes })));
-      return items.length;
+    removeFromList: (id: string, keys: string[]) => db.transaction("rw", db.lists, async () => {
+      const l = await db.lists.get(id);
+      if (!l) throw new Error("List not found");
+      const drop = new Set(keys);
+      await db.lists.update(id, { keys: l.keys.filter((k) => !drop.has(k)), updatedAt: now() });
     }),
+    renameList: async (id: string, name: string) => {
+      const clean = name.trim().slice(0, 120);
+      if (!clean) throw new Error("List name required");
+      if (!(await db.lists.update(id, { name: clean }))) throw new Error("List not found");
+    },
+    /** Deletes only the list; the extracts stay. */
+    deleteList: (id: string) => db.lists.delete(id),
   };
 }
 export type ResultsStore = ReturnType<typeof createResultsStore>;

@@ -101,6 +101,18 @@ it("uploads PDFs, reports failures, groups owners by property and filters them",
   fireEvent.click(screen.getByRole("button", { name: "Počisti filtre" }));
   await waitFor(() => expect(screen.getAllByTestId("result-group")).toHaveLength(2));
 
+  // saved list: tick one property, create a list with it, then show only that list
+  fireEvent.click(screen.getByLabelText("Izberi 998 TESTNI KRAJ 50/21"));
+  fireEvent.click(screen.getByRole("button", { name: "Dodaj izbrane na seznam (1)" }));
+  fireEvent.click(await screen.findByRole("menuitem", { name: /Nov seznam/ }));
+  fireEvent.change(screen.getByLabelText("Ime seznama"), { target: { value: "Stavba 50" } });
+  fireEvent.click(screen.getByRole("button", { name: "Shrani" }));
+  expect(await screen.findByTestId("list-note")).toHaveTextContent("Seznam Stavba 50 ustvarjen (1)");
+  await waitFor(() => expect(screen.getAllByTestId("result-group")).toHaveLength(1));
+  expect(screen.getByTestId("result-group")).toHaveTextContent("50/21");
+  fireEvent.click(screen.getByRole("button", { name: "Počisti filtre" }));
+  await waitFor(() => expect(screen.getAllByTestId("result-group")).toHaveLength(2));
+
   fireEvent.change(screen.getByLabelText(/Filtriraj lastnike/), { target: { value: "kranjc" } });
   await waitFor(() => expect(screen.getAllByTestId("owner-row")).toHaveLength(1));
   expect(screen.getAllByTestId("result-group")).toHaveLength(1);

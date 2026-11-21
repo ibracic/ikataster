@@ -38,7 +38,7 @@ If iKataster is useful to you, a ⭐ on GitHub helps other people find it.
   - download many e-ZK extracts in one go;
   - see owners, shares, mortgages, easements and pending changes;
   - re-check later to see what changed;
-  - save results in folders and export them to Excel/CSV, or to a ZIP that includes the PDFs.
+  - group extracts into saved lists (e.g. one per building or client), filter by KO, number or download day, and export them to Excel/CSV or to a ZIP that includes the PDFs.
 - **Works on a phone** and can be added to the home screen. You can share a link to any parcel or building.
 - **Backup**: save and restore all your local data as one file.
 
@@ -84,7 +84,7 @@ flowchart LR
 ## Privacy
 
 - No iKataster server sees your searches or extracts. The app is a set of static files: your browser downloads the cadastral data files and map tiles, and does everything else locally.
-- Your lists, extracts and folders live only in your browser (IndexedDB). Use *Podatki → Varnostna kopija* to back them up.
+- Your lists, extracts and saved lists live only in your browser (IndexedDB). Use *Podatki → Varnostna kopija* to back them up.
 - The extension talks only to iKataster and to the e-ZK portal, inside your own logged-in browser session.
 - iKataster never publishes owner data. You search by property, never by a person's name.
 

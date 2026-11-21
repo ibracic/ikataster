@@ -1,3 +1,4 @@
+import Dexie from "dexie";
 // @vitest-environment node
 import { createResultsStore, resultKey, groupResults, filterRecords, resultDays, type ResultRecord } from "./results";
 import type { EzkExtract, Owner } from "./types";
@@ -80,42 +81,42 @@ describe("results store PDFs", () => {
   });
 });
 
-describe("saved folders", () => {
-  it("save, list, rename, open (exact copy incl. PDFs), overwrite and delete; survive reopen of the DB", async () => {
-    const name = `res-fold-${Date.now()}`;
+describe("saved lists", () => {
+  it("create, add several, remove, rename, delete (extracts stay); survives reopen", async () => {
+    const name = `res-list-${Date.now()}`;
     const s = createResultsStore(name);
-    const a = extract("999 VZORČNA VAS 100/1", "100/1", [owner("Janez Novak")]);
-    const b = extract("998 X 50/21", "50", [owner("Ana Zupan")], 21);
-    await s.put(a, "a.pdf", new Uint8Array([37, 80, 68, 70, 1]));
-    await s.put(b, "b.pdf");
-    const before = await s.list();
-
-    const id = await s.saveFolder("  Stranka Novak  ");
-    await expect(s.saveFolder("   ")).rejects.toThrow();
-    expect(await s.listFolders()).toEqual([expect.objectContaining({ id, name: "Stranka Novak", count: 2 })]);
-
-    // change current results, then reopen the folder -> identical to the snapshot
-    await s.clear();
-    await s.put(extract("1 A 1", "1", [owner("X")]), "x.pdf");
+    await s.put(extract("999 VZORČNA VAS 100/1", "100/1", [owner("Janez Novak")]), "a.pdf");
+    await s.put(extract("998 X 50/21", "50", [owner("Ana Zupan")], 21), "b.pdf");
+    const [a, b] = (await s.list()).map((r) => r.key);
+    const id = await s.createList("  Stavba 50  ", [b]);
+    await expect(s.createList("  ", [a])).rejects.toThrow();
+    expect(await s.addToList(id, [a, b])).toBe(1);
     s.db.close();
-    const s2 = createResultsStore(name); // "reload"
-    expect(await s2.openFolder(id)).toBe(2);
-    expect(await s2.list()).toEqual(before);
-    expect([...(await s2.pdfs([before[0].key])).get(before[0].key)!]).toEqual([37, 80, 68, 70, 1]);
+    const s2 = createResultsStore(name);
+    expect(await s2.savedLists()).toEqual([expect.objectContaining({ id, name: "Stavba 50", keys: [b, a] })]);
+    await s2.removeFromList(id, [b]);
+    await s2.renameList(id, "Novak");
+    expect((await s2.savedLists())[0]).toMatchObject({ name: "Novak", keys: [a] });
+    await s2.deleteList(id);
+    expect(await s2.savedLists()).toEqual([]);
+    expect(await s2.list()).toHaveLength(2);
+  });
 
-    await s2.renameFolder(id, "Novak 2026");
-    // overwrite with a smaller set
-    await s2.remove([before[1].key]);
-    expect(await s2.saveFolder("Novak 2026", id)).toBe(id);
-    const [f] = await s2.listFolders();
-    expect(f).toMatchObject({ name: "Novak 2026", count: 1 });
-    expect(f.createdAt).toBeLessThanOrEqual(f.updatedAt);
-
-    await s2.deleteFolder(id);
-    expect(await s2.listFolders()).toEqual([]);
-    expect(await s2.db.folderItems.count()).toBe(0);
-    expect(await s2.db.folderPdfs.count()).toBe(0);
-    await expect(s2.openFolder(id)).rejects.toThrow("Folder not found");
+  it("migrates old folders to lists without losing extracts that were only in a folder", async () => {
+    const name = `res-mig-${Date.now()}`;
+    const old = new Dexie(name);
+    old.version(3).stores({ results: "key, addedAt", pdfs: "key", folders: "id, updatedAt", folderItems: "[folderId+key], folderId", folderPdfs: "[folderId+key], folderId" });
+    const rec = (key: string) => ({ key, fileName: "x.pdf", addedAt: 1, extract: extract("999 X 1", "1", []) });
+    await old.table("results").put(rec("parcel:999:1"));
+    await old.table("folders").put({ id: "f1", name: "Stranka", createdAt: 1, updatedAt: 2, count: 2 });
+    await old.table("folderItems").bulkPut([{ folderId: "f1", key: "parcel:999:1", record: rec("parcel:999:1") }, { folderId: "f1", key: "parcel:999:2", record: rec("parcel:999:2") }]);
+    await old.table("folderPdfs").put({ folderId: "f1", key: "parcel:999:2", bytes: new Uint8Array([7]) });
+    old.close();
+    const s = createResultsStore(name);
+    expect(await s.savedLists()).toEqual([expect.objectContaining({ id: "f1", name: "Stranka", keys: ["parcel:999:1", "parcel:999:2"] })]);
+    expect((await s.list()).map((r) => r.key).sort()).toEqual(["parcel:999:1", "parcel:999:2"]);
+    expect([...(await s.pdfs(["parcel:999:2"])).get("parcel:999:2")!]).toEqual([7]);
+    expect(await s.db.folderItems.count()).toBe(0);
   });
 });
 

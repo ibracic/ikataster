@@ -18,17 +18,17 @@ async function seed(tag: string) {
   await cart.add([{ kind: "parcel", koId: 657, koName: "MARIBOR GRAD", number: "1587", eid: "E1", geometry: { type: "Point", coordinates: [15.6, 46.5] } }]);
   await res.put(x("1"), "1.pdf", new Uint8Array([37, 80, 68, 70, 0, 255]));
   await res.put(x("2"), "2.pdf");
-  await res.saveFolder("Mapa A");
+  await res.createList("Seznam A", ["parcel:657:1", "parcel:657:2"]);
   return { cart, res };
 }
 
 describe("backup/restore", () => {
-  it("round-trips all IndexedDB data (incl. PDFs and folders) and settings into empty stores", async () => {
+  it("round-trips all IndexedDB data (incl. PDFs and saved lists) and settings into empty stores", async () => {
     const a = await seed(`a${Date.now()}`);
     const lsA = mem(); lsA.setItem("ikataster.lang", "en"); lsA.setItem("ikataster.kos.v1", "cache"); lsA.setItem("mantine-color-scheme-value", "dark"); lsA.setItem("other", "x");
     const { zip, fileName, summary } = await exportBackup({ cart: a.cart.db, results: a.res.db }, lsA, new Date("2026-09-29T08:00:00Z"));
     expect(fileName).toBe("ikataster-varnostna-kopija-2026-09-29.zip");
-    expect(summary.tables).toMatchObject({ "cart.items": 1, "results.results": 2, "results.pdfs": 1, "results.folders": 1, "results.folderItems": 2, "results.folderPdfs": 1 });
+    expect(summary.tables).toMatchObject({ "cart.items": 1, "results.results": 2, "results.pdfs": 1, "results.lists": 1 });
     expect(summary.local).toBe(2); // lang + color scheme; KO cache and foreign keys skipped
 
     const b = { cart: createCartStore(`bk-cart-b${Date.now()}`), res: createResultsStore(`bk-res-b${Date.now()}`) };
@@ -41,7 +41,7 @@ describe("backup/restore", () => {
     expect(after.dbs).toEqual(before.dbs);
     expect(after.local).toEqual(before.local);
     expect([...(await b.res.pdfs(["parcel:657:1"])).get("parcel:657:1")!]).toEqual([37, 80, 68, 70, 0, 255]);
-    expect(await b.res.openFolder((await b.res.listFolders())[0].id)).toBe(2);
+    expect((await b.res.savedLists())[0]).toMatchObject({ name: "Seznam A", keys: ["parcel:657:1", "parcel:657:2"] });
   });
 
   it("rejects files that are not backups", () => {

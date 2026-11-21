@@ -1,5 +1,5 @@
 import { ChangesBadge, ChangesList } from "./ChangesNote";
-import { ActionIcon, Badge, Collapse, Group, Paper, Stack, Table, Text, Tooltip, UnstyledButton } from "@mantine/core";
+import { ActionIcon, Badge, Checkbox, Collapse, Group, Paper, Stack, Table, Text, Tooltip, UnstyledButton } from "@mantine/core";
 import { IconChevronDown, IconChevronRight, IconFileTypePdf, IconMapPin, IconX } from "@tabler/icons-react";
 import { useI18n, type MsgKey } from "../i18n";
 import { formatEur, parcelValue, partValue, useKoValues } from "../values";
@@ -85,9 +85,12 @@ interface Props {
   onOpenProperty?: (r: ResultRecord) => void;
   onOpenPdf?: (r: ResultRecord) => void;
   onRemove: (r: ResultRecord) => void;
+  /** Multi-select for saved lists (checkbox shown when given). */
+  selected?: boolean;
+  onSelect?: (r: ResultRecord, on: boolean) => void;
 }
 
-export function ResultCard({ record, owners, open, onToggle, onOpenProperty, onOpenPdf, onRemove }: Props) {
+export function ResultCard({ record, owners, open, onToggle, onOpenProperty, onOpenPdf, onRemove, selected, onSelect }: Props) {
   const { t } = useI18n();
   const x = record.extract;
   const p = x.property;
@@ -96,6 +99,8 @@ export function ResultCard({ record, owners, open, onToggle, onOpenProperty, onO
   return (
     <Paper withBorder radius="md" p="sm" data-testid="result-group">
       <Group justify="space-between" wrap="nowrap" align="flex-start" gap="xs">
+        {onSelect && <Checkbox mt={3} size="sm" checked={!!selected} onChange={(e) => onSelect(record, e.currentTarget.checked)}
+          aria-label={`${t("listSelect")} ${record.extract.property.label}`} />}
         <UnstyledButton onClick={onToggle} style={{ minWidth: 0, flex: 1 }} aria-expanded={open}>
           <Group gap={6} wrap="nowrap" align="flex-start">
             {open ? <IconChevronDown size={18} style={{ flexShrink: 0, marginTop: 2 }} /> : <IconChevronRight size={18} style={{ flexShrink: 0, marginTop: 2 }} />}
