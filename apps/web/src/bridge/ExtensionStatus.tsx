@@ -28,6 +28,9 @@ export function ExtensionStatus({ platform = currentPlatform() }: { platform?: P
             <Text size="xs" mt={4}>{t("extNoEzkTab")} <Anchor href={EZK_URL} target="_blank" rel="noopener" size="xs">{t("extOpenEzk")}</Anchor></Text>
           )}
           {state.ezkTab === true && <Text size="xs" mt={4}>{t("extEzkTab")}</Text>}
+          <Text size="xs" mt={4} c="dimmed" data-testid="ezk-page-hint">
+            {t("extEzkPageHint")} <Anchor href={EZK_URL} target="_blank" rel="noopener" size="xs">{t("extEzkPageLink")}</Anchor>
+          </Text>
         </Alert>
       )}
       {state.status !== "detected" && isMobile(platform) && (

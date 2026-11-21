@@ -62,8 +62,10 @@ export function QueuePanel() {
       <Text size="xs" fw={600}>{t("queueCurrentRound")}</Text>
       <Progress size="sm" value={(done + failed) / current.length * 100} animated={running} aria-label={t("queueProgress")} />
       <Text size="xs" c="dimmed" data-testid="queue-summary">{fmt(t("queueSummary"), { done, total: current.length, failed, waiting })}</Text>
-      <Stack gap={2} data-testid="queue-jobs">{current.map(j => <Group key={j.key} justify="space-between" data-status={j.status}>
-        <Text size="xs">{label(j, t)}</Text><Badge size="xs" color={j.status === "failed" ? "orange" : j.status === "done" ? "teal" : "gray"}>
+      <Stack gap={2} data-testid="queue-jobs">{current.map(j => <Group key={j.key} justify="space-between" data-status={j.status} wrap="nowrap" align="flex-start">
+        <div><Text size="xs">{label(j, t)}</Text>
+          {j.status === "failed" && j.code !== "NOT_IN_ZK" && <Text size="xs" c="dimmed" data-testid="job-reason">{err(j.code)}{j.error && j.error !== j.code ? ` (${j.error.slice(0, 160)})` : ""}</Text>}</div>
+        <Badge size="xs" color={j.status === "failed" ? "orange" : j.status === "done" ? "teal" : "gray"}>
           {j.code === "NOT_IN_ZK" ? t("queueNotInZk") : t(`queue_${j.status}` as never)}
         </Badge>
       </Group>)}</Stack>
