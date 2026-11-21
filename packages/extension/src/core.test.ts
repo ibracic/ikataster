@@ -107,7 +107,7 @@ describe("manifest", () => {
     const f = manifest("firefox", "0.1.0", ["https://app.example"]);
     for (const m of [c, f]) {
       expect(m.manifest_version).toBe(3);
-      expect(m.permissions).toEqual(["tabs", "scripting"]);
+      expect(m.permissions).toEqual(["scripting"]);
       expect(m.host_permissions).toEqual(["https://esodisce.si/*"]);
       const relay = (m.content_scripts as { matches: string[]; js: string[] }[]).find((s) => s.js.includes("relay.js"))!;
       expect(relay.matches).toEqual(["https://app.example/*"]);
