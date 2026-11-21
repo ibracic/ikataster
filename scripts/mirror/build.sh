@@ -68,14 +68,15 @@ tippecanoe -q -e "$NEW/tiles" -t "$W/tmp" -Z8 -z14 -d13 --no-tile-compression --
   -n "iKataster GURS mirror" -A "Geodetska uprava Republike Slovenije"
 echo "== ko files $(date -Is)"; rm -f kodata.sqlite "$SITE/../kodata.sqlite"
 python3 "$HERE/kodata.py" gj "$NEW" "$DATE"
-ln -sf "$W/gj/RN_SLO_NASLOVI_register_naslovov_${STAMP}.csv" x/
+RN=$(ls gj/RN_SLO_NASLOVI_register_naslovov_*.csv | sort | tail -1)  # RN export date can differ from KN
+rm -f x/RN_SLO_NASLOVI_register_naslovov_*.csv; ln -sf "$W/$RN" x/
 python3 "$HERE/extras.py" x "$NEW"
 echo "== eup $(date -Is)"; mkdir -p "$W/eup"
 python3 "$HERE/eup.py" harvest "$W/eup" || { [ -s "$W/eup/eup.jsonl" ] && echo "EUP harvest failed, reusing previous eup.jsonl"; } || exit 1
 python3 "$HERE/eup.py" apply "$W/eup" "$NEW"
-python3 "$HERE/municipalities.py" x/KN_SLO_PARCELE_SLO_parcele_x_rpe_obcine_${STAMP}.csv "gj/RN_SLO_NASLOVI_register_naslovov_${STAMP}.csv" "$NEW"
+python3 "$HERE/municipalities.py" x/KN_SLO_PARCELE_SLO_parcele_x_rpe_obcine_${STAMP}.csv "$RN" "$NEW"
 python3 "$HERE/addresses.py" gj "$NEW" "$DATE"
-python3 "$HERE/managers.py" "$NEW" "$DATE" gj/KN_SLO_STAVBE_SLO_upravniki_${STAMP}.csv "gj/RN_SLO_NASLOVI_register_naslovov_${STAMP}.csv"
+python3 "$HERE/managers.py" "$NEW" "$DATE" gj/KN_SLO_STAVBE_SLO_upravniki_${STAMP}.csv "$RN"
 printf '{"date":"%s","source":"Geodetska uprava Republike Slovenije, kataster nepremičnin in register naslovov, stanje %s"}\n' "$DATE" "$DATE" > "$NEW/index.json"
 
 FILES=$(find "$NEW" -type f | wc -l)
