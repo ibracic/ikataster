@@ -103,6 +103,10 @@ iKataster is an independent project and is not affiliated with GURS or the Slove
 
 ---
 
+## Contact
+
+Questions, bugs or suggestions: [info@ikataster.si](mailto:info@ikataster.si) or a [GitHub issue](https://github.com/ibracic/ikataster/issues).
+
 # Part 2: For developers and self-hosting
 
 ## How it works
