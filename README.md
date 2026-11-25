@@ -66,7 +66,7 @@ flowchart LR
 
 ### Step by step
 
-1. **Install the extension once** (Chrome, Edge or Firefox on a computer). The app shows the steps under *Izpisi iz zemljiške knjige → Za prenos → Navodila za namestitev*.
+1. **Install the extension once** on a computer: in Chrome or Edge from the [Chrome Web Store](https://chromewebstore.google.com/detail/ebmmbpmcpgdjipkcjaikgpkgpcmekhmp). For Firefox the app shows manual steps (document icon at top right → *Navodila za namestitev*).
 2. **Open the land registry** ([e-Sodstvo, e-ZK](https://esodisce.si/)) in another tab and **log in with your SI-PASS** as usual. Keep that tab open.
 3. **In iKataster, add properties to the download list** (tab *Za prenos* under the extracts button) (one by one, by drawing an area, or by importing a spreadsheet).
 4. **Click download.** For each property the extension asks the land-registry tab for the official extract, the same way you would by hand, and gives the PDF back to iKataster.

@@ -1,8 +1,12 @@
 import { useMediaQuery } from "@mantine/hooks";
-import { Modal, Text, Tabs, List, ThemeIcon, Title, Accordion } from "@mantine/core";
+import { Anchor, Modal, Text, Tabs, List, ThemeIcon, Title, Accordion } from "@mantine/core";
 import { IconInfoCircle, IconDownload, IconLock, IconQuestionMark } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useI18n } from "../i18n";
+import { CHROME_STORE_URL } from "../bridge/ExtensionStatus";
+
+const EZK_PAGE = "https://esodisce.si/evlozisce/javni_izpisi/list.html";
+const A = ({ href, children }: { href: string; children: ReactNode }) => <Anchor href={href} target="_blank" rel="noopener" inherit>{children}</Anchor>;
 
 type Content = {
   title: string; start: string; faq: string; intro: string; stepsTitle: string;
@@ -17,11 +21,11 @@ const CONTENT: Record<"sl" | "en", Content> = {
     intro: "iKataster prikazuje lastništvo in bremena nepremičnin. Za prenos izpiskov iz zemljiške knjige potrebuje dostop do portala e-ZK. Ker spletne strani zaradi varnosti ne morejo brati drugih zavihkov, potrebujete majhno razširitev za brskalnik.",
     stepsTitle: "Koraki za prenos izpiskov",
     steps: [
-      <><b>Namestite razširitev</b> iKataster (Chrome, Edge ali Firefox na računalniku). Navodila so v <i>Izpisi iz zemljiške knjige → Za prenos → Navodila za namestitev</i>.</>,
-      <>V drugem zavihku se <b>prijavite v e-Sodstvo (e-ZK)</b> s SI-PASS in zavihek pustite odprt.</>,
-      <>Na zemljevidu (klik, izris območja ali uvoz seznama) <b>dodajte parcele ali dele stavb na seznam</b>.</>,
-      <>Na seznamu kliknite <b>prenos</b>. Razširitev prek vaše seje e-ZK prenese uradne PDF-je.</>,
-      <>Aplikacija PDF-je prebere in pokaže <b>lastnike in bremena</b>.</>,
+      <><b>Namestite razširitev iKataster</b> (enkrat, na računalniku): v Chromu ali Edgu odprite <A href={CHROME_STORE_URL}>spletno trgovino Chrome</A> in kliknite <i>Dodaj v Chrome</i>. Za Firefox so navodila pod ikono z dokumentom zgoraj desno (<i>Izpisi iz zemljiške knjige</i>) → <i>Navodila za namestitev</i>.</>,
+      <>V novem zavihku se s SI-PASS <b>prijavite v e-Sodstvo</b> in odprite <A href={EZK_PAGE}>stran ZK izpiskov</A>. Zavihek pustite odprt. Prijava samo na domačo stran e-Sodstva ni dovolj.</>,
+      <>V iKatastru poiščite nepremičnino in kliknite <b>Dodaj za izpis ZK</b>. Lahko dodate tudi vse dele stavbe, vse stavbe upravnika ali uvozite seznam.</>,
+      <>Kliknite ikono z dokumentom zgoraj desno (<i>Izpisi iz zemljiške knjige</i>) in nato <b>Prenesi nove izpiske</b>.</>,
+      <>Izpisi se pojavijo v zavihku <i>Preneseni</i>: <b>lastniki, deleži in bremena</b>, ki jih lahko izvozite v Excel.</>,
     ],
     questions: [
       { id: "password", lock: true, q: "Ali aplikacija vidi moje geslo?", a: "Ne. Geslo SI-PASS vnesete samo na uradni strani e-Sodstva." },
@@ -38,11 +42,11 @@ const CONTENT: Record<"sl" | "en", Content> = {
     intro: "iKataster shows property owners and charges. To download land-registry extracts it needs the e-ZK portal. For security, a website can't read other tabs, so you need a small browser extension.",
     stepsTitle: "How to download extracts",
     steps: [
-      <><b>Install the iKataster extension</b> (Chrome, Edge or Firefox on a computer). Steps are under <i>Land-registry extracts → To download → Installation instructions</i>.</>,
-      <>In another tab, <b>log in to e-Sodstvo (e-ZK)</b> with SI-PASS and keep that tab open.</>,
-      <>On the map (click, draw an area or import a list) <b>add parcels or building parts to the list</b>.</>,
-      <>In the list, click <b>download</b>. The extension fetches the official PDFs through your e-ZK session.</>,
-      <>The app reads the PDFs and shows <b>owners and charges</b>.</>,
+      <><b>Install the iKataster extension</b> (once, on a computer): in Chrome or Edge open the <A href={CHROME_STORE_URL}>Chrome Web Store</A> and click <i>Add to Chrome</i>. For Firefox, see the document icon at top right (<i>Land-registry extracts</i>) → <i>Installation instructions</i>.</>,
+      <>In a new tab <b>sign in to e-Sodstvo</b> with SI-PASS and open the <A href={EZK_PAGE}>LR extracts page</A>. Keep that tab open. Signing in on the e-Sodstvo home page alone is not enough.</>,
+      <>In iKataster find a property and click <b>Add for LR extract</b>. You can also add all parts of a building, all buildings of a manager, or import a list.</>,
+      <>Click the document icon at top right (<i>Land-registry extracts</i>), then <b>Download new extracts</b>.</>,
+      <>Extracts appear in the <i>Downloaded</i> tab: <b>owners, shares and charges</b>, which you can export to Excel.</>,
     ],
     questions: [
       { id: "password", lock: true, q: "Does the app see my password?", a: "No. You enter your SI-PASS password only on the official e-Sodstvo pages." },
