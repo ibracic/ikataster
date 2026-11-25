@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Alert, Anchor, Badge, Button, Group, List, Modal, Tabs, Text } from "@mantine/core";
-import { IconDownload, IconPlugConnected, IconPlugConnectedX } from "@tabler/icons-react";
+import { IconBrandChrome, IconDownload, IconPlugConnected, IconPlugConnectedX } from "@tabler/icons-react";
 import { useI18n } from "../i18n";
 import { useExtension } from "./useExtension";
 import { currentPlatform, isMobile, type Platform } from "../pwa/platform";
 import { IconDeviceMobile } from "@tabler/icons-react";
 
+export const CHROME_STORE_URL = "https://chromewebstore.google.com/detail/ebmmbpmcpgdjipkcjaikgpkgpcmekhmp";
 const EZK_URL = "https://esodisce.si/evlozisce/javni_izpisi/list.html";
 
 /** Extension state shown in the cart: detected (+ eZK tab status) or install instructions. */
@@ -67,7 +68,10 @@ export function InstallModal({ opened, onClose }: { opened: boolean; onClose: ()
           <Tabs.Tab value="firefox">Firefox</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="chrome" pt="sm">
-          <Button component="a" href="/extension/ikataster-chrome.zip" download size="xs" leftSection={<IconDownload size={14} />} mb="sm">ikataster-chrome.zip</Button>
+          <Button component="a" href={CHROME_STORE_URL} target="_blank" rel="noopener" leftSection={<IconBrandChrome size={16} />} mb={6}>{t("extStoreButton")}</Button>
+          <Text size="xs" c="dimmed" mb="md">{t("extStoreHint")}</Text>
+          <Text size="sm" fw={600} mb={4}>{t("extManualTitle")}</Text>
+          <Button component="a" href="/extension/ikataster-chrome.zip" download size="xs" variant="light" leftSection={<IconDownload size={14} />} mb="sm">ikataster-chrome.zip</Button>
           <List type="ordered" size="sm" spacing={4}>
             <List.Item>{t("extChrome1")}</List.Item>
             <List.Item>{t("extChrome2")}</List.Item>

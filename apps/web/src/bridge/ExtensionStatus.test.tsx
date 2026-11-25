@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { MantineProvider } from "@mantine/core";
 import { I18nProvider } from "../i18n";
 import { BridgeContext, createAppBridge } from "./instance";
-import { ExtensionStatus } from "./ExtensionStatus";
+import { ExtensionStatus, CHROME_STORE_URL } from "./ExtensionStatus";
 import { startRelay } from "@ikataster/extension/src/relay-core";
 import { handleBackgroundMessage } from "@ikataster/extension/src/background-core";
 
@@ -38,7 +38,8 @@ describe("ExtensionStatus", () => {
     renderStatus("extension");
     expect(await screen.findByText("Razširitev ni nameščena", {}, { timeout: 4000 })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Navodila za namestitev" }));
-    expect(await screen.findByRole("link", { name: /ikataster-chrome\.zip/ })).toHaveAttribute("href", "/extension/ikataster-chrome.zip");
+    expect(await screen.findByRole("link", { name: /Dodaj v Chrome/ })).toHaveAttribute("href", CHROME_STORE_URL);
+    expect(screen.getByRole("link", { name: /ikataster-chrome\.zip/ })).toHaveAttribute("href", "/extension/ikataster-chrome.zip");
     spy.mockRestore();
   });
 

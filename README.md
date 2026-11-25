@@ -48,6 +48,8 @@ If iKataster is useful to you, a ⭐ on GitHub helps other people find it.
 
 iKataster can't log into the land registry for you, and it never sees your password. You log in yourself, the normal way, and the small iKataster browser extension then passes requests between the two tabs.
 
+Install the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/ebmmbpmcpgdjipkcjaikgpkgpcmekhmp) (Chrome and Edge).
+
 ```mermaid
 flowchart LR
     U(["You"])
@@ -163,7 +165,7 @@ By default the app reads the cadastral copy from `/mirror` on its own origin, an
 
 ### Installing the extension
 
-The built app serves the extension zips under `/extension/`. In the app open *Izpisi iz zemljiške knjige → Za prenos → Navodila za namestitev* for step-by-step instructions (load unpacked in Chrome/Edge, temporary add-on in Firefox). After installing, reload the app tab once.
+Chrome and Edge users install the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/ebmmbpmcpgdjipkcjaikgpkgpcmekhmp). The built app also serves the extension zips under `/extension/` for manual installs. In the app open *Izpisi iz zemljiške knjige → Za prenos → Navodila za namestitev* for step-by-step instructions (load unpacked in Chrome/Edge, temporary add-on in Firefox). After installing, reload the app tab once.
 
 ## Building the data
 
